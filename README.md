@@ -8,7 +8,7 @@
 ### <ins>Citation</ins>
 <i>Please cite the original manuscript if you find Phindr3D useful for your work:</i>
 <br/>
-Mergenthaler P, Hariharan S, Pemberton JM, Lourenco C, Penn LZ, Andrews DW (2021) Rapid 3D phenotypic analysis of neurons and organoids using data-driven cell segmentation-free machine learning. PLoS Comput Biol 17(2): e1008630. https://doi.org/10.1371/journal.pcbi.1008630
+Mergenthaler P, Hariharan S, Pemberton JM, Lourenco C, Penn LZ, Andrews DW (2021) Rapid 3D phenotypic analysis of neurons and organoids using data-driven cell segmentation-free machine learning. PLoS Comput Biol 17(2): e1008630. https://doi.org/10.1371/journal.pcbi.1008630. 
 
 ### <ins>Installation</ins>
 
