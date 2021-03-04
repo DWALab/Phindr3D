@@ -1,5 +1,5 @@
 <p align="center">
-<img src="phindr3d_icon.png" width="400" height="400"></img></p>
+<img src="phindr3d_icon.png" width="300" height="300"></img></p>
 
 ## <ins>Phindr3D</ins>
 
