@@ -12,8 +12,8 @@ Mergenthaler P, Hariharan S, Pemberton JM, Lourenco C, Penn LZ, Andrews DW (2021
 
 ### <ins>Installation</ins>
 
-* Download the executables [**here**](Executables) for the installation of a stand-alone program of *Phindr3D* or the *Phindr3D Organoid Contour Segmentation app*. If required, the Matlab runtime will be installed automatically. 
-* The code is written using Matlab 64 bit version 2017b. Download the repository and add it to your Matlab path.
+* To install the stand-alone program, download the executables [**here**](Executables) for the installation of a stand-alone program of *Phindr3D* or the *Phindr3D Organoid Contour Segmentation app*. If required, the Matlab runtime will be installed automatically. 
+* The code is written using Matlab 64 bit version 2017b. To run Phindr3D directly from Matlab, download the repository and add it to your Matlab path.
 
 #### Dependencies
 
