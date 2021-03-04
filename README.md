@@ -21,7 +21,7 @@ Download the Matlab <b><i>drtoolbox</b></i> from [**here**](https://lvdmaaten.gi
 
 ### <ins>3D Data Sets</ins>
 
-The full 3D microscopy data sets generated in this study were deposited to the Open Microscopy Image Data Resource repository (http://idr.openmicroscopy.org) under accession number idr0105.
+The full 3D microscopy data sets generated in this study were deposited to the Open Microscopy Image Data Resource repository (http://idr.openmicroscopy.org) under accession number idr0105 *(in progress)*.
 
 Test image data sets with an excerpt of the neuron and organoid data that will allow quick evaluation of the core features of Phindr3D were deposited to the open science platform Zenodo (https://zenodo.org; neuron data: DOI <a href="https://dx.doi.org/10.5281/zenodo.4064148" target="_blank" rel="noopener noreferrer">10.5281/zenodo.4064148</a>; MCF10A organoid data: DOI <a href=https://dx.doi.org/10.5281/zenodo.4384912>10.5281/zenodo.4384912</a>). Numerical data for the figure panels were deposited to Zenodo (https://zenodo.org; DOI: <a href=https://dx.doi.org/10.5281/zenodo.4385040> 10.5281/zenodo.4385040</a>). 
 
