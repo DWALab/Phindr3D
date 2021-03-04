@@ -17,7 +17,7 @@ Mergenthaler P, Hariharan S, Pemberton JM, Lourenco C, Penn LZ, Andrews DW (2021
 
 #### Dependencies
 
-Download the Matlab <b><i>drtoolbox</b></i> from [**here**](https://lvdmaaten.github.io/drtoolbox/) and add it to your Matlab path. For affinity propagation, the Matlab code is already available as part of the Phindr3D package (under "Third Party").
+Download the Matlab <b><i>drtoolbox</b></i> from [**here**](https://lvdmaaten.github.io/drtoolbox/) and add it to your Matlab path. For affinity propagation, the Matlab code is already available as part of the Phindr3D package (under "Third Party" - Brendan J. Frey; Delbert Dueck (2007). "Clustering by passing messages between data points". Science. 315 (5814): 972–976.).
 
 ### <ins>3D Data Sets</ins>
 
