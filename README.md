@@ -1,9 +1,13 @@
 <p align="center">
-<img src="phindr3d_icon.png" width="300" height="300"></img></p>
+<img src="phindr3d_icon.png" width="200" height="200"></img></p>
 
 ## <ins>Phindr3D</ins>
 
 :microscope: Phindr3D is a comprehensive shallow-learning framework for automated quantitative phenotyping of three-dimensional (3D) high content screening image data using unsupervised data-driven voxel-based feature learning, which enables computationally facile classification, clustering and data visualization. 
+<br>
+<p align="center">
+<img src="Phindr3D-workflow.png" width="444" height="250"></img></p>
+<br>
 
 ### <ins>Citation</ins>
 <i>Please cite the original manuscript if you find Phindr3D useful for your work:</i>
