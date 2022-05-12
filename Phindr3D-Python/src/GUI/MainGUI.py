@@ -14,7 +14,9 @@
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
-from PyQt5.QtWidgets import *
+# from PyQt5.QtWidgets import *
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QPushButton
+
 
 class MainGUI:
     """Defines the main GUI window of Phindr3D"""
