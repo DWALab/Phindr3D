@@ -20,10 +20,7 @@ if __name__ == '__main__':
     """Phindr3D is designed for automated cell phenotype analysis"""
 
     # Create the GUI object
-    theMainGUI = MainGUI()
-
-    # Run the main GUI loop
-    theMainGUI.run()
+    run_mainGUI()
     # on exit...
 
 # end main
