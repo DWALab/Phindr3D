@@ -13,12 +13,19 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
-
+from .external_windows import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+import matplotlib
+from matplotlib.backend_bases import MouseButton
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.figure import Figure
+from scipy.spatial import distance
+import numpy as np
+from PIL import Image
 from .external_windows import *
-import pyqtgraph as pg
 import sys
 
 class load_file(QWidget):
