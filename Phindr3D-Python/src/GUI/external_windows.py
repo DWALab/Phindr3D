@@ -15,37 +15,49 @@
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
 from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+import numpy as np
 import matplotlib
 from matplotlib.backend_bases import MouseButton
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.figure import Figure
-from scipy.spatial import distance
-import numpy as np
-from PIL import Image
-import sys
 
-#Matplotlib Figure and Interactive Mouse-Click Callback Classes
+
+#Matplotlib Figure
 class MplCanvas(FigureCanvasQTAgg):
 
     def __init__(self, parent=None, width=5, height=5, dpi=100, projection="3d"):
         self.fig = Figure(figsize=(width, height), dpi=dpi)
-        if projection == "3d":
+        if projection=="3d":
             self.axes = self.fig.add_subplot(111, projection=projection)
         else:
-            self.axes = self.fig.add_subplot(111)
+            self.axes = self.fig.add_subplot(111, projection=None)
         super(MplCanvas, self).__init__(self.fig)
 
-class interactive_points(object):
-    def __init__(self, xdata, ydata, sc, main_plot, projection):
-        self.xdata=xdata
-        self.ydata=ydata
-        self.scbounds=sc
+#imported matplotlib toolbar. Only use desired functions.
+class NavigationToolbar(NavigationToolbar):
+    NavigationToolbar.toolitems = (
+        (None, None, None, None),
+        (None, None, None, None),
+        (None, None, None, None),
+        (None, None, None, None),
+        (None, None, None, None),
+        ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
+        ('Customize', 'Edit axis, curve and image parameters', 'qt4_editor_options', 'edit_parameters'),
+        (None, None, None, None),
+        ('Save', 'Save the figure', 'filesave', 'save_figure')
+    )
+
+#Callback will open image associated with data point
+class pick_onclick():
+    def __init__(self, main_plot, projection, x, y, z):
         self.main_plot=main_plot
         self.projection=projection
-
+        self.x=x
+        self.y=y
+        self.z=z
         class buildImageViewer(QWidget):
             def __init__(self):
                 super().__init__()
@@ -116,33 +128,44 @@ class interactive_points(object):
         self.winc = buildImageViewer()
 
     def __call__(self, event):
+        if event:
+            point_index = int(event.ind)
 
-        #for debugging
-        '''
-        if event.button is MouseButton.LEFT:
-            print('%s click: button=%d, x=%d, y=%d, xdata=%f, ydata=%f' %
-                      ('double' if event.dblclick else 'single', event.button,
-                       event.x, event.y, event.xdata, event.ydata))
-        '''
+            #for debugging
+            print("X=",self.x[point_index], " Y=", self.y[point_index], " Z=", self.z[point_index], " PointIdx=", point_index)
+
+            plt.figure(1)
+            #circle in red selected data point
+            #if self.projection=='2d':
+            self.main_plot.axes.scatter(self.x[point_index], self.y[point_index], self.z[point_index], s=20, facecolor="none", edgecolor='red', alpha=1)
+            #else:
+            #    self.main_plot.axes.scatter(self.x[point_index], self.y[point_index], self.z[point_index], s=20, facecolor="none", edgecolor='red', alpha=1, depthshade = False)
+            self.main_plot.draw()
+            winc=self.winc
+            winc.show()
+
+#zoom in/out fixed xy plane
+class fixed_2d():
+    def __init__(self, main_plot, sc_plot, projection):
+        self.main_plot =main_plot
+        self.sc_plot =sc_plot
+        self.projection = projection
+
+    def __call__(self, event):
 
         if event.inaxes is not None:
-            #find x & y axis tolerance
-            xlim=self.scbounds.axes.get_xlim()
-            ylim=self.scbounds.axes.get_ylim()
-            xtol=0.015*abs(abs(xlim[0])-abs(xlim[1]))+np.exp(-(abs(abs(xlim[0])-abs(xlim[1]))/500))/50
-            ytol=0.015*abs(abs(ylim[0])-abs(ylim[1]))+np.exp(-(abs(abs(ylim[0])-abs(ylim[1]))/500))/50
-
-            #when clicked locate closest data point
-            pt_closest= distance.cdist([(event.xdata,event.ydata)], list(zip(self.xdata,self.ydata))).argmin()
-            xclose=self.xdata[pt_closest]
-            yclose=self.ydata[pt_closest]
-
-            #create pop-up figure and plot if clicked data point within tolerance
-            plt.figure(1)
-
-            if xclose-xtol < event.xdata < xclose+xtol and yclose-ytol < event.ydata < yclose+ytol:
-                winc=self.winc
-                winc.show()
+            if self.projection=="2d":
+                if event.button == 'up':
+                    self.main_plot.axes.mouse_init()
+                    self.main_plot.axes.xaxis.zoom(-1)
+                    self.main_plot.axes.yaxis.zoom(-1)
+                    self.main_plot.axes.zaxis.zoom(-1)
+                if event.button =='down':
+                    self.main_plot.axes.xaxis.zoom(1)
+                    self.main_plot.axes.yaxis.zoom(1)
+                    self.main_plot.axes.zaxis.zoom(-1)
+                self.main_plot.draw()
+                self.main_plot.axes.disable_mouse_rotation()
 
 class extractWindow(QDialog):
     def __init__(self):
@@ -227,7 +250,9 @@ class resultsWindow(QDialog):
         export = clustering.addAction("Export Cluster Results")
         plotproperties = menubar.addMenu("Plot Properties")
         rotation = plotproperties.addAction("3D Rotation")
-        resetview = plotproperties.addAction("Reset Plot View")
+        reset_action = QAction("Reset Plot View", self)
+        reset_action.triggered.connect(lambda: self.reset_view())
+        resetview = plotproperties.addAction(reset_action)
 
         # menu features go here
 
@@ -254,40 +279,92 @@ class resultsWindow(QDialog):
         boxlayout.addWidget(QLabel("Color By"), 0, 2, 1, 1)
         boxlayout.addWidget(colordropdown, 1, 2, 1, 1)
         box.setLayout(boxlayout)
-
-        # button features go here
-
-        # building layout
-        layout = QGridLayout()
-        # setup matplotlib figure
+        #setup Matplotlib
         matplotlib.use('Qt5Agg')
-        # test points. normally empty list x=[], y=[]
+        # test points. normally empty list x=[], y=[], z=[] #temporary until read in formated super/megavoxel data
         x = [1, 5]
         y = [7, 2]
+        z = [0,0]
         # if !self.foundMetadata:  #x and y coordinates from super/megavoxels
         # x=
         # y=
-        projection = "2d"  # Temp Modify to radio
-        main_plot = MplCanvas(self, width=5, height=5, dpi=100, projection=projection)
-        sc_plot = main_plot.axes.scatter(x, y, [4, 9])
-
+        self.main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection="3d")
+        sc_plot = self.main_plot.axes.scatter(x, y, z, s=10, alpha=1, depthshade=False, picker=True)
+        self.main_plot.axes.set_position([0, 0, 1, 1])
         if not x and not y:
-            main_plot.axes.set_ylim(bottom=0)
-            main_plot.axes.set_xlim(left=0)
+            self.main_plot.axes.set_ylim(bottom=0)
+            self.main_plot.axes.set_xlim(left=0)
+        self.original_xlim=0
+        self.original_ylim=0
+        if all(np.array(z)==0):
+            self.original_zlim=[0, 0.1]
 
-        toolbar = NavigationToolbar(main_plot, self)
+        projection = "2d"  # update from radiobutton
+        def axis_limit(sc_plot):
+            xlim = sc_plot.axes.get_xlim3d()
+            ylim = sc_plot.axes.get_ylim3d()
+            lower_lim=min(xlim[0], ylim[0])
+            upper_lim=max(xlim[1], ylim[1])
+            return(lower_lim, upper_lim)
+        def toggle_2d_3d(x, y, z, projection, sc_plot, checkbox_cur, checkbox_prev, dim):
+            if checkbox_cur.isChecked() and checkbox_prev.isChecked():
+                checkbox_prev.setChecked(False)
+            check_projection(x, y, z, projection, sc_plot, dim)
+        def check_projection(x, y, z, projection, sc_plot, dim):
+            if dim == "2d":
+                projection=dim
+                low, high= axis_limit(sc_plot)
+                #for debugging
+                #print(low, high)
+                self.main_plot.axes.mouse_init()
+                self.main_plot.axes.view_init(azim=-90, elev=89)
+                if self.original_xlim==0 and self.original_ylim==0 and self.original_zlim==0:
+                    self.original_xlim=[low-1, high+1]
+                    self.original_ylim=[low - 1, high + 1]
+                self.main_plot.axes.set_xlim(low-1, high+1)
+                self.main_plot.axes.set_ylim(low-1, high+1)
+                self.main_plot.axes.get_zaxis().line.set_linewidth(0)
+                self.main_plot.axes.tick_params(axis='z', labelsize=0)
+                self.main_plot.axes.set_zlim3d(0,0.1)
+                self.main_plot.draw()
+                self.main_plot.axes.disable_mouse_rotation()
+            elif dim == "3d":
+                projection = dim
+                self.main_plot.axes.get_zaxis().line.set_linewidth(1)
+                self.main_plot.axes.tick_params(axis='z', labelsize=10)
+                self.main_plot.fig.canvas.draw()
+                self.main_plot.axes.mouse_init()
+
+        # button features go here
+        twod.toggled.connect(lambda: toggle_2d_3d(x, y, z, projection, sc_plot, twod, threed, "2d"))
+        threed.toggled.connect(lambda: toggle_2d_3d(x, y, z, projection, sc_plot, threed, twod, "3d"))
+        twod.setChecked(True)
+        fixed_camera = fixed_2d(self.main_plot, sc_plot, projection)
+        picked=pick_onclick(self.main_plot, projection, x, y, z)
+        # matplotlib callback mouse/scroller actions
+        rot =self.main_plot.fig.canvas.mpl_connect('scroll_event', fixed_camera)
+        self.main_plot.fig.canvas.mpl_connect('pick_event', picked)
+
+        # building layout
+        layout = QGridLayout()
+        toolbar = NavigationToolbar(self.main_plot, self)
+
         layout.addWidget(toolbar, 0, 0, 1, 1)
-        layout.addWidget(main_plot, 1, 0, 1, 1)
+        layout.addWidget(self.main_plot, 1, 0, 1, 1)
         layout.addWidget(box, 2, 0, 1, 1)
-        img_click = interactive_points(x, y, sc_plot, main_plot, projection)
-        # connect mouse-click to figure
-        cid = main_plot.fig.canvas.mpl_connect('button_press_event', img_click)
         layout.setMenuBar(menubar)
         self.setLayout(layout)
         minsize = self.minimumSizeHint()
-        minsize.setHeight(self.minimumSizeHint().height() + 200)
-        minsize.setWidth(self.minimumSizeHint().width() + 100)
+        minsize.setHeight(self.minimumSizeHint().height() + 400)
+        minsize.setWidth(self.minimumSizeHint().width() + 300)
         self.setFixedSize(minsize)
+    def reset_view(self):
+        print(self.original_xlim, self.original_ylim, self.original_zlim)
+        self.main_plot.axes.set_xlim(self.original_xlim)
+        self.main_plot.axes.set_ylim(self.original_ylim)
+        self.main_plot.axes.set_zlim3d(self.original_zlim)
+        self.main_plot.axes.view_init(azim=-90, elev=89)
+        self.main_plot.draw()
 
 class paramWindow(QDialog):
     def __init__(self):
@@ -521,4 +598,3 @@ class external_windows():
 
     def buildSegmentationWindow(self):
         return segmentationWindow()
-
