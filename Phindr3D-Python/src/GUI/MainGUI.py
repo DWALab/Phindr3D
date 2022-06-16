@@ -35,7 +35,9 @@ class MainGUI(QWidget, external_windows):
         """MainGUI constructor"""
         QMainWindow.__init__(self)
         super(MainGUI, self).__init__()
-        self.metadata_file=False
+        self.metadata = Metadata()
+
+        self.metadata_file=None
         self.setWindowTitle("Phindr3D")
         self.image_grid=0
         self.rgb_img=[]
@@ -74,17 +76,27 @@ class MainGUI(QWidget, external_windows):
 
         def loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, color, values):
             filename, dump = QFileDialog.getOpenFileName(self, 'Open File', '', 'Text files (*.txt)')
-            if filename != '':
-                self.metadata_file=filename
-                print(self.metadata_file)
-                adjustbar.setValue(0)
-                slicescrollbar.setValue(0)
-                self.img_display(slicescrollbar, img_plot, sv, mv, color, values)
+            if os.path.exists(filename):
+                # When meta data is loaded, using the loaded data, change the data for image viewing
+                # Consider adding another class to store all of the data (GUIDATA in MATLab?)
+                if self.metadata.loadMetadataFile(filename):
+                    self.metadata_file = filename
+                    print(self.metadata_file)
+                    adjustbar.setValue(0)
+                    slicescrollbar.setValue(0)
+                    self.img_display(slicescrollbar, img_plot, sv, mv, color, values)
+                    alert = self.buildErrorWindow("Metadata Extraction Completed.", QMessageBox.Information, "Notice")
+                    alert.exec()
+                else:
+                    alert = self.buildErrorWindow("Metadata Extraction Failed.", QMessageBox.Critical)
+                    alert.exec()
             else:
                 load_metadata_win = self.buildErrorWindow("Select Valid Metadatafile (.txt)", QMessageBox.Critical)
+                load_metadata_win.show()
                 load_metadata_win.exec()
                 # When meta data is loaded, using the loaded data, change the data for image viewing
                 # Consider adding another class to store all of the data (GUIDATA in MATLab?)
+
         # metadataError will check if there is metadata. If there is not, create error message.
         # Otherwise, execute button behaviour, depending on button (pass extra parameter to
         # distinguish which button was pressed into metadataError()?)
@@ -146,7 +158,7 @@ class MainGUI(QWidget, external_windows):
 
         # Function purely for testing purposes, this function will switch 'foundMetadata' to true or false
         def testMetadata():
-            self.metadata_file= not self.metadata_file
+            slicescrollbar.setMaximum(5)
 
         createmetadata.triggered.connect(extractMetadata)
         viewresults.triggered.connect(viewResults)
@@ -222,6 +234,7 @@ class MainGUI(QWidget, external_windows):
         setvoxel.clicked.connect(lambda: metadataError("Set Voxel Parameters"))
         adjustbar.valueChanged.connect(lambda: metadataError("Adjust Image Threshold"))
         loadmeta.clicked.connect(lambda: loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, self.color, values))
+        loadmetadata.triggered.connect(lambda: loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, self.color, values))
         nextimage.clicked.connect(lambda: slicescrollbar.setValue(int(slicescrollbar.value())+1) if self.metadata_file else metadataError("Next Image"))
         previmage.clicked.connect(lambda: slicescrollbar.setValue(int(slicescrollbar.value())-1) if int(slicescrollbar.value())>0 else None)
         setcolors.clicked.connect(lambda: colorpicker() if self.metadata_file else metadataError("Color Channel"))
@@ -261,7 +274,7 @@ class MainGUI(QWidget, external_windows):
             #extract image details from metadata
             data = pd.read_csv(self.metadata_file, sep="\t")
             self.ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
-            slicescrollbar.setMaximum((data.shape[0]-1)/(self.ch_len-1))
+            slicescrollbar.setMaximum(data.shape[0]-1)
             print(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[slicescrollbar.value()])
 
             #add/remove colour channels if not default of 3 channels
@@ -277,13 +290,13 @@ class MainGUI(QWidget, external_windows):
 
             #initialize array as image size with # channels
             rgb_img = Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[slicescrollbar.value()]).size
-            rgb_img = np.empty((rgb_img[0], rgb_img[1], 3, self.ch_len))
+            rgb_img = np.empty((rgb_img[1], rgb_img[0], 3, self.ch_len))
 
             #threshold/colour each image channel
             for ind, rgb_color in zip(range(slicescrollbar.value(), slicescrollbar.value()+ self.ch_len), color):
                 ch_num=str(ind-slicescrollbar.value()+1)
                 data['Channel_'+ch_num]=data['Channel_'+ch_num].str.replace(r'\\', '/', regex=True)
-                cur_img = np.array(Image.open(data['Channel_'+ch_num].iloc[ind]))
+                cur_img = np.array(Image.open(data['Channel_'+ch_num].iloc[slicescrollbar.value()]))
                 threshold=getImageThreshold(cur_img)
                 cur_img[cur_img<=threshold]=0
                 cur_img= np.dstack((cur_img, cur_img, cur_img))
@@ -307,9 +320,9 @@ class MainGUI(QWidget, external_windows):
             sv.setChecked(False)
             mv.setChecked(False)
 
-    def buildErrorWindow(self, errormessage, icon):
+    def buildErrorWindow(self, errormessage, icon, errortitle="ErrorDialog"):
         alert = QMessageBox()
-        alert.setWindowTitle("Error Dialog")
+        alert.setWindowTitle(errortitle)
         alert.setText(errormessage)
         alert.setIcon(icon)
         return alert

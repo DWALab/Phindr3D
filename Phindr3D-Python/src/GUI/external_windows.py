@@ -1,7 +1,23 @@
+# Copyright (C) 2022 Sunnybrook Research Institute
+# This file is part of src <https://github.com/DWALab/Phindr3D>.
+#
+# src is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# src is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with src.  If not, see <http://www.gnu.org/licenses/>.
+
 from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import numpy as np
+from PyQt5.QtGui import *
+from ..Data import *
 import matplotlib
 from matplotlib.backend_bases import MouseButton
 import matplotlib.pyplot as plt
@@ -9,6 +25,11 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationTool
 from matplotlib.figure import Figure
 import matplotlib.colors as mcolors
 import pandas as pd
+from scipy.spatial import distance
+import numpy as np
+from PIL import Image
+import sys
+import os
 
 
 #Matplotlib Figure
@@ -159,7 +180,7 @@ class extractWindow(QDialog):
         layout = QGridLayout()
         imagerootbox = QTextEdit()
         imagerootbox.setReadOnly(True)
-        imagerootbox.setText(directory)
+        imagerootbox.setPlaceholderText(directory)
         imagerootbox.setFixedSize(300, 60)
         imagerootbox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         imagerootbox.setFont(largetext)
@@ -170,7 +191,7 @@ class extractWindow(QDialog):
 
         samplefilebox = QTextEdit()
         samplefilebox.setReadOnly(True)
-        samplefilebox.setText(samplefilename)
+        samplefilebox.setPlaceholderText(samplefilename)
         samplefilebox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         samplefilebox.setFont(largetext)
         samplefilebox.setFixedSize(450, 30)
@@ -200,8 +221,74 @@ class extractWindow(QDialog):
         cancel.setFixedHeight(30)
 
         # button functions
+        def selectImageDir():
+            imagedir = QFileDialog.getExistingDirectory()
+            if not os.path.exists(imagedir):
+                return
+            imagerootbox.setText(imagedir)
+            # select first '.tif' or '.tiff' file to be sample file
+            for file in os.listdir(imagedir):
+                if file.endswith('.tiff') or file.endswith('.tif'):
+                    samplefilebox.setText(file)
+                    break
+        def createFile():
+            imagedir = imagerootbox.toPlainText()
+            regex = expressionbox.text()
+            outputname = outputfilebox.text()
+            datas = DataFunctions()
+            # replace '?<' patterns with '?P<' to make compatible with re.fullmatch function
+            # first checks if '?<' corresponds to a '?<=' or '?<!' pattern first before replacing
+            # part of Python specific regular expression syntax
+
+            regexlen = regex.__len__()
+            for i in range(regexlen):
+                if regex[i] == '<':
+                    if i > 0:
+                        if regex[i - 1] == '?':
+                            if i < regexlen - 1:
+                                if regex[i + 1] != '!' and regex[i + 1] != '=':
+                                    regex = regex[:i] + 'P' + regex[i:]
+            try:
+                alert = QMessageBox()
+                try:
+                    if outputname != "":
+                        created = datas.createMetadata(imagedir, regex, outputname)
+                    else:
+                        created = datas.createMetadata(imagedir, regex)
+                    if created:
+                        alert.setText("Metadata creation success.")
+                        alert.setIcon(QMessageBox.Information)
+                        alert.setWindowTitle("Notice")
+                        self.close()
+                    else:
+                        alert.setText("Error: No Regex matches found in selected folder.")
+                        alert.setIcon(QMessageBox.Critical)
+                except MissingChannelStackError:
+                    alert.setText("Error: No Channel and/or Stack groups found in regex.")
+                    alert.setIcon(QMessageBox.Critical)
+                alert.show()
+                alert.exec()
+            except WindowsError:
+                alert = QMessageBox()
+                alert.setWindowTitle("Error")
+                alert.setText("No such image directory exists.")
+                alert.setIcon(QMessageBox.Critical)
+                alert.show()
+                alert.exec()
+        def evalRegex():
+            regex = expressionbox.text()
+            samplefile = samplefilebox.toPlainText()
+            if regex == "" or samplefile == samplefilename:
+                return
+            datas = DataFunctions()
+            regexdict = datas.parseAndCompareRegex(samplefile, regex)
+            if regexdict != None:
+                print(regexdict)
 
         cancel.clicked.connect(self.close)
+        selectimage.clicked.connect(selectImageDir)
+        createfile.clicked.connect(createFile)
+        evaluateexpression.clicked.connect(evalRegex)
 
         layout.addWidget(imagerootbox, 0, 0, 1, 2)
         layout.addWidget(selectimage, 0, 2, 1, 1)
