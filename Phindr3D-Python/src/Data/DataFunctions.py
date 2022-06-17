@@ -27,6 +27,8 @@ class DataFunctions:
     No constructor. All parameters and methods are static.
     """
 
+
+
     # replace this with a single comparison for one file to make a dictionary with the
     # Well, Stack, Channel, etc. to display in a window after clicking "Evaluate Regular Expression"
 

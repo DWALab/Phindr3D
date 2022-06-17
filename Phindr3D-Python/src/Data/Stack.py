@@ -14,7 +14,10 @@
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
-from .ImageChannel import *
+try:
+    from .ImageChannel import *
+except ImportError:
+    from ImageChannel import *
 
 class Stack:
     """This class handles groups of image files and the associated metadata.
@@ -25,7 +28,6 @@ class Stack:
         """Stack class constructor"""
         self.channels = {}
         self.otherparams = {}
-        pass
 
     def addChannels(self, row, columnlabels): # row is a list of elements from one row in metadata file
         # rowi (row index) used to iterate row alongside columns
@@ -43,8 +45,17 @@ class Stack:
                 self.otherparams[col] = row[rowi]
             rowi += 1
 
+    # end addChannels
 
-
+    def GetTreatment(self):
+        """Treatment is an optional column in the metadata. If the column exists,
+            this method returns the value from that column. If no Treatment value was
+            found in the metadata, this method returns None."""
+        try:
+            return self.otherparams['Treatment']
+        except KeyError:
+            return None
+    # end GetTreatment
 
 
 
@@ -53,7 +64,7 @@ class Stack:
 
 
 if __name__ == '__main__':
-    """Tests of the ImageChannel class that can be run directly."""
+    """Tests of the Stack class that can be run directly."""
 
     pass
 
