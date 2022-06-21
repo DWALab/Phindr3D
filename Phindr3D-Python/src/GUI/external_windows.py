@@ -275,6 +275,7 @@ class extractWindow(QDialog):
                 alert.setIcon(QMessageBox.Critical)
                 alert.show()
                 alert.exec()
+
         def evalRegex():
             regex = expressionbox.text()
             samplefile = samplefilebox.toPlainText()
@@ -282,6 +283,7 @@ class extractWindow(QDialog):
                 return
             datas = DataFunctions()
             regexdict = datas.parseAndCompareRegex(samplefile, regex)
+            # for debugging
             if regexdict != None:
                 print(regexdict)
 
@@ -567,6 +569,8 @@ class paramWindow(QDialog):
             norm = normalise.isChecked()
             conditiontrain = trainbycondition.isChecked()
             # dropdown behaviour goes here <--
+
+            # print statements for testing purposes
             print(superx, supery, superz, svcategories, megax, megay, megaz,
                   mvcategories, voxelnum, trainingnum)
             if bg:
@@ -592,87 +596,76 @@ class segmentationWindow(QDialog):
         super(segmentationWindow, self).__init__()
         self.setWindowTitle("Organoid Segmentation")
         self.setLayout(QGridLayout())
-        title = QLabel("Organoid Segmentation")
-        title.setFont(QFont('Arial', 25))
-        self.layout().addWidget(title)
-        choosemdata = QPushButton("Select Metadata File")
 
-        # Define function for button behaviour (choose metadata file, select channels, choose output
-        # directory, select segmentation channel, loading windows, create directories, TBA)
-        def segment():
-            filename, dump = QFileDialog.getOpenFileName(self, 'Select Metadata File', '', 'Text file (*.txt)')
-            if filename != '':
-                win = QDialog()
-                selectall = QPushButton("Select All")
-                ok = QPushButton("OK")
-                cancel = QPushButton("Cancel")
-                items = ["Channel 1", "Channel 2", "Channel 3", "Well", "Field", "Stack", "Metadata File", "ImageID"]
-                list = QListWidget()
-                for item in items:
-                    list.addItem(item)
-                list.setSelectionMode(QAbstractItemView.MultiSelection)
+        # buttons
+        selectmetadata = QPushButton("Select Metadata File")
+        segmentationsettings = QPushButton("Segmentation Settings")
+        outputpath = QPushButton("Preview/edit output path")
+        segment = QPushButton("Segment")
+        nextimage = QPushButton("Next Image")
+        previmage = QPushButton("Previous Image")
 
-                selectall.clicked.connect(lambda: list.selectAll())
-                cancel.clicked.connect(lambda: win.close())
+        # button functions
+        def setSegmentationSettings():
+            newdialog = QDialog()
+            newdialog.setWindowTitle("Set Segmentation Settings")
+            newdialog.setLayout(QGridLayout())
+            minarea = QLineEdit()
+            intensity = QLineEdit()
+            radius = QLineEdit()
+            smoothing = QLineEdit()
+            scale = QLineEdit()
+            entropy = QLineEdit()
+            maximage = QLineEdit()
+            confirm = QPushButton("Confirm")
+            cancel = QPushButton("Cancel")
 
-                # OK button behaviour: User has made their selection, and thus moves on to next step
-                def okClicked():
-                    win.close()
-                    selected = list.selectedItems()
-                    if selected == []:
-                        print("nothing selected")
-                    else:
-                        outputdirectory = QFileDialog.getExistingDirectory(self, "Select Output Directory")
-                        if outputdirectory != '':
-                            newlist = QListWidget()
-                            for item in items:
-                                newlist.addItem(item)
-                            newlist.setSelectionMode(QAbstractItemView.SingleSelection)
-                            wina = QDialog()
-                            wina.setLayout(QGridLayout())
-                            wina.layout().addWidget(newlist, 0, 0, 2, 2)
-                            secondok = QPushButton("OK")
-                            secondcancel = QPushButton("Cancel")
-                            secondcancel.clicked.connect(lambda: wina.close())
-                            progress = QProgressBar()
-                            # Again, new OK button behaviour: write images, with progress bar to track status
-                            def secondOkClicked():
-                                wina.close()
-                                selecteditem = newlist.selectedItems()
-                                if selecteditem == []:
-                                    print("nothing selected")
-                                else:
-                                    completed = 0
-                                    winb = QDialog()
-                                    winb.setLayout(QGridLayout())
-                                    progress.setFixedSize(500, 20)
-                                    dl = QPushButton("Download")
-                                    winb.layout().addWidget(progress, 0, 0, 2, 2)
-                                    winb.layout().addWidget(dl, 2, 1, 1, 1)
-                                    winb.show()
-                                    while completed < 100:
-                                        completed += 0.0001
-                                        progress.setValue(int(completed))
-                                    winb.exec()
+            def confirmClicked():
+                # do stuff with the values in the line edits
+                newdialog.close()
+            def cancelClicked():
+                newdialog.close()
 
-                            secondok.clicked.connect(lambda: secondOkClicked())
-                            wina.layout().addWidget(secondok, 2, 0, 1, 1)
-                            wina.layout().addWidget(secondcancel, 2, 1, 1, 1)
-                            wina.show()
-                            wina.exec()
+            confirm.clicked.connect(confirmClicked)
+            cancel.clicked.connect(cancelClicked)
 
-                ok.clicked.connect(lambda: okClicked())
+            newdialog.layout().addWidget(QLabel("Min Area Spheroid"), 0, 0, 1, 1)
+            newdialog.layout().addWidget(minarea, 0, 1, 1, 1)
+            newdialog.layout().addWidget(QLabel("Intensity Threshold"), 1, 0, 1, 1)
+            newdialog.layout().addWidget(intensity, 1, 1, 1, 1)
+            newdialog.layout().addWidget(QLabel("Radius Spheroid"), 2, 0, 1, 1)
+            newdialog.layout().addWidget(radius, 2, 1, 1, 1)
+            newdialog.layout().addWidget(QLabel("Smoothing Parameter"), 3, 0, 1, 1)
+            newdialog.layout().addWidget(smoothing, 3, 1, 1, 1)
+            newdialog.layout().addWidget(QLabel("Scale Spheroid"), 4, 0, 1, 1)
+            newdialog.layout().addWidget(scale, 4, 1, 1, 1)
+            newdialog.layout().addWidget(QLabel("Entropy Threshold"), 5, 0, 1, 1)
+            newdialog.layout().addWidget(entropy, 5, 1, 1, 1)
+            newdialog.layout().addWidget(QLabel("Max Image Fraction"), 6, 0, 1, 1)
+            newdialog.layout().addWidget(maximage, 6, 1, 1, 1)
+            newdialog.layout().addWidget(confirm, 7, 0, 1, 1)
+            newdialog.layout().addWidget(cancel, 7, 1, 1, 1)
+            newdialog.setFixedSize(newdialog.minimumSizeHint())
+            newdialog.show()
+            newdialog.exec()
 
-                win.setLayout(QGridLayout())
-                win.layout().addWidget(list, 0, 0, 2, 2)
-                win.layout().addWidget(selectall, 2, 0, 1, 2)
-                win.layout().addWidget(ok, 3, 0, 1, 1)
-                win.layout().addWidget(cancel, 3, 1, 1, 1)
-                win.show()
-                win.exec()
 
-        choosemdata.clicked.connect(segment)
-        self.layout().addWidget(choosemdata)
+        segmentationsettings.clicked.connect(setSegmentationSettings)
+
+        # image boxes
+        focusimage = QGroupBox("Focus Image")
+        segmentmap = QGroupBox("Segmentation Map")
+        # put images here
+
+        # add everything to layout
+        self.layout().addWidget(selectmetadata, 0, 0)
+        self.layout().addWidget(segmentationsettings, 1, 0)
+        self.layout().addWidget(outputpath, 2, 0)
+        self.layout().addWidget(segment, 3, 0)
+        self.layout().addWidget(focusimage, 0, 1, 3, 1)
+        self.layout().addWidget(segmentmap, 0, 2, 3, 1)
+        self.layout().addWidget(previmage, 3, 1)
+        self.layout().addWidget(nextimage, 3, 2)
 
 class colorchannelWindow(object):
     def __init__(self, ch, color):

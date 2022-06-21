@@ -128,10 +128,8 @@ class DataFunctions:
                 rows.append(d)
         #make sure rows is not empty and that Channel and Stack are in the groups.
         if len(rows) == 0:
-            print('\nFailed to create metadata. No regex matches found in folder.\n')
             return False
         if ('Channel' not in rows[0].keys()) or ('Stack' not in rows[0].keys()):
-            print('\nFailed to create metadata. regex must contain "Channel" and "Stack" groups.')
             raise MissingChannelStackError
         tmpdf = pd.DataFrame(rows)
         #make new dataframe with desired colummns
@@ -164,7 +162,6 @@ class DataFunctions:
             chandf = tmpdf[tmpdf['Channel']==chan].reset_index(drop=True)
             df[f'Channel_{chan}'] = chandf['_file']
         df.to_csv(metadatafilename, sep='\t', index=False)
-        print(f'Metadata file created at \n{metadatafilename}')
         return True # return value to indicate success of function
 
     # end createMetadata

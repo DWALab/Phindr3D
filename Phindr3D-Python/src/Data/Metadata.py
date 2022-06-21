@@ -18,6 +18,7 @@
 
 import pandas
 import os.path
+from .DataFunctions import *
 import numpy as np
 
 try:
@@ -73,8 +74,7 @@ class Metadata:
         # Loads metadata file into a hierarchy of classes
         # Returns true if successful, prints error message and returns false if failure
         if not self.metadataFileExists(filepath):
-            print("Error: File path is not string or valid existing file")
-            return False
+            raise FileNotFoundError
         metadata = pandas.read_table(filepath, usecols=lambda c: not c.startswith('Unnamed:'), delimiter='\t')
         numrows = metadata.shape[0]
         rows = []
@@ -85,13 +85,15 @@ class Metadata:
                 channels.append(col)
         # if there are no channels, stack, or imageid, return error
         if channels == [] or ('Stack' not in metadata) or ('ImageID' not in metadata):
-            print("Error: Metadata file must have a Stack column, an ImageID column, and Channel column(s)")
-            return False
+            raise MissingChannelStackError
         # takes input metadata and stores in a list of tuples, each representing a row of metadata
         for i in range(numrows):
             row = []
             for channel in channels:
-                row.append(metadata.at[i, channel])
+                if os.path.exists(metadata.at[i, channel]) and (metadata.at[i, channel].endswith(".tiff") or metadata.at[i, channel].endswith(".tif")):
+                    row.append(metadata.at[i, channel])
+                else:
+                    raise MissingChannelStackError
             # add additional parameter columnlabels, except for channels, stack, metadatafile, and image id
             # these will be ordered at the end, for referencing purposes
             # order of a row of data: Channels, Other Parameters, Stack, MetadataFile, ImageID

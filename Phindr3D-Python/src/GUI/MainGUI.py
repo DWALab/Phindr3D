@@ -79,38 +79,32 @@ class MainGUI(QWidget, external_windows):
             if os.path.exists(filename):
                 # When meta data is loaded, using the loaded data, change the data for image viewing
                 # Consider adding another class to store all of the data (GUIDATA in MATLab?)
-                if self.metadata.loadMetadataFile(filename):
+                try:
+                    self.metadata.loadMetadataFile(filename)
                     self.metadata_file = filename
                     print(self.metadata_file)
                     adjustbar.setValue(0)
                     slicescrollbar.setValue(0)
                     self.img_display(slicescrollbar, img_plot, sv, mv, color, values)
+                    # If the file loaded correctly, proceed to calculating thresholds, scale factors, etc.
+                    self.metadata.computeImageParameters()
+                    # Update values of GUI widgets
+
+
                     alert = self.buildErrorWindow("Metadata Extraction Completed.", QMessageBox.Information, "Notice")
                     alert.exec()
-                else:
-                    alert = self.buildErrorWindow("Metadata Extraction Failed.", QMessageBox.Critical)
+
+                except MissingChannelStackError:
+                    errortext = "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid."
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                    alert.exec()
+                except FileNotFoundError:
+                    alert = self.buildErrorWindow("Metadata Extraction Failed: Metadata file does not exist.")
                     alert.exec()
             else:
                 load_metadata_win = self.buildErrorWindow("Select Valid Metadatafile (.txt)", QMessageBox.Critical)
                 load_metadata_win.show()
                 load_metadata_win.exec()
-                # When meta data is loaded, using the loaded data, change the data for image viewing
-                if self.metadata.loadMetadataFile(filename):
-                    # If the file loaded correctly, proceed to calculating thresholds, scale factors, etc.
-                    self.metadata.computeImageParameters()
-
-
-
-
-                    # Update values of GUI widgets
-
-
-
-                    # alert = self.buildErrorWindow("Metadata Extraction Completed", QMessageBox.Information)
-                    # alert.exec()
-                else:
-                    alert = self.buildErrorWindow("Something went wrong!! Load Failed", QMessageBox.Critical)
-                    alert.exec()
 
         # metadataError will check if there is metadata. If there is not, create error message.
         # Otherwise, execute button behaviour, depending on button (pass extra parameter to
@@ -135,6 +129,7 @@ class MainGUI(QWidget, external_windows):
         exp = file.addMenu("Export")
         expsessions = exp.addAction("Session")
         expparameters = exp.addAction("Parameters")
+        menuexit = file.addAction("Exit")
 
         metadata = menubar.addMenu("Metadata")
         createmetadata = metadata.addAction("Create Metafile")
@@ -149,6 +144,7 @@ class MainGUI(QWidget, external_windows):
         about = menubar.addAction("About")
 
         segmentation = menubar.addAction("Organoid Segmentation App")
+
 
         # Testing purposes
         test = menubar.addMenu("Test")
@@ -183,6 +179,7 @@ class MainGUI(QWidget, external_windows):
         expparameters.triggered.connect(exportError)
         about.triggered.connect(self.aboutAlert)
         segmentation.triggered.connect(organoidSegmentation)
+        menuexit.triggered.connect(self.close)
 
         switchmeta.triggered.connect(testMetadata)
         # Creating and formatting menubar
