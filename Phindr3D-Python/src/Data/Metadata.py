@@ -251,13 +251,14 @@ class Metadata:
     # rescale intensities
     # threshold images
 
-    # class attributes
-    # output metadata file name
+
+
+
+
+
 
 
 # end class Metadata
-
-
 
 if __name__ == '__main__':
     """Tests of the Metadata class that can be run directly."""
@@ -265,19 +266,22 @@ if __name__ == '__main__':
     # Running will prompt user for a text file, image id, stack id, and channel number
     # Since this is only for testing purposes, assume inputted values are all correct types
 
-    metadatafile = input("Metadata file: ")
-    imageid = float(input("Image ID: "))
-    stackid = int(input("Stack ID: "))
-    channelnumber = int(input("Channel Number: "))
+    # metadatafile = r"R:\\Phindr3D-Dataset\\neurondata\\Phindr3D_neuron-sample-data\\metaout_metadatafile.txt"
+    metadatafile = r"R:\\Phindr3D-Dataset\\Phindr3D_TreatmentID_sample_data\\metadata_python.txt"
+
+    # metadatafile = input("Metadata file: ")
+    # imageid = float(input("Image ID: "))
+    # stackid = int(input("Stack ID: "))
+    # channelnumber = int(input("Channel Number: "))
     test = Metadata()
     if test.loadMetadataFile(metadatafile):
-        print('Result:', test.images[imageid].layers[stackid].channels[channelnumber].channelpath)
+        # print('Result:', test.images[imageid].layers[stackid].channels[channelnumber].channelpath)
         # using pandas, search through dataframe to find the correct element
-        metadata = pandas.read_table(metadatafile, usecols=lambda c: not c.startswith('Unnamed:'), delimiter='\t')
-        numrows = metadata.shape[0]
-        for i in range(numrows):
-            if (metadata.at[i, 'Stack'] == stackid) and (metadata.at[i, 'ImageID'] == imageid):
-                print('Expect:', metadata.at[i, f'Channel_{channelnumber}'])
+        # metadata = pandas.read_table(metadatafile, usecols=lambda c: not c.startswith('Unnamed:'), delimiter='\t')
+        # numrows = metadata.shape[0]
+        # for i in range(numrows):
+        #    if (metadata.at[i, 'Stack'] == stackid) and (metadata.at[i, 'ImageID'] == imageid):
+        #        print('Expect:', metadata.at[i, f'Channel_{channelnumber}'])
         print("So, did it load? " + "Yes!" if test.metadataLoadSuccess else "No.")
         print("===")
         print("Running computeImageParameters: " + "Successful" if test.computeImageParameters() else "Unsuccessful")

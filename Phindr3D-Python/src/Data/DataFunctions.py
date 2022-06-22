@@ -27,67 +27,24 @@ class DataFunctions:
     No constructor. All parameters and methods are static.
     """
 
-
-
-    # replace this with a single comparison for one file to make a dictionary with the
-    # Well, Stack, Channel, etc. to display in a window after clicking "Evaluate Regular Expression"
-
     @staticmethod
     def parseAndCompareRegex(sampleFile, regex):
         """Given a sample file name string and a regex string, parse the file name
             and find the fields specified in the regular expression. If no fields
-            can be found, return None. Otherwise, return a dictionary with the
-            field names and their values."""
-
+            can be found, return empty dictionary. Otherwise, return a dictionary with the
+            field names and their values. On re.error return empty dictionary. """
+        outdict = {}
         # Check that both sampleFile and regex are strings
-
-        m = re.fullmatch(regex, sampleFile)
-        if m != None:
-            pass
-            # ...
-
-
-
+        try:
+            m = re.fullmatch(regex, sampleFile)
+            if m is None:
+                outdict = {}
+            else:
+                outdict = m.groupdict()
+        except re.error:
+            outdict = {}
+        return outdict
     # end parseAndCompareRegex
-
-
-    @staticmethod
-    def parseAndSearchRegex(folderPath, regex, numResults=-1, useAbsPath=True):
-        """This function returns an empty list if the folderPath cannot be found,
-            or if the regular expression returns no results.
-            It returns a list of file name strings on success,
-            where the number of list elements will be all the file names
-            in the directory if numResults is less than 0.
-            If numResults is less than the number of files in the directory,
-            numResults elements are returned. If numResults is greater, then
-            the list will contain all the file names in the directory."""
-
-        # Error handling
-        # directoryExists(folderPath)
-        #
-
-        regexResults = []
-        f = os.listdir(folderPath)
-        #read images in folder
-        for i, file in enumerate(f):
-            m = re.fullmatch(regex, file)
-            if m != None:
-                d = m.groupdict()
-                d['_file'] = os.path.abspath(f'{folderPath}\\{file}') if useAbsPath else file
-                regexResults.append(d)
-
-        if len(regexResults) == 0 or numResults == 0:
-            return []
-        elif numResults < 0:
-            return regexResults
-        elif len(regexResults) > numResults:
-            return regexResults[:numResults]
-        else:
-            return regexResults
-    # end parseAndSearchRegex
-
-
-
 
     @staticmethod
     def directoryExists(theDir):
@@ -101,6 +58,28 @@ class DataFunctions:
             return os.path.exists(theDir)
     # end directoryExists
 
+    @staticmethod
+    def regexPatternCompatibility(regex):
+        """Provides compatibility between MATLAB regular expressions and Python.
+            Replaces '?<' patterns with '?P<' to make compatible with re.fullmatch function.
+            It first checks if '?<' corresponds to a '?<=' or '?<!' pattern first before replacing
+            part of Python specific regular expression syntax."""
+        # set the default value if no modifications are necessary
+        outstring = ""
+        strlist = regex.split("?<")
+        if len(strlist) <= 1:
+            return regex
+        else:
+            for i in range(len(strlist)-1):
+                outstring = outstring+strlist[i]
+                try:
+                    theSep = "?<" if (strlist[i+1][0] == '=' or strlist[i+1][0] == '!') else "?P<"
+                except IndexError:
+                    theSep = "?<"
+                outstring = outstring + theSep
+            outstring = outstring+strlist[len(strlist)-1]
+        return outstring
+    # end regexPatternCompatibility
 
     @staticmethod
     def createMetadata(folder_path, regex, mdatafilename='metadata_python.txt'):
@@ -168,8 +147,9 @@ class DataFunctions:
 
 # end DataFunctions
 
-
-
+# error classes
+class MissingChannelStackError(Exception):
+    pass
 
 
 def test_directoryExists():
@@ -203,28 +183,26 @@ def test_directoryExists():
 # end test_directoryExists
 
 
-
-
 def test_parseAndCompareRegex():
     """A set of tests of the static method parseAndCompareRegex"""
     success = "Success in test_parseAndCompareRegex test "
     failure = "Failure in test_parseAndCompareRegex test "
     # Test 1
     tnum = 1
+    t1expected = {'Well': 'r03c19', 'Field': '01', 'Stack': '15', 'Channel': '2'}
+    t1file = "r03c19f01p15-ch2sk1fk1fl1.tiff"
+    t1regex = "(?<Well>\w+)f(?<Field>\d+)p(?<Stack>\d+)-ch(?<Channel>\d).*.tif(f)?"
+    t1regex = DataFunctions.regexPatternCompatibility(t1regex)
+    t1out = DataFunctions.parseAndCompareRegex(t1file, t1regex)
+    print(success + str(tnum) if t1out == t1expected else failure + str(tnum))
 
 # end test_parseAndCompareRegex
 
-# error classes
-
-class MissingChannelStackError(Exception):
-    pass
 
 if __name__ == '__main__':
     """Tests of the static methods that can be run directly."""
-    #test_directoryExists()
 
+    test_directoryExists()
     test_parseAndCompareRegex()
-
-
 
 # end if main
