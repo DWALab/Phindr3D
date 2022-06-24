@@ -36,8 +36,7 @@ class MainGUI(QWidget, external_windows):
         QMainWindow.__init__(self)
         super(MainGUI, self).__init__()
         self.metadata = Metadata()
-
-        self.metadata_file=None
+        self.metadata_file=False
         self.setWindowTitle("Phindr3D")
         self.image_grid=0
         self.rgb_img=[]
@@ -68,6 +67,9 @@ class MainGUI(QWidget, external_windows):
                 winp = self.buildParamWindow()
                 winp.show()
                 winp.exec()
+            elif buttonPressed == "Set Channel Colors":
+                color = QColorDialog.getColor()
+                return color
 
         def exportError():
             if not self.metadata_file:
@@ -83,6 +85,7 @@ class MainGUI(QWidget, external_windows):
                     self.metadata.loadMetadataFile(filename)
                     self.metadata_file = filename
                     print(self.metadata_file)
+
                     adjustbar.setValue(0)
                     slicescrollbar.setValue(0)
                     self.img_display(slicescrollbar, img_plot, sv, mv, color, values)
@@ -105,6 +108,8 @@ class MainGUI(QWidget, external_windows):
                 load_metadata_win = self.buildErrorWindow("Select Valid Metadatafile (.txt)", QMessageBox.Critical)
                 load_metadata_win.show()
                 load_metadata_win.exec()
+                # When meta data is loaded, using the loaded data, change the data for image viewing
+                # Consider adding another class to store all of the data (GUIDATA in MATLab?)
 
         # metadataError will check if there is metadata. If there is not, create error message.
         # Otherwise, execute button behaviour, depending on button (pass extra parameter to
@@ -115,7 +120,8 @@ class MainGUI(QWidget, external_windows):
                 metadataError("Set Channel Colors")
             else:
                 prev_color=self.color[:]
-                colorchannelWindow(self.ch_len, self.color)
+                win_color=colorchannelWindow(self.ch_len, self.color)
+                self.color=win_color.color
                 if np.array_equal(prev_color, self.color)==False:
                     self.img_display(slicescrollbar, img_plot, sv, mv, self.color, values)
 
@@ -145,7 +151,6 @@ class MainGUI(QWidget, external_windows):
 
         segmentation = menubar.addAction("Organoid Segmentation App")
 
-
         # Testing purposes
         test = menubar.addMenu("Test")
         switchmeta = test.addAction("Switch Metadata")
@@ -158,7 +163,7 @@ class MainGUI(QWidget, external_windows):
             winz.exec()
 
         def viewResults():
-            winc = self.buildResultsWindow()
+            winc = self.buildResultsWindow(self.color)
             winc.show()
             winc.exec()
 
@@ -246,7 +251,6 @@ class MainGUI(QWidget, external_windows):
         setvoxel.clicked.connect(lambda: metadataError("Set Voxel Parameters"))
         adjustbar.valueChanged.connect(lambda: metadataError("Adjust Image Threshold"))
         loadmeta.clicked.connect(lambda: loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, self.color, values))
-        loadmetadata.triggered.connect(lambda: loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, self.color, values))
         nextimage.clicked.connect(lambda: slicescrollbar.setValue(int(slicescrollbar.value())+1) if self.metadata_file else metadataError("Next Image"))
         previmage.clicked.connect(lambda: slicescrollbar.setValue(int(slicescrollbar.value())-1) if int(slicescrollbar.value())>0 else None)
         setcolors.clicked.connect(lambda: colorpicker() if self.metadata_file else metadataError("Color Channel"))
@@ -286,8 +290,8 @@ class MainGUI(QWidget, external_windows):
             #extract image details from metadata
             data = pd.read_csv(self.metadata_file, sep="\t")
             self.ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
-            slicescrollbar.setMaximum(data.shape[0]-1)
-            print(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[slicescrollbar.value()])
+            slicescrollbar.setMaximum((data.shape[0]-1))
+            #print(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[slicescrollbar.value()])
 
             #add/remove colour channels if not default of 3 channels
             if self.ch_len>3 and len(self.color)<self.ch_len:
@@ -346,6 +350,7 @@ class MainGUI(QWidget, external_windows):
         alert.exec()
 
     def closeEvent(self, event):
+        print("closed all windows")
         for window in QApplication.topLevelWidgets():
             window.close()
 

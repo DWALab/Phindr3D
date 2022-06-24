@@ -1,5 +1,5 @@
 List of libraries used:
-- PyQt5.Widgetss
+- PyQt5.Widgets
 - PyQt5.QtGui
 - PyQt5.QtCore
 - matplotlib
@@ -8,3 +8,4 @@ List of libraries used:
 - sys
 - random
 - sklearn
+- textwrap
