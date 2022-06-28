@@ -36,7 +36,6 @@ class MainGUI(QWidget, external_windows):
         QMainWindow.__init__(self)
         super(MainGUI, self).__init__()
         self.metadata = Metadata()
-        self.metadata_file=False
         self.setWindowTitle("Phindr3D")
         self.image_grid=0
         self.rgb_img=[]
@@ -60,7 +59,7 @@ class MainGUI(QWidget, external_windows):
         phind = QPushButton("Phind")
         # Button behaviour defined here
         def metadataError(buttonPressed):
-            if not self.metadata_file:
+            if not self.metadata.GetMetadataFilename():
                 alert = self.buildErrorWindow("Metadata not found!!", QMessageBox.Critical)
                 alert.exec()
             elif buttonPressed == "Set Voxel Parameters":
@@ -72,7 +71,7 @@ class MainGUI(QWidget, external_windows):
                 return color
 
         def exportError():
-            if not self.metadata_file:
+            if not self.metadata.GetMetadataFilename():
                 alert = self.buildErrorWindow("No variables to export!!", QMessageBox.Critical)
                 alert.exec()
 
@@ -83,8 +82,7 @@ class MainGUI(QWidget, external_windows):
                 # Consider adding another class to store all of the data (GUIDATA in MATLab?)
                 try:
                     self.metadata.loadMetadataFile(filename)
-                    self.metadata_file = filename
-                    print(self.metadata_file)
+                    print(self.metadata.GetMetadataFilename())
 
                     adjustbar.setValue(0)
                     slicescrollbar.setValue(0)
@@ -116,7 +114,7 @@ class MainGUI(QWidget, external_windows):
         # distinguish which button was pressed into metadataError()?)
 
         def colorpicker():
-            if not self.metadata_file:
+            if not self.metadata.GetMetadataFilename():
                 metadataError("Set Channel Colors")
             else:
                 prev_color=self.color[:]
@@ -251,10 +249,10 @@ class MainGUI(QWidget, external_windows):
         setvoxel.clicked.connect(lambda: metadataError("Set Voxel Parameters"))
         adjustbar.valueChanged.connect(lambda: metadataError("Adjust Image Threshold"))
         loadmeta.clicked.connect(lambda: loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, self.color, values))
-        nextimage.clicked.connect(lambda: slicescrollbar.setValue(int(slicescrollbar.value())+1) if self.metadata_file else metadataError("Next Image"))
+        nextimage.clicked.connect(lambda: slicescrollbar.setValue(int(slicescrollbar.value())+1) if self.metadata.GetMetadataFilename() else metadataError("Next Image"))
         previmage.clicked.connect(lambda: slicescrollbar.setValue(int(slicescrollbar.value())-1) if int(slicescrollbar.value())>0 else None)
-        setcolors.clicked.connect(lambda: colorpicker() if self.metadata_file else metadataError("Color Channel"))
-        slicescrollbar.valueChanged.connect(lambda: self.img_display(slicescrollbar, img_plot, sv, mv, self.color, values) if self.metadata_file else metadataError("Slice Scroll"))
+        setcolors.clicked.connect(lambda: colorpicker() if self.metadata.GetMetadataFilename() else metadataError("Color Channel"))
+        slicescrollbar.valueChanged.connect(lambda: self.img_display(slicescrollbar, img_plot, sv, mv, self.color, values) if self.metadata.GetMetadataFilename() else metadataError("Slice Scroll"))
 
         #TEMPORARY PARAMS! until set voxel parameters is finished...
         class params(object):
@@ -263,13 +261,13 @@ class MainGUI(QWidget, external_windows):
                 megaVoxelTileX = 5
                 megaVoxelTileY = 5
         param=params()
-        sv.stateChanged.connect(lambda : self.overlay_display(img_plot, self.image_grid, param, sv, mv, 'SV') if self. metadata_file else metadataError("SV"))
-        mv.stateChanged.connect(lambda : self.overlay_display(img_plot, self.image_grid, param, mv, sv, 'MV') if self. metadata_file else metadataError("MV"))
+        sv.stateChanged.connect(lambda : self.overlay_display(img_plot, self.image_grid, param, sv, mv, 'SV') if self.metadata.GetMetadataFilename() else metadataError("SV"))
+        mv.stateChanged.connect(lambda : self.overlay_display(img_plot, self.image_grid, param, mv, sv, 'MV') if self.metadata.GetMetadataFilename() else metadataError("MV"))
         phind.clicked.connect(lambda: metadataError("Phind"))
     #draws image layers
     def overlay_display(self, img_plot, img_grid, params, checkbox_cur, checkbox_prev, type):
 
-        if self.metadata_file:
+        if self.metadata.GetMetadataFilename():
             #re-plot image channel as bottom layer
             img_plot.axes.clear()
             img_plot.axes.imshow(self.rgb_img)
@@ -286,9 +284,9 @@ class MainGUI(QWidget, external_windows):
     #draw superimposed image channels
     def img_display(self, slicescrollbar, img_plot, sv, mv, color, values):
 
-        if self.metadata_file:
+        if self.metadata.GetMetadataFilename():
             #extract image details from metadata
-            data = pd.read_csv(self.metadata_file, sep="\t")
+            data = pd.read_csv(self.metadata.GetMetadataFilename(), sep="\t")
             self.ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
             slicescrollbar.setMaximum((data.shape[0]-1))
             #print(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[slicescrollbar.value()])

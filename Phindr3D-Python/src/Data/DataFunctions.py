@@ -33,8 +33,11 @@ class DataFunctions:
             and find the fields specified in the regular expression. If no fields
             can be found, return empty dictionary. Otherwise, return a dictionary with the
             field names and their values. On re.error return empty dictionary. """
-        outdict = {}
         # Check that both sampleFile and regex are strings
+        if not isinstance(sampleFile, str) or not isinstance(regex, str):
+            return {}
+        # else
+        outdict = {}
         try:
             m = re.fullmatch(regex, sampleFile)
             if m is None:

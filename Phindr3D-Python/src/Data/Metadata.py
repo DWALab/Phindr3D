@@ -51,14 +51,19 @@ class Metadata:
             return False
         else:
             self.metadataFilename = omf
-
+            return True
     # end SetMetadataFilename
 
     def GetMetadataFilename(self):
-        """Get method to return the metadata filename string."""
-
+        """Get method to return the metadata filename string.
+            If the filename is empty or None, return False"""
+        if self.metadataFilename is None:
+            return False
+        elif self.metadataFilename == "":
+            return False
+        else:
+            return self.metadataFilename
     # end GetMetadataFilename
-
 
     def metadataFileExists(self, omf):
         """Check whether the filename specified already exists.
@@ -239,7 +244,11 @@ class Metadata:
         # If the metadata has not loaded successfully, return False
         if not self.metadataLoadSuccess:
             return False
-        #
+        # else
+
+
+
+
 
 
         return True
