@@ -69,6 +69,23 @@ class MainGUI(QWidget, external_windows):
             elif buttonPressed == "Set Channel Colors":
                 color = QColorDialog.getColor()
                 return color
+            elif buttonPressed == "Image Go":
+                try:
+                    inputimageid = int(imagenav.text())
+                    if inputimageid > slicescrollbar.maximum():
+                        errormsg = "Error: Input ID exceeds maximum of " + str(slicescrollbar.maximum())
+                        error = self.buildErrorWindow(errormsg, QMessageBox.Critical)
+                        error.exec()
+                    elif inputimageid < slicescrollbar.minimum():
+                        errormsg = "Error: Input ID exceeds minimum of " + str(slicescrollbar.minimum())
+                        error = self.buildErrorWindow(errormsg, QMessageBox.Critical)
+                        error.exec()
+                    else:
+                        slicescrollbar.setValue(inputimageid)
+                except ValueError:
+                    error = self.buildErrorWindow("Error: Invalid Id", QMessageBox.Critical)
+                    error.exec()
+
 
         def exportError():
             if not self.metadata.GetMetadataFilename():
@@ -182,6 +199,7 @@ class MainGUI(QWidget, external_windows):
         expparameters.triggered.connect(exportError)
         about.triggered.connect(self.aboutAlert)
         segmentation.triggered.connect(organoidSegmentation)
+        loadmetadata.triggered.connect(lambda: loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, self.color, values))
         menuexit.triggered.connect(self.close)
 
         switchmeta.triggered.connect(testMetadata)
@@ -212,6 +230,15 @@ class MainGUI(QWidget, external_windows):
         image_selection.addWidget(previmage)
         image_selection.addWidget(nextimage)
         vertical.addRow(image_selection)
+        imagenav = QLineEdit()
+        imagenav.setValidator(QIntValidator())
+        imagego = QPushButton("Image Go")
+
+        imagego.clicked.connect(lambda: metadataError("Image Go"))
+        imageselect = QHBoxLayout()
+        imageselect.addWidget(imagenav)
+        imageselect.addWidget(imagego)
+        vertical.addRow(imageselect)
         imageparam.setLayout(vertical)
         layout.addWidget(imageparam, 2, 0)
 
