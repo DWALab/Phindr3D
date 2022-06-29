@@ -15,16 +15,24 @@
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
 # Static functions for data and metadata handling
-
+import numpy as np
 import pandas
 import os.path
-from .DataFunctions import *
-import numpy as np
 
 try:
     from .Image import *
+    from .DataFunctions import *
 except ImportError:
     from Image import *
+    from DataFunctions import *
+
+try:
+    from ..PhindConfig import *
+except ImportError:
+    from src.PhindConfig.PhindConfig import *
+
+# Initialize a random number generator
+Generator = np.random.default_rng()
 
 class Metadata:
     """This class handles groups of image files and the associated metadata.
@@ -34,12 +42,21 @@ class Metadata:
     def __init__(self):
         """Metadata class constructor"""
 
-        # Set default values for member variables
+        # Define user-controlled parameters and set default values
+        # self.intensityNormPerTreatment = False
+        self.intensityNormPerTreatment = True
+
+        # self.randTrainingPerTreatment = 1 # do we even need this one?
+
+        # Set default values for internally-accessed member variables
         self.metadataLoadSuccess = False
         self.metadataFilename = ""
         self.images = {}
 
-
+        # Training set, scale factors, and thresholds
+        self.trainingSet = []
+        self.scaleFactors = None
+        self.thresholds = None
     # end constructor
 
 
@@ -228,11 +245,72 @@ class Metadata:
                     idList.append(imgID)
             else:
                 pass
+            # Use set to find unique values, then change type back to list
+            idList = list(set(idList))
             return idList
         except AttributeError:
             # Return an empty list
             return []
     # end GetAllImageIDs
+
+    def getTrainingFields(self):
+        """
+        Get smaller subset of images (usually 10) to define parameters for further analysis.
+        (nly used for scaling factors to scale down intensities from 0 to 1).
+        output is a Numpy array of a subset of image IDs.
+        """
+        randFieldID = None
+
+        # Get the list of all image IDs in the set
+        uniqueImageID = np.array(self.GetAllImageIDs())
+        numImageIDs = len(uniqueImageID)
+
+        # Necessary configuration parameters
+        intensityNormPerTreatment = self.intensityNormPerTreatment
+        randTrainingFields = PhindConfig.randTrainingFields
+        # Adjust randTrainingFields if it is larger than numImageIDs
+        randTrainingFields = numImageIDs if numImageIDs < randTrainingFields else randTrainingFields
+
+        print("intensityNormPerTreatment: ")
+        print(intensityNormPerTreatment)
+        print("randTrainingFields: ")
+        print(randTrainingFields)
+        print("AllImageIDs: ")
+        print(self.GetAllImageIDs())
+
+        print("numImageIDs: "+str(numImageIDs))
+        print("uniqueImageID.size: ")
+        print(uniqueImageID.size)
+
+        if not intensityNormPerTreatment:
+            randFieldID = np.array([uniqueImageID[i] for i in
+                Generator.choice(uniqueImageID.size, size=randTrainingFields,
+                    replace=False, shuffle=False)])
+        else:
+            # have different treatments, want to choose training images from each treatment.
+            uTreat = self.GetTreatmentTypes()
+            allTreatments = self.GetAllTreatments()
+            allTrKeys = np.array(allTreatments.keys())
+            allTrValues = np.array(allTreatments.values())
+            randTrainingPerTreatment = \
+                -(-randTrainingFields//len(uTreat)) #ceiling division
+            randFieldIDList = []
+            for treat in uTreat:
+                treatmentIDs = allTrKeys[allTrValues == treat]
+                tempList = [treatmentIDs[j] for j in
+                    Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
+                        replace=False, shuffle=False)]
+                randFieldIDList = randFieldIDList + tempList
+            randFieldID = np.array(randFieldIDList)
+        #end if
+        # output is randFieldID is a Numpy array of image ids
+        return randFieldID
+    # end getTrainingFields
+
+
+
+
+
 
 
     def computeImageParameters(self):
@@ -248,23 +326,23 @@ class Metadata:
 
 
 
+        # getTrainingFields()
+
+
+        # GetNumChannels
+        # GetAllImageIDs
+        # GetTreatmentTypes
+        # GetAllTreatments
+
 
 
 
         return True
     # end computeImageParameters
 
-
-
     # This class should also include
     # rescale intensities
     # threshold images
-
-
-
-
-
-
 
 
 # end class Metadata
@@ -276,7 +354,7 @@ if __name__ == '__main__':
     # Since this is only for testing purposes, assume inputted values are all correct types
 
     # metadatafile = r"R:\\Phindr3D-Dataset\\neurondata\\Phindr3D_neuron-sample-data\\metaout_metadatafile.txt"
-    metadatafile = r"R:\\Phindr3D-Dataset\\Phindr3D_TreatmentID_sample_data\\metadata_python.txt"
+    metadatafile = r"R:\\Phindr3D-Dataset\\Phindr3D_TreatmentID_sample_data\\mike_test.txt"
 
     # metadatafile = input("Metadata file: ")
     # imageid = float(input("Image ID: "))
@@ -296,5 +374,7 @@ if __name__ == '__main__':
         print("Running computeImageParameters: " + "Successful" if test.computeImageParameters() else "Unsuccessful")
     else:
         print("loadMetadataFile was unsuccessful")
+
+    print(test.getTrainingFields())
 
 # end main
