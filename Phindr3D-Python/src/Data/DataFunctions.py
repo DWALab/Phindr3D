@@ -95,7 +95,7 @@ class DataFunctions:
         mdatafilename: filename for metadatafile that will be written.
 
         regex groups MUST INCLUDE Channel and Stack and at least one other image identification group
-        regex groups CANNOT include ImageID or _file.
+        regex groups CANNOT include ImageID or
         """
 
         f = os.listdir(folder_path)
@@ -106,7 +106,6 @@ class DataFunctions:
             m = re.fullmatch(regex, file)
             if m != None:
                 d = m.groupdict()
-                d['_file'] = os.path.abspath(f'{folder_path}\\{file}')
                 rows.append(d)
         #make sure rows is not empty and that Channel and Stack are in the groups.
         if len(rows) == 0:
@@ -140,9 +139,18 @@ class DataFunctions:
         #give metadatafilename
         df['MetadataFile'] = metadatafilename
         # fill in file paths for each channel
-        for chan in channels:
-            chandf = tmpdf[tmpdf['Channel']==chan].reset_index(drop=True)
-            df[f'Channel_{chan}'] = chandf['_file']
+        fileparts = re.split(r'\(\?P<\w+>\\\w\+?\)', regex) #split the regex around all the capturing groups.
+        for index, row in df.iterrows(): #iterate through the rows of the df to re-get capturing group info 
+            for chan in channels:        #also have to go through the channels to get channel info
+                fname = ''
+                for i, dkey in enumerate(d.keys()): #build the expected filename back up from the split regex.
+                    fname += fileparts[i]
+                    if dkey == 'Channel':
+                        fname += str(chan)
+                    else:
+                        fname += row[dkey]
+                fname += fileparts[i+1] #add the .tif(f)
+                df.iat[index, df.columns.get_loc(f'Channel_{chan}')] = os.path.abspath(f'{folder_path}\\{fname}') #place the name at the right spot
         df.to_csv(metadatafilename, sep='\t', index=False)
         return True # return value to indicate success of function
 
