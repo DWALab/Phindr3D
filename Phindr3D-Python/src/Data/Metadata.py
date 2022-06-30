@@ -289,17 +289,30 @@ class Metadata:
         else:
             # have different treatments, want to choose training images from each treatment.
             uTreat = self.GetTreatmentTypes()
+            print(uTreat)
             allTreatments = self.GetAllTreatments()
-            allTrKeys = np.array(allTreatments.keys())
-            allTrValues = np.array(allTreatments.values())
+            print(allTreatments)
+            allTrKeys = np.array(list(allTreatments.keys()))
+            print(allTrKeys)
+            allTrValues = np.array(list(allTreatments.values()))
+            print(allTrValues)
             randTrainingPerTreatment = \
                 -(-randTrainingFields//len(uTreat)) #ceiling division
+            print(randTrainingPerTreatment)
             randFieldIDList = []
             for treat in uTreat:
-                treatmentIDs = allTrKeys[allTrValues == treat]
-                tempList = [treatmentIDs[j] for j in
-                    Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
-                        replace=False, shuffle=False)]
+                tempList = []
+                print(treat)
+                try:
+                    print(allTrKeys == treat)
+                    treatmentIDs = allTrKeys[allTrValues == treat]
+                    print("There are " + str(len(treatmentIDs)) + " treatment IDs")
+                    if len(treatmentIDs) > 0:
+                        tempList = [treatmentIDs[j] for j in
+                            Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
+                                replace=False, shuffle=False)]
+                except (ValueError,KeyError):
+                    tempList = []
                 randFieldIDList = randFieldIDList + tempList
             randFieldID = np.array(randFieldIDList)
         #end if
