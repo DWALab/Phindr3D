@@ -26,28 +26,3 @@ class NavigationToolbar(NavigationToolbar):
         (None, None, None, None),
         ('Save', 'Save the figure', 'filesave', 'save_figure')
     )
-
-#Callback will open image associated with data point. Note: in 3D plot pan is hold left-click swipe, zoom is hold right-click swipe
-
-#zoom in/out fixed xy plane
-class fixed_2d():
-    def __init__(self, main_plot, sc_plot, projection):
-        self.main_plot =main_plot
-        self.sc_plot =sc_plot
-        self.projection = projection
-
-    def __call__(self, event):
-
-        if event.inaxes is not None:
-            if self.projection=="2d":
-                if event.button == 'up':
-                    self.main_plot.axes.mouse_init()
-                    self.main_plot.axes.xaxis.zoom(-1)
-                    self.main_plot.axes.yaxis.zoom(-1)
-                    self.main_plot.axes.zaxis.zoom(-1)
-                if event.button =='down':
-                    self.main_plot.axes.xaxis.zoom(1)
-                    self.main_plot.axes.yaxis.zoom(1)
-                    self.main_plot.axes.zaxis.zoom(-1)
-                self.main_plot.draw()
-                self.main_plot.axes.disable_mouse_rotation()

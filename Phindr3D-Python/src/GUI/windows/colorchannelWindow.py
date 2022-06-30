@@ -26,7 +26,6 @@ class colorchannelWindow(object):
             self.btn[i].setStyleSheet('background-color: rgb' +str(tuple((np.array(self.color[i])*255).astype(int))) +';')
             win.layout().addRow(self.btn[i])
             btn_grp.addButton(self.btn[i], i+1)
-        print(btn_grp.buttons())
         win.layout().addRow(btn_ok, btn_cancel)
         btn_grp.buttonPressed.connect(self.colorpicker_window)
         btn_ok.clicked.connect(lambda: self.confirmed_colors(win, color))

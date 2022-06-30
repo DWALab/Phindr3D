@@ -7,7 +7,7 @@ class featurefilegroupingWindow(object):
         win = QDialog()
         win.setWindowTitle("Filter Feature File Groups and Channels")
         win.setLayout(QFormLayout())
-
+        #setup checkbox for groups
         grp_title = QLabel("Grouping")
         grp_title.setFont(QFont('Arial', 10))
         grp_checkbox=QGroupBox()
@@ -15,14 +15,14 @@ class featurefilegroupingWindow(object):
         grp_list=[]
         grp_vbox = QVBoxLayout()
         grp_vbox.addWidget(grp_title)
-
+        #setup Channels Column
         ch_title = QLabel("Channels")
         ch_title.setFont(QFont('Arial', 10))
         ch_checkbox=QGroupBox()
         ch_checkbox.setFlat(True)
         ch_vbox = QVBoxLayout()
         ch_vbox.addWidget(ch_title)
-
+        #add channel columns and checkboxes to layout
         for i in range (len(columns)):
             print(columns[i].find('Channel_'))
             if columns[i].find("Channel_")== 0:
@@ -46,10 +46,10 @@ class featurefilegroupingWindow(object):
 
         win.show()
         win.exec()
-
+    #change ResultsWindow GUI dropdown to contain groupings
     def selected(self, grp_checkbox, win, groupings):
         for checkbox in grp_checkbox.findChildren(QCheckBox):
-            print('%s: %s' % (checkbox.text(), checkbox.isChecked()))
+            #print('%s: %s' % (checkbox.text(), checkbox.isChecked()))
             if checkbox.isChecked():
                 groupings.append(checkbox.text())
         win.close()
