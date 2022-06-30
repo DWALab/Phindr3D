@@ -153,8 +153,53 @@ class DataFunctions:
                 df.iat[index, df.columns.get_loc(f'Channel_{chan}')] = os.path.abspath(f'{folder_path}\\{fname}') #place the name at the right spot
         df.to_csv(metadatafilename, sep='\t', index=False)
         return True # return value to indicate success of function
-
     # end createMetadata
+
+
+
+
+
+    @staticmethod
+    def mat_dot(A, B, axis=0):
+        """
+        equivalent to dot product for matlab (can choose axis as well)
+        """
+        return np.sum(A.conj() * B, axis=axis)
+    # end mat_dot
+
+    # regexpi
+    # imfinfo
+    # im2col
+
+
+    @staticmethod
+    def rescaleIntensity(im, low=0, high=1):
+        """Called in getIndividualChannelThreshold.
+        Rescales intensity of image based on lower and upper bounds
+        """
+        im = im.astype(np.float64)
+        diffIM = high - low
+        im = (im - low) / diffIM
+        im[im > 1] = 1
+        im[im < 0] = 0
+        return im
+    # end rescaleIntensity
+
+    @staticmethod
+    def selectPixelsbyweights(x):
+        """called in getTrainingPixels. x type is """
+        n, bin_edges = np.histogram(x, bins=(int(1/0.025) + 1), range=(0,1), )
+        q = np.digitize(x, bin_edges)
+        n = n / np.sum(n)
+        p = np.zeros(q.shape)
+        for i in range(0, n.shape[0]):
+            p[q==i] = n[i]
+        p = 1 - p
+        p = np.sum(p>np.random.random((q.shape)), axis=1) #q shape may or may not be correct
+        p = p != 0
+        p = x[p, :]
+        return p
+    # end selectPixelsbyweights
 
 # end DataFunctions
 
