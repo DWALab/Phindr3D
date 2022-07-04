@@ -139,7 +139,7 @@ class DataFunctions:
         #give metadatafilename
         df['MetadataFile'] = metadatafilename
         # fill in file paths for each channel
-        fileparts = re.split(r'\(\?P<\w+>\\\w\+?\)', regex) #split the regex around all the capturing groups.
+        fileparts = re.split(r'\(\?P<\w+>\.?\\?\w?\+?\)', regex) #split the regex around all the capturing groups.
         for index, row in df.iterrows(): #iterate through the rows of the df to re-get capturing group info 
             for chan in channels:        #also have to go through the channels to get channel info
                 fname = ''
