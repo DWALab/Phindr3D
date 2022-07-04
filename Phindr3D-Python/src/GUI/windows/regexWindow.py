@@ -70,7 +70,7 @@ class regexWindow(QDialog):
             if groupValue.isnumeric():
                 grouplabel = f'(?P<{groupName}>\\d+)'
             else:
-                grouplabel = f'(?P<{groupName}>\\w+)'
+                grouplabel = f'(?P<{groupName}>.+)'
 
             self.regex = self.regex[:restart] + grouplabel + self.regex[reend:]
             self.regexview.setText(self.regex)
