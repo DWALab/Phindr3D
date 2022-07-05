@@ -41,12 +41,10 @@ class Metadata:
 
     def __init__(self):
         """Metadata class constructor"""
-
         # Define user-controlled parameters and set default values
         # self.intensityNormPerTreatment = False
         self.intensityNormPerTreatment = True
-
-        # self.randTrainingPerTreatment = 1 # do we even need this one?
+        self.randTrainingPerTreatment = 3
 
         # Set default values for internally-accessed member variables
         self.metadataLoadSuccess = False
@@ -57,6 +55,8 @@ class Metadata:
         self.trainingSet = []
         self.scaleFactors = None
         self.thresholds = None
+        self.lowerbound = [0, 0, 0]
+        self.upperbound = [1, 1, 1]
     # end constructor
 
 
@@ -180,11 +180,10 @@ class Metadata:
     # end GetNumChannels
 
     def GetAllTreatments(self):
-        """If there was a Treatment column in the metadata, Stack instances
-            in stackLayers will have Treatment data. There should be a unique
-            Treatment value for all stackLayers in an image, but if not, the
-            Stack.GetTreatment method returns a list of the values found.
-            This method chooses the first from the list, in such a case.
+        """If there was a Treatment column in the metadata, Image instances
+            in images will have Treatment data. The Image.GetTreatment method
+            returns a list of the treatment values found in that Image.
+            This method chooses the first from the list.
             This method creates a dictionary of imageIDs and the Treatment values,
             if they exist, or None if not. On error, returns an empty dictionary."""
         allTreatments = {}
@@ -192,8 +191,8 @@ class Metadata:
             if len(self.images) > 0:
                 for imgID in self.images:
                     tmpTreat = self.images[imgID].GetTreatment()
-                    if isinstance(tmpTreat, str):
-                        treat = tmpTreat
+                    if tmpTreat is None:
+                        treat = None
                     elif isinstance(tmpTreat, list):
                         treat = tmpTreat[0]
                     else:
@@ -221,12 +220,13 @@ class Metadata:
             if len(self.images) > 0:
                 for imgID in self.images:
                     tmpTreat = self.images[imgID].GetTreatment()
-                    if isinstance(tmpTreat, str):
-                        treatmentList.append(tmpTreat)
-                    elif isinstance(tmpTreat, list):
+                    if isinstance(tmpTreat, list):
                         treatmentList.extend(tmpTreat)
+                    else:
+                        pass
                 # Use set to find unique values in a list, then change type back to list
                 treatmentList = list(set(treatmentList))
+                treatmentList.sort()
             else:
                 pass
             return treatmentList
@@ -247,6 +247,7 @@ class Metadata:
                 pass
             # Use set to find unique values, then change type back to list
             idList = list(set(idList))
+            idList.sort()
             return idList
         except AttributeError:
             # Return an empty list
@@ -270,47 +271,26 @@ class Metadata:
         uniqueImageID = np.array(self.GetAllImageIDs())
         numImageIDs = len(uniqueImageID)
 
-        # Necessary configuration parameters
-        intensityNormPerTreatment = self.intensityNormPerTreatment
         # randTrainingFields is numTrainingFields, unless numTrainingFields is larger than numImageIDs
         randTrainingFields = numImageIDs if numImageIDs < numTrainingFields else numTrainingFields
 
-        print("intensityNormPerTreatment: ")
-        print(intensityNormPerTreatment)
-        print("randTrainingFields: ")
-        print(randTrainingFields)
-        print("AllImageIDs: ")
-        print(self.GetAllImageIDs())
-
-        print("numImageIDs: "+str(numImageIDs))
-        print("uniqueImageID.size: ")
-        print(uniqueImageID.size)
-
-        if not intensityNormPerTreatment:
+        if not self.intensityNormPerTreatment:
             randFieldID = np.array([uniqueImageID[i] for i in
                 Generator.choice(uniqueImageID.size, size=randTrainingFields,
                     replace=False, shuffle=False)])
         else:
             # have different treatments, want to choose training images from each treatment.
             uTreat = self.GetTreatmentTypes()
-            print(uTreat)
             allTreatments = self.GetAllTreatments()
-            print(allTreatments)
             allTrKeys = np.array(list(allTreatments.keys()))
-            print(allTrKeys)
             allTrValues = np.array(list(allTreatments.values()))
-            print(allTrValues)
             randTrainingPerTreatment = \
                 -(-randTrainingFields//len(uTreat)) #ceiling division
-            print(randTrainingPerTreatment)
             randFieldIDList = []
             for treat in uTreat:
                 tempList = []
-                print(treat)
                 try:
-                    print(allTrKeys == treat)
                     treatmentIDs = allTrKeys[allTrValues == treat]
-                    print("There are " + str(len(treatmentIDs)) + " treatment IDs")
                     if len(treatmentIDs) > 0:
                         tempList = [treatmentIDs[j] for j in
                             Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
@@ -318,6 +298,7 @@ class Metadata:
                 except (ValueError,KeyError):
                     tempList = []
                 randFieldIDList = randFieldIDList + tempList
+            randFieldIDList.sort()
             randFieldID = np.array(randFieldIDList)
         #end if
         # output is randFieldID is a Numpy array of image ids
@@ -325,6 +306,82 @@ class Metadata:
     # end getTrainingFields
 
 
+
+
+
+    def getScalingFactorforImages(self, randFieldIDforNormalization):
+        """compute lower and higher scaling values for each image"""
+        # randFieldIDforNormalization is the IDs of the images for training
+        # On error, return the following value
+        errorVal = ([0,0,0], [1,1,1])
+        if randFieldIDforNormalization.size == 0:
+            return errorVal
+        # else
+        numChannels = self.GetNumChannels()
+        numImages = randFieldIDforNormalization.size
+
+        if self.intensityNormPerTreatment:
+            grpVal = np.zeros(numImages)
+        # min values of all selected images in all channels
+        minChannel = np.zeros((numImages, numChannels))
+        # max values of all selected images in all channels
+        maxChannel = np.zeros((numImages, numChannels))
+
+
+    # end getScalingFactorforImages
+
+
+    #   getScalingFactorforImages.m
+    def getScalingFactorforImages(metadata, param):
+        randFieldIDforNormalization = getTrainingFields(metadata, param)  # choose images for scaling
+        if param.intensityNormPerTreatment:
+            grpVal = np.zeros(randFieldIDforNormalization.size)
+        minChannel = np.zeros(
+            (randFieldIDforNormalization.size, param.numChannels))  # min values of all selected images in all channels
+        maxChannel = np.zeros(
+            (randFieldIDforNormalization.size, param.numChannels))  # max values of all selected images in all channels
+        numImages = randFieldIDforNormalization.size
+        for i in range(0, numImages):
+            # which images
+            id = randFieldIDforNormalization[i]  # which 3d image
+            tmpmdata = metadata.loc[metadata[param.imageIDCol[0]] == id]
+            zStack = np.ravel(tmpmdata[param.stackCol])
+            depth = len(zStack)
+            # used to be a getTileInfo here.
+            randHalf = int(depth // 2)
+            randZ = [zStack[j] for j in Generator.choice(depth, size=randHalf, replace=False,
+                                                         shuffle=False)]  # choose half of the stack, randomly
+            minVal = np.zeros((randHalf, param.numChannels))
+            maxVal = np.zeros((randHalf, param.numChannels))
+            for j in range(randHalf):
+                for k in range(param.numChannels):
+                    IM = io.imread(tmpmdata.loc[tmpmdata[param.stackCol[0]] == randZ[j], param.channelCol[k]].values[0])
+                    minVal[j, k] = np.quantile(IM, 0.01)
+                    maxVal[j, k] = np.quantile(IM, 0.99)
+            minChannel[i, :] = np.amin(minVal, axis=0)
+            maxChannel[i, :] = np.amax(maxVal, axis=0)
+            if param.intensityNormPerTreatment:
+                # index of the treatment for this image in the list of all treatment
+                grpVal[i] = np.argwhere(param.allTreatments == tmpmdata[param.treatmentCol].values[
+                    0])  # tmpdata[param.treatmentCol[0]][0] is the treatment of the current image
+
+        if param.intensityNormPerTreatment:
+            uGrp = np.unique(grpVal)
+            param.lowerbound = np.zeros((uGrp.size, param.numChannels))
+            param.upperbound = np.zeros((uGrp.size, param.numChannels))
+            for i in range(0, uGrp.size):
+                ii = grpVal == uGrp[i]
+                if np.sum(ii) > 1:
+                    param.lowerbound[i, :] = np.quantile(minChannel[grpVal == uGrp[i], :], 0.01)
+                    param.upperbound[i, :] = np.quantile(maxChannel[grpVal == uGrp[i], :], 0.99)
+                else:
+                    param.lowerbound[i, :] = minChannel[grpVal == uGrp[i], :]
+                    param.upperbound[i, :] = maxChannel[grpVal == uGrp[i], :]
+        else:
+            param.lowerbound = np.quantile(minChannel, 0.01, axis=0)
+            param.upperbound = np.quantile(maxChannel, 0.99, axis=0)
+        param.randFieldID = randFieldIDforNormalization  # added this here because I dont know where else this would be determined.
+        return param
 
 
 
@@ -341,15 +398,8 @@ class Metadata:
             return False
         # else
 
-
-
-        # getTrainingFields()
-
-
-        # GetNumChannels
-        # GetAllImageIDs
-        # GetTreatmentTypes
-        # GetAllTreatments
+        theTrainingFields = self.getTrainingFields(PhindConfig.randTrainingFields)
+        (lowerbound, upperbound) = self.getScalingFactorforImages(theTrainingFields)
 
 
 
@@ -372,7 +422,7 @@ if __name__ == '__main__':
 
     # metadatafile = r"R:\\Phindr3D-Dataset\\neurondata\\Phindr3D_neuron-sample-data\\metaout_metadatafile.txt"
     #metadatafile = r"R:\\Phindr3D-Dataset\\Phindr3D_TreatmentID_sample_data\\mike_test.txt"
-    metadatafile = r""
+    metadatafile = r"C:\\mschumaker\\projects\\Phindr3D\\Phindr3D-Python\\testdata\\metadata_tests\\set1_treatments\\mike_test.txt"
 
 
     # metadatafile = input("Metadata file: ")
@@ -394,6 +444,11 @@ if __name__ == '__main__':
     else:
         print("loadMetadataFile was unsuccessful")
 
-    print(test.getTrainingFields())
+    #finalOut = test.getTrainingFields(PhindConfig.randTrainingFields)
+    #print("final getTrainingFields output")
+    #print(finalOut)
+
+    finalOut = test.computeImageParameters()
+
 
 # end main
