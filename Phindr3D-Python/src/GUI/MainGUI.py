@@ -117,7 +117,12 @@ class MainGUI(QWidget, external_windows):
                     alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
                     alert.exec()
                 except FileNotFoundError:
-                    alert = self.buildErrorWindow("Metadata Extraction Failed: Metadata file does not exist.")
+                    errortext = "Metadata Extraction Failed: Metadata file does not exist."
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                    alert.exec()
+                except InvalidImageError:
+                    errortext = "Metadata Extraction Failed: Invalid Image type (must be grayscale)."
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
                     alert.exec()
             else:
                 load_metadata_win = self.buildErrorWindow("Select Valid Metadatafile (.txt)", QMessageBox.Critical)
@@ -337,7 +342,10 @@ class MainGUI(QWidget, external_windows):
             for ind, rgb_color in zip(range(slicescrollbar.value(), slicescrollbar.value()+ self.ch_len), color):
                 ch_num=str(ind-slicescrollbar.value()+1)
                 data['Channel_'+ch_num]=data['Channel_'+ch_num].str.replace(r'\\', '/', regex=True)
-                cur_img = np.array(Image.open(data['Channel_'+ch_num].iloc[slicescrollbar.value()]))
+                img = Image.open(data['Channel_'+ch_num].iloc[slicescrollbar.value()])
+                if img.mode != "I" and img.mode != "I;16":
+                    raise InvalidImageError
+                cur_img = np.array(img)
                 threshold=getImageThreshold(cur_img)
                 cur_img[cur_img<=threshold]=0
                 cur_img= np.dstack((cur_img, cur_img, cur_img))
@@ -385,5 +393,8 @@ def run_mainGUI():
     window = MainGUI()
     window.show()
     app.exec()
+
+class InvalidImageError(Exception):
+    pass
 
 # end class MainGUI
