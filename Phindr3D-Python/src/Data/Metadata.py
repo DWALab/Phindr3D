@@ -253,13 +253,18 @@ class Metadata:
             return []
     # end GetAllImageIDs
 
-    def getTrainingFields(self):
+    def getTrainingFields(self, numTrainingFields=10):
         """
         Get smaller subset of images (usually 10) to define parameters for further analysis.
         (nly used for scaling factors to scale down intensities from 0 to 1).
         output is a Numpy array of a subset of image IDs.
+        On error, returns an empty numpy array
         """
-        randFieldID = None
+        randFieldID = np.array([])
+
+        # Check the type of numTrainingFields
+        if not isinstance(numTrainingFields, int):
+            return randFieldID
 
         # Get the list of all image IDs in the set
         uniqueImageID = np.array(self.GetAllImageIDs())
@@ -267,9 +272,8 @@ class Metadata:
 
         # Necessary configuration parameters
         intensityNormPerTreatment = self.intensityNormPerTreatment
-        randTrainingFields = PhindConfig.randTrainingFields
-        # Adjust randTrainingFields if it is larger than numImageIDs
-        randTrainingFields = numImageIDs if numImageIDs < randTrainingFields else randTrainingFields
+        # randTrainingFields is numTrainingFields, unless numTrainingFields is larger than numImageIDs
+        randTrainingFields = numImageIDs if numImageIDs < numTrainingFields else numTrainingFields
 
         print("intensityNormPerTreatment: ")
         print(intensityNormPerTreatment)
@@ -367,7 +371,9 @@ if __name__ == '__main__':
     # Since this is only for testing purposes, assume inputted values are all correct types
 
     # metadatafile = r"R:\\Phindr3D-Dataset\\neurondata\\Phindr3D_neuron-sample-data\\metaout_metadatafile.txt"
-    metadatafile = r"R:\\Phindr3D-Dataset\\Phindr3D_TreatmentID_sample_data\\mike_test.txt"
+    #metadatafile = r"R:\\Phindr3D-Dataset\\Phindr3D_TreatmentID_sample_data\\mike_test.txt"
+    metadatafile = r""
+
 
     # metadatafile = input("Metadata file: ")
     # imageid = float(input("Image ID: "))
