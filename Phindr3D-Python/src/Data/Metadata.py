@@ -18,6 +18,7 @@
 import numpy as np
 import pandas
 import os.path
+import imageio.v2 as io
 
 try:
     from .Image import *
@@ -237,7 +238,7 @@ class Metadata:
 
     def GetAllImageIDs(self):
         """Returns a list of all the image ID values, if found.
-            something else if not."""
+            If no image IDs are found, an empty list is returned."""
         idList = []
         try:
             if len(self.images) > 0:
@@ -253,6 +254,19 @@ class Metadata:
             # Return an empty list
             return []
     # end GetAllImageIDs
+
+    def GetImage(self, theImageID):
+        """Returns the Image class with the given image ID, if it is found.
+            If the requested image ID is not found, returns None."""
+        # First check the type of theImageID
+        if not isinstance(theImageID, int):
+            return None
+        # Attempt to get the Image object with the given ID, return None on failure
+        try:
+            return self.images[theImageID]
+        except (IndexError, AttributeError, KeyError):
+            return None
+    # end GetImage
 
     def getTrainingFields(self, numTrainingFields=10):
         """
@@ -322,67 +336,46 @@ class Metadata:
 
         if self.intensityNormPerTreatment:
             grpVal = np.zeros(numImages)
-        # min values of all selected images in all channels
+        # blank array for min values of all selected images in all channels
         minChannel = np.zeros((numImages, numChannels))
-        # max values of all selected images in all channels
+        # blank array for max values of all selected images in all channels
         maxChannel = np.zeros((numImages, numChannels))
 
-
-    # end getScalingFactorforImages
-
-
-    #   getScalingFactorforImages.m
-    def getScalingFactorforImages(metadata, param):
-        randFieldIDforNormalization = getTrainingFields(metadata, param)  # choose images for scaling
-        if param.intensityNormPerTreatment:
-            grpVal = np.zeros(randFieldIDforNormalization.size)
-        minChannel = np.zeros(
-            (randFieldIDforNormalization.size, param.numChannels))  # min values of all selected images in all channels
-        maxChannel = np.zeros(
-            (randFieldIDforNormalization.size, param.numChannels))  # max values of all selected images in all channels
-        numImages = randFieldIDforNormalization.size
         for i in range(0, numImages):
             # which images
-            id = randFieldIDforNormalization[i]  # which 3d image
-            tmpmdata = metadata.loc[metadata[param.imageIDCol[0]] == id]
-            zStack = np.ravel(tmpmdata[param.stackCol])
+            theID = int(randFieldIDforNormalization[i])  # which 3d image
+            theImageObject = self.GetImage(theID)
+            zStack = theImageObject.stackLayers # dictionary
+            # Get the number of stack layers in the image
             depth = len(zStack)
-            # used to be a getTileInfo here.
+            zStackKeys = list(zStack.keys())
             randHalf = int(depth // 2)
-            randZ = [zStack[j] for j in Generator.choice(depth, size=randHalf, replace=False,
-                                                         shuffle=False)]  # choose half of the stack, randomly
-            minVal = np.zeros((randHalf, param.numChannels))
-            maxVal = np.zeros((randHalf, param.numChannels))
-            for j in range(randHalf):
-                for k in range(param.numChannels):
-                    IM = io.imread(tmpmdata.loc[tmpmdata[param.stackCol[0]] == randZ[j], param.channelCol[k]].values[0])
+            # choose half of the stack, randomly
+            generatedArray = Generator.choice(depth, size=randHalf, replace=False, shuffle=False)
+            # TO DO Add try-catch here for KeyError
+            randZ = [zStackKeys[int(j)] for j in generatedArray]
+            print(randZ)
+            minVal = np.zeros((randHalf, numChannels))
+            maxVal = np.zeros((randHalf, numChannels))
+
+            for j in range(len(zStackKeys)):
+                theStackObject = zStack[zStackKeys[j]]
+                theChannels = theStackObject.channels
+                channelKeys = list(theChannels.keys())
+                for k in range(len(channelKeys)):
+                    # TO DO Add try-catch here for KeyError
+                    imFilePath = theChannels[channelKeys[k]].channelpath
+                    print(imFilePath)
+                    # TO DO Add try-catch here for IOError (or similar - check imread api)
+                    IM = io.imread(imFilePath)
                     minVal[j, k] = np.quantile(IM, 0.01)
                     maxVal[j, k] = np.quantile(IM, 0.99)
+
             minChannel[i, :] = np.amin(minVal, axis=0)
             maxChannel[i, :] = np.amax(maxVal, axis=0)
-            if param.intensityNormPerTreatment:
-                # index of the treatment for this image in the list of all treatment
-                grpVal[i] = np.argwhere(param.allTreatments == tmpmdata[param.treatmentCol].values[
-                    0])  # tmpdata[param.treatmentCol[0]][0] is the treatment of the current image
 
-        if param.intensityNormPerTreatment:
-            uGrp = np.unique(grpVal)
-            param.lowerbound = np.zeros((uGrp.size, param.numChannels))
-            param.upperbound = np.zeros((uGrp.size, param.numChannels))
-            for i in range(0, uGrp.size):
-                ii = grpVal == uGrp[i]
-                if np.sum(ii) > 1:
-                    param.lowerbound[i, :] = np.quantile(minChannel[grpVal == uGrp[i], :], 0.01)
-                    param.upperbound[i, :] = np.quantile(maxChannel[grpVal == uGrp[i], :], 0.99)
-                else:
-                    param.lowerbound[i, :] = minChannel[grpVal == uGrp[i], :]
-                    param.upperbound[i, :] = maxChannel[grpVal == uGrp[i], :]
-        else:
-            param.lowerbound = np.quantile(minChannel, 0.01, axis=0)
-            param.upperbound = np.quantile(maxChannel, 0.99, axis=0)
-        param.randFieldID = randFieldIDforNormalization  # added this here because I dont know where else this would be determined.
-        return param
-
+        return errorVal
+    # end getScalingFactorforImages
 
 
 
@@ -400,7 +393,8 @@ class Metadata:
 
         theTrainingFields = self.getTrainingFields(PhindConfig.randTrainingFields)
         (lowerbound, upperbound) = self.getScalingFactorforImages(theTrainingFields)
-
+        print(lowerbound)
+        print(upperbound)
 
 
 
@@ -420,9 +414,9 @@ if __name__ == '__main__':
     # Running will prompt user for a text file, image id, stack id, and channel number
     # Since this is only for testing purposes, assume inputted values are all correct types
 
-    # metadatafile = r"R:\\Phindr3D-Dataset\\neurondata\\Phindr3D_neuron-sample-data\\metaout_metadatafile.txt"
+    metadatafile = r"R:\\Phindr3D-Dataset\\neurondata\\Phindr3D_neuron-sample-data\\builder_test.txt"
     #metadatafile = r"R:\\Phindr3D-Dataset\\Phindr3D_TreatmentID_sample_data\\mike_test.txt"
-    metadatafile = r"C:\\mschumaker\\projects\\Phindr3D\\Phindr3D-Python\\testdata\\metadata_tests\\set1_treatments\\mike_test.txt"
+    #metadatafile = r"C:\\mschumaker\\projects\\Phindr3D\\Phindr3D-Python\\testdata\\metadata_tests\\set1_treatments\\mike_test.txt"
 
 
     # metadatafile = input("Metadata file: ")
@@ -444,11 +438,7 @@ if __name__ == '__main__':
     else:
         print("loadMetadataFile was unsuccessful")
 
-    #finalOut = test.getTrainingFields(PhindConfig.randTrainingFields)
-    #print("final getTrainingFields output")
-    #print(finalOut)
 
-    finalOut = test.computeImageParameters()
 
 
 # end main
