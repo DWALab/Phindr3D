@@ -2,11 +2,13 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import proj3d
 import matplotlib
 import numpy as np
 import pandas as pd
+import time
 from more_itertools import locate
 from PIL import Image
 from ..analysis_scripts import *
@@ -100,7 +102,11 @@ class interactive_points():
 
                 # adjustbar layout
                 adjustbar = QSlider(Qt.Vertical)
+                adjustbar.setMinimum(0)
+                adjustbar.setValue(0)
                 adjustbar.setFixedWidth(50)
+                adjustbar.setPageStep(1)
+                adjustbar.setSingleStep(1)
                 adjustbar.setStyleSheet(
                     "QSlider::groove:vertical {background-color: #8DE8F6; border: 1px solid;height: 700px;margin: 0px;}"
                     "QSlider::handle:vertical {background-color: #8C8C8C; border: 1px silver; height: 30px; width: 10px; margin: -5px 0px;}")
@@ -114,39 +120,46 @@ class interactive_points():
                 win.setLayout(grid)
 
                 self.channel_display(adjustbar, main_plot, color, x_data, label, cur_label, index, feature_file, file_info, ch_info, imageID)
+                adjustbar.valueChanged.connect(lambda: self.channel_display(adjustbar, main_plot, color, x_data, label, cur_label, index, feature_file, file_info, ch_info, imageID))
                 win.show()
                 win.exec()
 
     def channel_display(self, slicescrollbar, img_plot, color, x, label, cur_label, index, feature_file, file_info, ch_info, imageID):
             if feature_file:
                 # extract image details from feature file
-                data = pd.read_csv(feature_file[0], sep="\t", na_values='        NaN')
+                data = pd.read_csv(feature_file[0], sep="\t", na_values='NaN')
                 ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
+                data = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], sep="\t",  na_values='NaN')
 
                 #update info labels
                 ch_names = ['<font color= "#' + str('%02x%02x%02x' % (int(color[i-1][0]*255), int(color[i-1][1]*255), int(color[i-1][2]*255))) + '">' + "Channel_" + str(i) + "</font>" for i in
                             range(1, ch_len + 1, 1)]
                 ch_names='<br>'.join(ch_names)
                 ch_info.setText("Channels<br>"+ch_names)
-                slicescrollbar.setMaximum((data.shape[0] - 1))
+                meta_loc=0
+                stacks=0
                 if len(self.labels)>1:
                     cur_ind=list(locate(label, lambda x: x==cur_label))[index]
-                    cur_ind=imageID[cur_ind]-1
-                    slicescrollbar.setValue(cur_ind)
-                    file_info.setText("Filename: " + data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[cur_ind])
+                    cur_ind=imageID[cur_ind]
+                    stacks=data[data["ImageID"] == cur_ind]["Channel_1"]
+                    meta_loc=stacks.index[0]
+                    stacks=stacks.shape[0]
                 else:
-                    slicescrollbar.setValue(imageID[index]-1)
-                    file_info.setText("Filename: " + data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[index])
+                    stacks = data[data["ImageID"] == index+1]["Channel_1"]
+                    meta_loc=stacks.index[0]
+                    stacks = stacks.shape[0]
+                file_info.setText("Filename: " + data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc+slicescrollbar.value()])
+                slicescrollbar.setMaximum(stacks-1)
 
                 # initialize array as image size with # channels
-                rgb_img = Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[slicescrollbar.value()]).size
+                rgb_img = Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc+slicescrollbar.value()]).size
                 rgb_img = np.empty((rgb_img[1], rgb_img[0], 3, ch_len))
 
                 # threshold/colour each image channel
                 for ind, rgb_color in zip(range(slicescrollbar.value(), slicescrollbar.value() + ch_len),color):
                     ch_num = str(ind - slicescrollbar.value() + 1)
                     data['Channel_' + ch_num] = data['Channel_' + ch_num].str.replace(r'\\', '/', regex=True)
-                    cur_img = np.array(Image.open(data['Channel_' + ch_num].iloc[slicescrollbar.value()]))
+                    cur_img = np.array(Image.open(data['Channel_' + ch_num].iloc[meta_loc+slicescrollbar.value()]))
                     threshold = getImageThreshold(cur_img)
                     cur_img[cur_img <= threshold] = 0
                     cur_img = np.dstack((cur_img, cur_img, cur_img))
@@ -164,16 +177,15 @@ class interactive_points():
                 img_plot.axes.imshow(rgb_img)
                 img_plot.draw()
 
-    def __call__ (self, event): #picker is mouse scroll down trigger
-        if event.mouseevent.inaxes is not None and event.mouseevent.button=="down":
-
+    def __call__ (self, event): #picker is right-click activation
+        if event.mouseevent.inaxes is not None and event.mouseevent.button is MouseButton.RIGHT:
             #https://github.com/matplotlib/matplotlib/issues/ 19735   ---- code below from github open issue. wrong event.ind coordinate not fixed in current version matplotlib...
             xx = event.mouseevent.x
             yy = event.mouseevent.y
             label = event.artist.get_label()
-            label_ind=np.where(np.array(self.labels)==label)
+            label_ind=np.where(np.array(self.labels)==label)[0]
             # magic from https://stackoverflow.com/questions/10374930/matplotlib-annotating-a-3d-scatter-plot
-            x2, y2, z2 = proj3d.proj_transform(self.data[0][label_ind][0], self.data[1][label_ind][0], self.data[2][label_ind][0], self.main_plot.axes.get_proj())
+            x2, y2, z2 = proj3d.proj_transform(self.data[0][label_ind[0]], self.data[1][label_ind[0]], self.data[2][label_ind[0]], self.main_plot.axes.get_proj())
             x3, y3 = self.main_plot.axes.transData.transform((x2, y2))
             # the distance
             d = np.sqrt((x3 - xx) ** 2 + (y3 - yy) ** 2)
@@ -182,9 +194,9 @@ class interactive_points():
             # from https://stackoverflow.com/questions/10374930/matplotlib-annotating-a-3d-scatter-plot
             imin = 0
             dmin = 10000000
-            for i in range(len(self.data[0][label_ind])):
+            for i in range(np.shape(label_ind)[0]):
                 # magic from https://stackoverflow.com/questions/10374930/matplotlib-annotating-a-3d-scatter-plot
-                x2, y2, z2 = proj3d.proj_transform(self.data[0][label_ind][i], self.data[1][label_ind][i], self.data[2][label_ind][i], self.main_plot.axes.get_proj())
+                x2, y2, z2 = proj3d.proj_transform(self.data[0][label_ind[i]], self.data[1][label_ind[i]], self.data[2][label_ind[i]], self.main_plot.axes.get_proj())
                 x3, y3 = self.main_plot.axes.transData.transform((x2, y2))
                 # magic from https://stackoverflow.com/questions/10374930/matplotlib-annotating-a-3d-scatter-plot
                 d = np.sqrt((x3 - xx) ** 2 + (y3 - yy) ** 2)
@@ -192,11 +204,12 @@ class interactive_points():
                 if d < dmin:
                     dmin = d
                     imin = i
-            self.main_plot.axes.scatter3D(self.data[0][label_ind][imin],
-                                        self.data[1][label_ind][imin],
-                                        self.data[2][label_ind][imin], s=35, facecolor="none",
+            self.main_plot.axes.scatter3D(self.data[0][label_ind[imin]],
+                                        self.data[1][label_ind[imin]],
+                                        self.data[2][label_ind[imin]], s=35, facecolor="none",
                                         edgecolor='gray', alpha=1)
-
+            #for debugging
+            #print(self.data[0][label_ind[imin]], self.data[1][label_ind[imin]], self.data[2][label_ind[imin]])
             self.main_plot.draw()
             self.main_plot.figure.canvas.draw_idle()
             self.buildImageViewer(self.data[0],self.labels,label, imin,self.color,self.feature_file, self.imageID)

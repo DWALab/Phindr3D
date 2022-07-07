@@ -24,7 +24,6 @@ class featurefilegroupingWindow(object):
         ch_vbox.addWidget(ch_title)
         #add channel columns and checkboxes to layout
         for i in range (len(columns)):
-            print(columns[i].find('Channel_'))
             if columns[i].find("Channel_")== 0:
                 ch_label=QLabel(columns[i])
                 ch_vbox.addWidget((ch_label))
