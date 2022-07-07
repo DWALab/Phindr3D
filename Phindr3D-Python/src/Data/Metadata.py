@@ -43,9 +43,8 @@ class Metadata:
     def __init__(self):
         """Metadata class constructor"""
         # Define user-controlled parameters and set default values
-        # self.intensityNormPerTreatment = False
-        self.intensityNormPerTreatment = True
-        self.randTrainingPerTreatment = 3
+        self.intensityNormPerTreatment = False
+        self.randTrainingPerTreatment = 1
 
         # Set default values for internally-accessed member variables
         self.metadataLoadSuccess = False
@@ -322,10 +321,6 @@ class Metadata:
         return randFieldID
     # end getTrainingFields
 
-
-
-
-
     def getScalingFactorforImages(self, randFieldIDforNormalization):
         """compute lower and higher scaling values for each image"""
         # randFieldIDforNormalization is the IDs of the images for training
@@ -336,6 +331,8 @@ class Metadata:
         # else
         numChannels = self.GetNumChannels()
         numImages = randFieldIDforNormalization.size
+        # Get the list of all treatment types
+        allTreatmentTypes = self.GetTreatmentTypes()
 
         if self.intensityNormPerTreatment:
             grpVal = np.zeros(numImages)
@@ -357,27 +354,48 @@ class Metadata:
             generatedArray = Generator.choice(depth, size=randHalf, replace=False, shuffle=False)
             # TO DO Add try-catch here for KeyError
             randZ = [zStackKeys[int(j)] for j in generatedArray]
-            print(randZ)
             minVal = np.zeros((randHalf, numChannels))
             maxVal = np.zeros((randHalf, numChannels))
 
-            for j in range(len(zStackKeys)):
-                theStackObject = zStack[zStackKeys[j]]
+            for j in range(len(randZ)):
+                theStackObject = zStack[randZ[j]]
                 theChannels = theStackObject.channels
                 channelKeys = list(theChannels.keys())
                 for k in range(len(channelKeys)):
                     # TO DO Add try-catch here for KeyError
                     imFilePath = theChannels[channelKeys[k]].channelpath
-                    print(imFilePath)
                     # TO DO Add try-catch here for IOError (or similar - check imread api)
                     IM = io.imread(imFilePath)
                     minVal[j, k] = np.quantile(IM, 0.01)
                     maxVal[j, k] = np.quantile(IM, 0.99)
-
             minChannel[i, :] = np.amin(minVal, axis=0)
             maxChannel[i, :] = np.amax(maxVal, axis=0)
 
-        return errorVal
+            if self.intensityNormPerTreatment:
+                # index of the treatment for this image in the list of all treatments
+                # if the treatment type is not found (or there are no treatments), return error
+                try:
+                    grpVal[i] = allTreatmentTypes.index(theImageObject.GetTreatment()[0])
+                except (ValueError, IndexError):
+                    return errorVal
+        # end for images
+
+        if self.intensityNormPerTreatment:
+            uGrp = np.unique(grpVal)
+            lowerbound = np.zeros((uGrp.size, numChannels))
+            upperbound = np.zeros((uGrp.size, numChannels))
+            for i in range(0, uGrp.size):
+                ii = grpVal == uGrp[i]
+                if np.sum(ii) > 1:
+                    lowerbound[i, :] = np.quantile(minChannel[grpVal == uGrp[i], :], 0.01)
+                    upperbound[i, :] = np.quantile(maxChannel[grpVal == uGrp[i], :], 0.99)
+                else:
+                    lowerbound[i, :] = minChannel[grpVal == uGrp[i], :]
+                    upperbound[i, :] = maxChannel[grpVal == uGrp[i], :]
+        else:
+            lowerbound = np.quantile(minChannel, 0.01, axis=0)
+            upperbound = np.quantile(maxChannel, 0.99, axis=0)
+        return (lowerbound, upperbound)
     # end getScalingFactorforImages
 
 
@@ -395,9 +413,9 @@ class Metadata:
         # else
 
         theTrainingFields = self.getTrainingFields(PhindConfig.randTrainingFields)
-        (lowerbound, upperbound) = self.getScalingFactorforImages(theTrainingFields)
-        print(lowerbound)
-        print(upperbound)
+        (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(theTrainingFields)
+        #print(self.lowerbound)
+        #print(self.upperbound)
 
 
 
