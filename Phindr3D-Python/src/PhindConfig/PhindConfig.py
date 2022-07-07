@@ -56,8 +56,6 @@ class PhindConfig:
     randTrainingSuperVoxel = 10000
     pixelsPerImage = 200
     randTrainingFields = 5
-    randTrainingPerTreatment = 1
-    intensityNormPerTreatment = False
     # Visualization
     showBinCenters = False
     showImage = False
@@ -81,9 +79,7 @@ class PhindConfig:
     # allTreatments = []
     # trainingColforImageCategories = []
     superVoxelPerField = randTrainingSuperVoxel//randTrainingFields
-    lowerbound = [0, 0, 0]
-    upperbound = [1, 1, 1]
-    numChannels = 3
+    # numChannels = 3
 
     svcolormap = random_cmap(map_len=numSuperVoxelBins+1)
     mvcolormap = random_cmap(map_len=numMegaVoxelBins+1)
