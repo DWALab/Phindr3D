@@ -1,0 +1,12 @@
+List of libraries used:
+- PyQt5.Widgets
+- PyQt5.QtGui
+- PyQt5.QtCore
+- matplotlib
+- numpy
+- scipy
+- sys
+- random
+- sklearn
+- textwrap
+- more-itertools

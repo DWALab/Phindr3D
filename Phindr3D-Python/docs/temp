@@ -1,0 +1,5 @@
+This directory will contain the tools to build sphinx documentation:
+Makefile
+conf.py
+index.rst
+make.bat
