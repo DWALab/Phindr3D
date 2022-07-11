@@ -36,14 +36,6 @@ class PhindConfig:
         return colors.ListedColormap(temp_cmap)
     # end random_cmap
 
-    # Super-Voxel dimensions
-    tileX = 10
-    tileY = 10
-    tileZ = 3
-    # Mega-Voxel dimensions
-    megaVoxelTileX = 5
-    megaVoxelTileY = 5
-    megaVoxelTileZ = 2
     # Number of categories for binning
     numVoxelBins = 20
     numSuperVoxelBins = 15
@@ -86,3 +78,52 @@ class PhindConfig:
 
 # end class PhindConfig
 
+
+class TileInfo:
+    """Contains configuration parameters for tiles, voxels, offsets, etc.
+        Many parameters are defined in the getTileInfo method.
+        They are defined and set to 'None' at __init__ in this class."""
+    def __init__(self):
+        # Super-Voxel dimensions
+        self.tileX = 10
+        self.tileY = 10
+        self.tileZ = 3
+        # Mega-Voxel dimensions
+        self.megaVoxelTileX = 5
+        self.megaVoxelTileY = 5
+        self.megaVoxelTileZ = 2
+
+        # The following parameters are defined in getTileInfo
+        # All are defined and set to None at __init__
+        self.xOffsetStart = None
+        self.xOffsetEnd = None
+        self.yOffsetStart = None
+        self.yOffsetEnd = None
+        self.zOffsetStart = None
+        self.zOffsetEnd = None
+        self.croppedX = None
+        self.croppedY = None
+        self.croppedZ = None
+        self.origX = None
+        self.origY = None
+        self.origZ = None
+        # Offset start/end
+        self.superVoxelXOffsetStart = None
+        self.superVoxelXOffsetEnd = None
+        self.superVoxelYOffsetStart = None
+        self.superVoxelYOffsetEnd = None
+        self.superVoxelZOffsetStart = None
+        self.superVoxelZOffsetEnd = None
+        # Add start/end
+        self.superVoxelXAddStart = None
+        self.superVoxelXAddEnd = None
+        self.superVoxelYAddStart = None
+        self.superVoxelYAddEnd = None
+        self.superVoxelZAddStart = None
+        self.superVoxelZAddEnd = None
+        # Num super and mega voxels
+        self.numSuperVoxels = None
+        self.numSuperVoxelsXY = None
+        self.numMegaVoxels = None
+        self.numMegaVoxelsXY = None
+# end class TileInfo

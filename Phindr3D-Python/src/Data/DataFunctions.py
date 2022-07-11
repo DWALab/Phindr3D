@@ -16,6 +16,7 @@
 
 import os
 import re
+import tifffile as tf
 import pandas as pd
 import numpy as np
 
@@ -171,6 +172,22 @@ class DataFunctions:
     # imfinfo
     # im2col
 
+    @staticmethod
+    def imfinfo(filename):
+        class info:
+            pass
+
+        info = info()
+        tif = tf.TiffFile(filename)
+        file = tif.pages[0]
+        metadata = {}
+        for tag in file.tags.values():
+            metadata[tag.name] = tag.value
+        info.Height = metadata['ImageLength']
+        info.Width = metadata['ImageWidth']
+        info.Format = 'tif'
+        return info
+    # end imfinfo
 
     @staticmethod
     def rescaleIntensity(im, low=0, high=1):

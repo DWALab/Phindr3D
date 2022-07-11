@@ -19,6 +19,7 @@ import numpy as np
 import pandas
 import os.path
 import imageio.v2 as io
+import imagecodecs
 
 try:
     from .Image import *
@@ -28,7 +29,7 @@ except ImportError:
     from DataFunctions import *
 
 try:
-    from ..PhindConfig import *
+    from ..PhindConfig.PhindConfig import *
 except ImportError:
     from src.PhindConfig.PhindConfig import *
 
@@ -57,6 +58,10 @@ class Metadata:
         self.thresholds = None
         self.lowerbound = [0, 0, 0]
         self.upperbound = [1, 1, 1]
+
+        # Tile configuration and info from getTileInfo
+        self.theTileInfo = TileInfo()
+
     # end constructor
 
 
@@ -260,9 +265,6 @@ class Metadata:
     def GetImage(self, theImageID):
         """Returns the Image class with the given image ID, if it is found.
             If the requested image ID is not found, returns None."""
-        # First check the type of theImageID
-        if not isinstance(theImageID, int):
-            return None
         # Attempt to get the Image object with the given ID, return None on failure
         try:
             return self.images[theImageID]
@@ -398,8 +400,186 @@ class Metadata:
         return (lowerbound, upperbound)
     # end getScalingFactorforImages
 
+    def getImageInformation(self, theImage):
+        """Get information about the image files.
+            Called in getPixelBinCenters, getImageThresholdValues,
+            extractImageLevelTextureFeatures"""
+        d = np.ones(3, dtype=int)
+        # Get one file name from the full 3D image
+        # (first file is convenient.)
+        try:
+            d[2] = len(theImage.stackLayers)
+        except AttributeError:
+            d[2] = 0
+        try:
+            # dictionaries are ordered as of Python 3.7,
+            # but we will not assume what version of Python 3 is being used
+            firstStack = theImage.stackLayers[list(theImage.stackLayers.keys())[0]]
+            firstChannel = firstStack.channels[list(firstStack.channels.keys())[0]]
+            imFileName = firstChannel.channelpath
+            # imfinfo is matlab built-in,
+            # so replicate its action in DataFunctions
+            info = DataFunctions.imfinfo(imFileName)
+            d[0] = info.Height
+            d[1] = info.Width
+        except (IndexError, AttributeError):
+            d[0] = 0
+            d[1] = 1
+        return d
+    # end getImageInformation
+
+    def getTileInfo(self, dimSize, tileInfo):
+        """computes how many pixels and stacks that need to be retained based on user choices.
+            Called in getPixelBinCenters, extractImageLevelTextureFeatures,
+            getImageThresholdValues, getSuperVoxelbinCenters.
+            This method gets configuration information from PhindConfig"""
+        xOffset = dimSize[0] % tileInfo.tileX
+        yOffset = dimSize[1] % tileInfo.tileY
+        zOffset = dimSize[2] % tileInfo.tileZ
+
+        if xOffset % 2 == 0:
+            tileInfo.xOffsetStart = int(xOffset / 2 + 1) - 1  # remember 0 indexing in python
+            tileInfo.xOffsetEnd = int(xOffset / 2)
+        else:
+            tileInfo.xOffsetStart = int(xOffset // 2 + 1) - 1
+            tileInfo.xOffsetEnd = int(-(-xOffset // 2))  # ceiling division is the same as upside-down floor division.
+        if yOffset % 2 == 0:
+            tileInfo.yOffsetStart = int(yOffset / 2 + 1) - 1
+            tileInfo.yOffsetEnd = int(yOffset / 2)
+        else:
+            tileInfo.yOffsetStart = int(yOffset // 2 + 1) - 1
+            tileInfo.yOffsetEnd = int(-(-yOffset // 2))
+        if zOffset % 2 == 0:
+            tileInfo.zOffsetStart = int(zOffset / 2 + 1) - 1
+            tileInfo.zOffsetEnd = int(zOffset / 2)
+        else:
+            tileInfo.zOffsetStart = int(zOffset // 2 + 1) - 1
+            tileInfo.zOffsetEnd = int(-(-zOffset // 2))
+
+        tileInfo.croppedX = dimSize[0] - tileInfo.xOffsetStart - tileInfo.xOffsetEnd
+        tileInfo.croppedY = dimSize[1] - tileInfo.yOffsetStart - tileInfo.yOffsetEnd
+        tileInfo.croppedZ = dimSize[2] - tileInfo.zOffsetStart - tileInfo.zOffsetEnd
+
+        superVoxelXOffset = (tileInfo.croppedX / tileInfo.tileX) % tileInfo.megaVoxelTileX
+        superVoxelYOffset = (tileInfo.croppedY / tileInfo.tileY) % tileInfo.megaVoxelTileY
+        superVoxelZOffset = (tileInfo.croppedZ / tileInfo.tileZ) % tileInfo.megaVoxelTileZ
+        tileInfo.origX = dimSize[0]
+        tileInfo.origY = dimSize[1]
+        tileInfo.origZ = dimSize[2]
+
+        if superVoxelXOffset % 2 == 0:
+            tileInfo.superVoxelXOffsetStart = superVoxelXOffset / 2 + 1
+            tileInfo.superVoxelXOffsetEnd = superVoxelXOffset / 2
+        else:
+            tileInfo.superVoxelXOffsetStart = superVoxelXOffset // 2 + 1
+            tileInfo.superVoxelXOffsetEnd = -(-superVoxelXOffset // 2)  # same floor division trick.
+        if superVoxelXOffset != 0:  # add pixel rows if size of supervoxels are not directly visible
+            numSuperVoxelsToAddX = tileInfo.megaVoxelTileX - superVoxelXOffset
+            if numSuperVoxelsToAddX % 2 == 0:
+                tileInfo.superVoxelXAddStart = int(numSuperVoxelsToAddX / 2)
+                tileInfo.superVoxelXAddEnd = int(numSuperVoxelsToAddX / 2)
+            else:
+                tileInfo.superVoxelXAddStart = int(numSuperVoxelsToAddX // 2)
+                tileInfo.superVoxelXAddEnd = int(-(-numSuperVoxelsToAddX // 2))
+        else:
+            tileInfo.superVoxelXAddStart = int(0)
+            tileInfo.superVoxelXAddEnd = int(0)
+
+        # same along other axes.
+        if superVoxelYOffset != 0:
+            numSuperVoxelsToAddY = tileInfo.megaVoxelTileY - superVoxelYOffset
+            if numSuperVoxelsToAddY % 2 == 0:
+                tileInfo.superVoxelYAddStart = int(numSuperVoxelsToAddY / 2)
+                tileInfo.superVoxelYAddEnd = int(numSuperVoxelsToAddY / 2)
+            else:
+                tileInfo.superVoxelYAddStart = int(numSuperVoxelsToAddY // 2)
+                tileInfo.superVoxelYAddEnd = int(-(- numSuperVoxelsToAddY // 2))
+        else:
+            tileInfo.superVoxelYAddStart = int(0)
+            tileInfo.superVoxelYAddEnd = int(0)
+        if superVoxelZOffset != 0:
+            numSuperVoxelsToAddZ = tileInfo.megaVoxelTileZ - superVoxelZOffset
+            if numSuperVoxelsToAddZ % 2 == 0:
+                tileInfo.superVoxelZAddStart = int(numSuperVoxelsToAddZ / 2)
+                tileInfo.superVoxelZAddEnd = int(numSuperVoxelsToAddZ / 2)
+            else:
+                tileInfo.superVoxelZAddStart = int(numSuperVoxelsToAddZ // 2)
+                tileInfo.superVoxelZAddEnd = int(-(-numSuperVoxelsToAddZ // 2))
+        else:
+            tileInfo.superVoxelZAddStart = int(0)
+            tileInfo.superVoxelZAddEnd = int(0)
+        # continue first part of supervoxels offset parity with other axes
+        if superVoxelYOffset % 2 == 0:
+            tileInfo.superVoxelYOffsetStart = int(superVoxelYOffset / 2 + 1) - 1
+            tileInfo.superVoxelYOffsetEnd = int(superVoxelYOffset / 2)
+        else:
+            tileInfo.superVoxelYOffsetStart = int(superVoxelYOffset // 2 + 1) - 1
+            tileInfo.superVoxelYOffsetEnd = int(-(-superVoxelYOffset // 2))
+        if superVoxelZOffset % 2 == 0:
+            tileInfo.superVoxelZOffsetStart = int(superVoxelZOffset / 2 + 1) - 1
+            tileInfo.superVoxelZOffsetEnd = superVoxelZOffset / 2
+        else:
+            tileInfo.superVoxelZOffsetStart = int(superVoxelZOffset // 2 + 1) - 1
+            tileInfo.superVoxelZOffsetEnd = int(-(-superVoxelZOffset // 2))
+
+        tileInfo.numSuperVoxels = (tileInfo.croppedX * tileInfo.croppedY * tileInfo.croppedZ) // (
+                    tileInfo.tileX * tileInfo.tileY * tileInfo.tileZ)  # supposed to be all elementwise operations (floor division too)
+        tileInfo.numSuperVoxelsXY = (tileInfo.croppedX * tileInfo.croppedY) / (tileInfo.tileX * tileInfo.tileY)
+
+        tmpX = (tileInfo.croppedX / tileInfo.tileX) + superVoxelXOffset
+        tmpY = (tileInfo.croppedY / tileInfo.tileY) + superVoxelYOffset
+        tmpZ = (tileInfo.croppedZ / tileInfo.tileZ) + superVoxelZOffset
+
+        tileInfo.numMegaVoxels = int(
+            (tmpX * tmpY * tmpZ) // (tileInfo.megaVoxelTileX * tileInfo.megaVoxelTileY * tileInfo.megaVoxelTileZ))
+        tileInfo.numMegaVoxelsXY = int((tmpX * tmpY) / (tileInfo.megaVoxelTileX * tileInfo.megaVoxelTileY))
+
+        return tileInfo
+    # end getTileInfo
 
 
+
+
+
+
+
+    def getIndividualChannelThreshold(self):
+        """individual channel threshold"""
+
+    # end getIndividualChannelThreshold
+
+
+
+
+
+
+
+    def getImageThresholdValues(self, randFieldID):
+        """get image threshold values for dataset.
+            On error return one row of num channels entries, each entry np.nan
+            """
+        numChannels = self.GetNumChannels()
+        intensityThresholdValues = np.full((5000, numChannels), np.nan)  # not sure why we want 5000 rows
+        # define a value to return on error
+        errorVal = np.full((1, numChannels), np.nan)
+
+        startVal = 0
+        endVal = 0
+
+        # for each of the randomly selected images chosen in
+        for id in randFieldID:
+            theImageObject = self.GetImage(id)
+            print(id)
+            print(theImageObject)
+            d = self.getImageInformation(theImageObject)
+            print(d)
+            self.theTileInfo = self.getTileInfo(d, self.theTileInfo)
+            print("Well, it didn't crash getting the tile info")
+
+        # remember everything gets rescaled from 0 to 1
+        # drop rows containing nan, then take medians for each channel#intensityThresholdValues[ii]
+        return intensityThresholdValues
+    # end getImageThresholdValues
 
     def computeImageParameters(self):
         """Call after loading metadata. Calls functions that compute the scaling factors and thresholds.
@@ -416,7 +596,7 @@ class Metadata:
         (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(theTrainingFields)
         #print(self.lowerbound)
         #print(self.upperbound)
-
+        self.getImageThresholdValues(theTrainingFields)
 
 
         return True
