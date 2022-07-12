@@ -2,6 +2,8 @@
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+import matplotlib.pyplot as plt
+from matplotlib import cm
 
 class MplCanvas(FigureCanvasQTAgg):
 
@@ -12,6 +14,13 @@ class MplCanvas(FigureCanvasQTAgg):
         else:
             self.axes = self.fig.add_subplot(111, projection=None)
         super(MplCanvas, self).__init__(self.fig)
+        self.cmap = None
+    
+    def setNearFull(self):
+        self.axes.set_aspect('auto')
+        self.axes.set_position([0.01, 0.01, 0.98, 0.98])
+    
+    
 
 #imported matplotlib toolbar. Only use desired functions.
 class NavigationToolbar(NavigationToolbar):
