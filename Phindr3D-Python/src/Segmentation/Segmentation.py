@@ -67,8 +67,6 @@ class Segmentation:
         os.makedirs(self.segDir, exist_ok=True)
     
     def getCurrentIMs(self):
-        print(self.focusIms[self.allIDs[self.IDidx]]) ###########################
-        print(self.labelIms[self.allIDs[self.IDidx]])
         if self.allIDs == []:
             return None, None
         else:
