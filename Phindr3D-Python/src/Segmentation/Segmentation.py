@@ -17,7 +17,6 @@
 import os
 import json
 import numpy as np
-import pandas as pd
 import tifffile as tf
 from scipy import ndimage
 from .SegmentationFunctions import *
@@ -93,7 +92,6 @@ class Segmentation:
             return tf.imread(self.focusIms[self.allIDs[self.IDidx]]), tf.imread(self.labelIms[self.allIDs[self.IDidx]])
 
     def RunSegmentation(self, mdata):
-        import matplotlib.pyplot as plt
         try: 
             for id in mdata.images:
                 imstack = mdata.images[id]
@@ -152,9 +150,9 @@ class Segmentation:
                 focusname.append(f'ID{id}')
                 allobsname.append(f'All_{numObjects}_Objects')
                 focusname.append('FocusIM')
+                IML = L
                 objFileName = os.path.join(self.labDir, ('__'.join(allobsname) + '.tiff'))
                 focFileName = os.path.join(self.labDir, ('__'.join(focusname) + '.tiff'))
-                IML = L
                 tf.imwrite(objFileName, IML)
                 tf.imwrite(focFileName, IM)
                 self.focusIms[id] = focFileName
@@ -174,10 +172,41 @@ class Segmentation:
 
 # end class Segmentation
 
-
-
 if __name__ == '__main__':
     """Tests of the Segmentation class that can be run directly."""
+    from Data import Metadata
+    
+    mdata = Metadata()
+    segtest = Segmentation()
 
+    segtest.outputDir = 'testdata\\segmentation_tests\\check_results'
+    mdatafile = 'testdata\\segmentation_tests\\segtestmdata.txt'
 
+    mdata.loadMetadataFile(mdatafile)
+    print(f'Loading segmentation test images metadata success? ... {mdata.metadataLoadSuccess}')
+
+    segtest.createSubfolders()
+    segtest.RunSegmentation(mdata)
+    print(f'Segmentation success? ... {segtest.segmentationSuccess}')
+    for c, e in zip(os.listdir(segtest.labDir), os.listdir('testdata\\segmentation_tests\\expect_results\\LabelledImages')):
+        check = os.path.abspath(segtest.labDir + '\\' + c)
+        expect = os.path.abspath('testdata\\segmentation_tests\\expect_results\\LabelledImages\\' + e)
+        same = (tf.imread(check) == tf.imread(expect)).all()
+        if not same:
+            break 
+    print(f'Expected label image results? ... {same}')
+    for c, e in zip(os.listdir(segtest.segDir), os.listdir('testdata\\segmentation_tests\\expect_results\\SegmentedImages')):
+        check = os.path.abspath(segtest.segDir + '\\' + c)
+        expect = os.path.abspath('testdata\\segmentation_tests\\expect_results\\SegmentedImages\\' + e)
+        same = (tf.imread(check) == tf.imread(expect)).all()
+        if not same:
+            break
+    print(f'Expected segmented image results? ... {same}')
+    for f in os.listdir(segtest.segDir):
+        os.remove(os.path.abspath(segtest.segDir + '\\' + f))
+    for f in os.listdir(segtest.labDir):
+        os.remove(os.path.abspath(segtest.labDir + '\\' + f))
+    os.rmdir(segtest.segDir)
+    os.rmdir(segtest.labDir)
 # end main
+
