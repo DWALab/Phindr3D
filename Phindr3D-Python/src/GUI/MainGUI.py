@@ -86,7 +86,6 @@ class MainGUI(QWidget, external_windows):
                     error = self.buildErrorWindow("Error: Invalid Id", QMessageBox.Critical)
                     error.exec()
 
-
         def exportError():
             if not self.metadata.GetMetadataFilename():
                 alert = self.buildErrorWindow("No variables to export!!", QMessageBox.Critical)
@@ -99,7 +98,7 @@ class MainGUI(QWidget, external_windows):
                 # Consider adding another class to store all of the data (GUIDATA in MATLab?)
                 try:
                     self.metadata.loadMetadataFile(filename)
-                    print(self.metadata.GetMetadataFilename())
+                    #print(self.metadata.GetMetadataFilename())
 
                     adjustbar.setValue(0)
                     slicescrollbar.setValue(0)
@@ -108,10 +107,8 @@ class MainGUI(QWidget, external_windows):
                     self.metadata.computeImageParameters()
                     # Update values of GUI widgets
 
-
                     alert = self.buildErrorWindow("Metadata Extraction Completed.", QMessageBox.Information, "Notice")
                     alert.exec()
-
                 except MissingChannelStackError:
                     errortext = "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid."
                     alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
@@ -130,6 +127,7 @@ class MainGUI(QWidget, external_windows):
                 load_metadata_win.exec()
                 # When meta data is loaded, using the loaded data, change the data for image viewing
                 # Consider adding another class to store all of the data (GUIDATA in MATLab?)
+        # end loadMetadata
 
         # metadataError will check if there is metadata. If there is not, create error message.
         # Otherwise, execute button behaviour, depending on button (pass extra parameter to
@@ -383,7 +381,7 @@ class MainGUI(QWidget, external_windows):
         alert.exec()
 
     def closeEvent(self, event):
-        print("closed all windows")
+        #print("closed all windows")
         for window in QApplication.topLevelWidgets():
             window.close()
 

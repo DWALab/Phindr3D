@@ -55,7 +55,8 @@ class Metadata:
         # Training set, scale factors, and thresholds
         self.trainingSet = []
         self.scaleFactors = None
-        self.thresholds = None
+        self.intensityThresholdValues = None
+        self.intensityThreshold = None
         self.lowerbound = [0, 0, 0]
         self.upperbound = [1, 1, 1]
 
@@ -118,7 +119,9 @@ class Metadata:
         for i in range(numrows):
             row = []
             for channel in channels:
-                if os.path.exists(metadata.at[i, channel]) and (metadata.at[i, channel].endswith(".tiff") or metadata.at[i, channel].endswith(".tif")):
+                if os.path.exists(metadata.at[i, channel]) \
+                    and (metadata.at[i, channel].endswith(".tiff")
+                         or metadata.at[i, channel].endswith(".tif")):
                     row.append(metadata.at[i, channel])
                 #if os.path.exists(metadata[channel].str.replace(r'\\', '/', regex=True)[i]) and (metadata.at[i, channel].endswith(".tiff") or metadata.at[i, channel].endswith(".tif")):
                 #    row.append(metadata[channel].str.replace(r'\\', '/', regex=True)[i])
@@ -533,26 +536,56 @@ class Metadata:
         tileInfo.numMegaVoxels = int(
             (tmpX * tmpY * tmpZ) // (tileInfo.megaVoxelTileX * tileInfo.megaVoxelTileY * tileInfo.megaVoxelTileZ))
         tileInfo.numMegaVoxelsXY = int((tmpX * tmpY) / (tileInfo.megaVoxelTileX * tileInfo.megaVoxelTileY))
-
         return tileInfo
     # end getTileInfo
 
-
-
-
-
-
-
-    def getIndividualChannelThreshold(self):
+    def getIndividualChannelThreshold(self, theImage, theTileInfo):
         """individual channel threshold"""
+        numChannels = self.GetNumChannels()
+        allTreatmentTypes = self.GetTreatmentTypes()
+        errorVal = np.zeros((len(theImage.stackLayers), numChannels))
+        thresh = np.zeros((len(theImage.stackLayers), numChannels))
 
+        if self.intensityNormPerTreatment:
+            # index of the treatment for this image in the list of all treatments
+            # if the treatment type is not found (or there are no treatments), return error
+            try:
+                grpVal = allTreatmentTypes.index(theImage.GetTreatment()[0])
+            except (ValueError, IndexError):
+                return errorVal
+        # end if
+        for iImages in range(len(theImage.stackLayers)):
+            for iChannels in range(numChannels):
+                try:
+                    stackIndex = list(theImage.stackLayers.keys())[iImages]
+                    theStack = theImage.stackLayers[stackIndex]
+                    channelIndex = list(theStack.channels.keys())[iChannels]
+                    theChannel = theStack.channels[channelIndex]
+                    imFileName = theChannel.channelpath
+                except (IndexError, AttributeError):
+                    return errorVal
+                IM = io.imread(imFileName)
+                xEnd = -theTileInfo.xOffsetEnd
+                if xEnd == -0:
+                    # if the end index is -0, you just index from 1 to behind 1
+                    # and get an empty array. change to 0 if the dimOffsetEnd value is 0.
+                    xEnd = None
+                yEnd = -theTileInfo.yOffsetEnd
+                if yEnd == -0:
+                    yEnd = None
+                IM = IM[theTileInfo.xOffsetStart:xEnd, theTileInfo.yOffsetStart:yEnd]
+
+                if self.intensityNormPerTreatment:
+                    IM = DataFunctions.rescaleIntensity(IM,
+                        low=self.lowerbound[grpVal, iChannels], high=self.upperbound[grpVal, iChannels])
+                else:
+                    IM = DataFunctions.rescaleIntensity(IM,
+                        low=self.lowerbound[iChannels], high=self.upperbound[iChannels])
+                # want double precision here. not sure if python can handle this since
+                # rounding error occurs at 1e-16, but will make float64 anyway
+                thresh[iImages, iChannels] = DataFunctions.getImageThreshold(IM.astype('float64'))
+        return thresh
     # end getIndividualChannelThreshold
-
-
-
-
-
-
 
     def getImageThresholdValues(self, randFieldID):
         """get image threshold values for dataset.
@@ -562,50 +595,47 @@ class Metadata:
         intensityThresholdValues = np.full((5000, numChannels), np.nan)  # not sure why we want 5000 rows
         # define a value to return on error
         errorVal = np.full((1, numChannels), np.nan)
-
         startVal = 0
         endVal = 0
 
         # for each of the randomly selected images chosen in
         for id in randFieldID:
             theImageObject = self.GetImage(id)
-            print(id)
-            print(theImageObject)
             d = self.getImageInformation(theImageObject)
-            print(d)
             self.theTileInfo = self.getTileInfo(d, self.theTileInfo)
-            print("Well, it didn't crash getting the tile info")
+            tempThreshold = self.getIndividualChannelThreshold(theImageObject, self.theTileInfo)
+            intensityThresholdValues[startVal:endVal+tempThreshold.shape[0], :] = tempThreshold
+            startVal += tempThreshold.shape[0]
+            endVal += tempThreshold.shape[0]
+        # remember everything gets rescaled from 0 to 1 #drop rows containing nan,
+        # then take medians for each channel#intensityThresholdValues[ii]
+        outputThresholdValues = \
+            intensityThresholdValues[np.isfinite(intensityThresholdValues).any(axis=1)]
 
         # remember everything gets rescaled from 0 to 1
         # drop rows containing nan, then take medians for each channel#intensityThresholdValues[ii]
-        return intensityThresholdValues
+        return outputThresholdValues
     # end getImageThresholdValues
 
     def computeImageParameters(self):
         """Call after loading metadata. Calls functions that compute the scaling factors and thresholds.
             On success, fills the scaling factor and intensity member variables and returns True.
             If the metadata did not load successfully, returns False
-            On failure, returns False?
             """
         # If the metadata has not loaded successfully, return False
         if not self.metadataLoadSuccess:
             return False
         # else
-
+        # TO DO: catch errors, return False if caught
         theTrainingFields = self.getTrainingFields(PhindConfig.randTrainingFields)
         (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(theTrainingFields)
-        #print(self.lowerbound)
-        #print(self.upperbound)
-        self.getImageThresholdValues(theTrainingFields)
+        self.intensityThresholdValues = self.getImageThresholdValues(theTrainingFields)
 
-
+        intensityThreshold = np.quantile(self.intensityThresholdValues,
+            PhindConfig.intensityThresholdTuningFactor, axis=0)
+        self.intensityThreshold = np.reshape(intensityThreshold, (1, self.GetNumChannels()))
         return True
     # end computeImageParameters
-
-    # This class should also include
-    # rescale intensities
-    # threshold images
-
 
 # end class Metadata
 
@@ -638,8 +668,4 @@ if __name__ == '__main__':
         print("Running computeImageParameters: " + "Successful" if test.computeImageParameters() else "Unsuccessful")
     else:
         print("loadMetadataFile was unsuccessful")
-
-
-
-
 # end main
