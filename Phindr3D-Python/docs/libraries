@@ -1,3 +1,4 @@
+#Note: need at least Python Ver. 3.10 or else have staticmethod callable error
 List of libraries used:
 - PyQt5.Widgets
 - PyQt5.QtGui
@@ -10,3 +11,6 @@ List of libraries used:
 - sklearn
 - textwrap
 - more-itertools
+- imageio
+- imagecodecs
+- opencv-python-headless

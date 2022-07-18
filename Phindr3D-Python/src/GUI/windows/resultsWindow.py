@@ -166,8 +166,8 @@ class resultsWindow(QDialog):
         image_feature_data_raw = pd.read_csv(self.feature_file[0], sep='\t', na_values='        NaN')
         if load==True:
             grouping.blockSignals(True)
-            if grouping.count()>1:
-                grouping.clear()
+            #if grouping.count()>1:
+            grouping.clear()
             grps=[]
             featurefilegroupingWindow(image_feature_data_raw.columns, grps)
             grouping.addItem("No Grouping")
