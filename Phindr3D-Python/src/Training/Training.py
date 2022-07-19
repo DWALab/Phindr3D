@@ -32,7 +32,7 @@ from .TrainingFunctions import *
 from ..PhindConfig import *
 
 
-class Training(TrainingFunctions):
+class Training:
     """This class ...
        Static methods that draw closely from transliterations of the MATLAB functions
        can be found in the SegmentationFunctions class."""

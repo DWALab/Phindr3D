@@ -19,14 +19,32 @@ from sklearn.preprocessing import StandardScaler
 from scipy.spatial.distance import cdist
 import numpy as np
 
+try:
+    from .ClusteringFunctions import *
+except ImportError:
+    from ClusteringFunctions import *
+
+try:
+    from ..PhindConfig.PhindConfig import *
+except ImportError:
+    from src.PhindConfig.PhindConfig import *
+
 class Clustering:
-    """Not sure what this class is for yet"""
+    """This class"""
 
     def __init__(self):
-        """ClusterStuff constructor"""
+        """Clustering constructor"""
         pass
 
-# end class ClusterStuff
+    def action(self):
+        print("Running the Clustering action method")
+
+# end class Clustering
+
+
+
+
+
 def plot_type(X, dim, plot):
     # SAMMON MAPPING FUNCTION (not used)
     def cmdscale(D):
@@ -253,8 +271,12 @@ def plot_type(X, dim, plot):
     else:
         raise Exception("Invalid plot")
 
+
+
+
+
 if __name__ == '__main__':
-    """Not sure what this will do yet"""
+    """Unit testing"""
 
     pass
 

@@ -22,32 +22,34 @@ class TrainingFunctions:
     No constructor. All parameters and methods are static.
     """
 
-    @staticmethod
-    def getsomefiles():
-        pass
-
     # Functions for training, these functions can be found from Teo's code in
     # https://github.com/SRI-RSST/Phindr3D-python/blob/main/phindr_functions.py
     # Work on copying functionality later. For now, functions do nothing
     def getImageThreshold(self):
+        """Currently implemented in Metadata.py"""
         pass
 
     def getImageThresholdValues(self):
+        """Currently implemented in Metadata.py"""
         pass
 
     def getIndividualChannelThreshold(self):
+        """Currently implemented in Metadata.py"""
         pass
 
     def getScalingFactorForImages(self):
+        """Currently implemented in Metadata.py"""
         pass
 
     def getTrainingFields(self):
+        """Currently implemented in Metadata.py"""
         pass
 
     def getTrainingPixels(self):
         pass
 
     def rescaleIntensity(self):
+        """Currently implemented in DataFunctions.py"""
         pass
 
     def selectPixelsbyweights(self):

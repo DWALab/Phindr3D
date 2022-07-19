@@ -27,6 +27,12 @@ from PIL import Image
 import sys
 import random
 
+try:
+    from ..VoxelGrouping.VoxelGrouping import *
+    from ..Clustering.Clustering import *
+except ImportError:
+    from src.VoxelGrouping.VoxelGrouping import *
+    from src.Clustering.Clustering import *
 
 class MainGUI(QWidget, external_windows):
     """Defines the main GUI window of Phindr3D"""
@@ -36,6 +42,8 @@ class MainGUI(QWidget, external_windows):
         QMainWindow.__init__(self)
         super(MainGUI, self).__init__()
         self.metadata = Metadata()
+        self.voxelGrouping = VoxelGrouping()
+        self.clustering = Clustering()
         self.setWindowTitle("Phindr3D")
         self.image_grid=0
         self.rgb_img=[]
@@ -293,10 +301,10 @@ class MainGUI(QWidget, external_windows):
         param=params()
         sv.stateChanged.connect(lambda : self.overlay_display(img_plot, self.image_grid, param, sv, mv, 'SV') if self.metadata.GetMetadataFilename() else metadataError("SV"))
         mv.stateChanged.connect(lambda : self.overlay_display(img_plot, self.image_grid, param, mv, sv, 'MV') if self.metadata.GetMetadataFilename() else metadataError("MV"))
-        phind.clicked.connect(lambda: metadataError("Phind"))
-    #draws image layers
-    def overlay_display(self, img_plot, img_grid, params, checkbox_cur, checkbox_prev, type):
+        phind.clicked.connect(lambda: self.phindButtonAction() if self.metadata.GetMetadataFilename() else metadataError("Phind"))
 
+    def overlay_display(self, img_plot, img_grid, params, checkbox_cur, checkbox_prev, type):
+        """draws image layers"""
         if self.metadata.GetMetadataFilename():
             #re-plot image channel as bottom layer
             img_plot.axes.clear()
@@ -311,8 +319,10 @@ class MainGUI(QWidget, external_windows):
                 img_plot.axes.imshow(overlay, zorder=5, cmap=cmap, interpolation=None)
                 self.image_grid = np.full((self.rgb_img.shape[0], self.rgb_img.shape[1], 4), (0.0, 0.0, 0.0, 0.0))
             img_plot.draw()
-    #draw superimposed image channels
+    # end overlay_display
+
     def img_display(self, slicescrollbar, img_plot, sv, mv, color, values):
+        """draw superimposed image channels"""
 
         if self.metadata.GetMetadataFilename():
             #extract image details from metadata
@@ -365,6 +375,16 @@ class MainGUI(QWidget, external_windows):
             #sv/mv overlay removed when new image
             sv.setChecked(False)
             mv.setChecked(False)
+    # end img_display
+
+    def phindButtonAction(self):
+        """Actions performed when the Phind button is pressed and metadata has been loaded"""
+        # From pixels to supervoxels to megavoxels
+        self.voxelGrouping.action()
+        # Clustering
+        self.clustering.action()
+
+    # end phindButtonAction
 
     def buildErrorWindow(self, errormessage, icon, errortitle="ErrorDialog"):
         alert = QMessageBox()

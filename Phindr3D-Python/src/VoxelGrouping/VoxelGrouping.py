@@ -14,15 +14,27 @@
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
-from VoxelGroupingFunctions import VoxelGroupingFunctions
-from ..PhindConfig import *
+try:
+    #from .PixelImage import *
+    #from .SuperVoxelImage import *
+    #from .MegaVoxelImage import *
+    from .VoxelGroupingFunctions import *
+except ImportError:
+    #from PixelImage import *
+    #from SuperVoxelImage import *
+    #from MegaVoxelImage import *
+    from VoxelGroupingFunctions import *
 
-class VoxelGrouping(VoxelGroupingFunctions):
-    """Not sure what this class is for yet"""
+try:
+    from ..PhindConfig.PhindConfig import *
+except ImportError:
+    from src.PhindConfig.PhindConfig import *
+
+class VoxelGrouping:
+    """From pixels to supervoxels to megavoxels"""
 
     def __init__(self):
-        """ClusterStuff constructor"""
-
+        """Constructor"""
         initial_params = PhindConfig()
         self.tilex = None
         self.tiley = None
@@ -63,6 +75,10 @@ class VoxelGrouping(VoxelGroupingFunctions):
         self.numSuperVoxels = None
         self.numSuperVoxelsXY = None
         pass
+
+    def action(self):
+        print("Running the VoxelGrouping action method")
+
 
 # end class VoxelGrouping
 
