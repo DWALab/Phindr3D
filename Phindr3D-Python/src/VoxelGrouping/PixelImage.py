@@ -2,6 +2,7 @@
 
 try:
     from .VoxelGrouping import VoxelGrouping
+    from ..Data import *
 except ImportError:
     from VoxelGrouping import VoxelGrouping
 
@@ -11,8 +12,12 @@ class PixelImage(VoxelGrouping):
         self.pixelBinCenters = None # np array
 
     def getPixelBinCenters(self, x, metadata):
-        # Same as getSuperVoxelBinCenters, but mega
-        # required: randFieldID, metadata, supervoxels, image params (tileinfo)
-        tilesforTraining = []
+        # required: randFieldID, metadata, image params (tileinfo)
+        pixelsForTraining = np.zeros((300000, metadata.GetNumChannels()))
+        startVal = 0
+        endVal = 0
+        for i, id in enumerate(metadata.getTrainingFields()):
+            d = metadata.getImageInformation(metadata.GetImage(id))
+            info = metadata.getTileInfo(d, metadata.theTileInfo)
 
-        self.pixelBinCenters = self.getPixelBins(tilesforTraining)
+        self.pixelBinCenters = self.getPixelBins(pixelsForTraining)

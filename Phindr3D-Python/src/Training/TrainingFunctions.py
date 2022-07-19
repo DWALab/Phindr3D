@@ -29,28 +29,11 @@ class TrainingFunctions:
     # Functions for training, these functions can be found from Teo's code in
     # https://github.com/SRI-RSST/Phindr3D-python/blob/main/phindr_functions.py
     # Work on copying functionality later. For now, functions do nothing
-    def getImageThreshold(self):
-        pass
-
-    def getImageThresholdValues(self):
-        pass
-
-    def getIndividualChannelThreshold(self):
-        pass
-
-    def getScalingFactorForImages(self):
-        pass
-
-    def getTrainingFields(self):
-        pass
 
     def getTrainingPixels(self):
         pass
 
     def rescaleIntensity(self):
-        pass
-
-    def selectPixelsbyweights(self):
         pass
 
 
