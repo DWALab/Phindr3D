@@ -14,14 +14,57 @@
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
-class Clustering:
+from VoxelGroupingFunctions import VoxelGroupingFunctions
+from ..PhindConfig import *
+
+class VoxelGrouping(VoxelGroupingFunctions):
     """Not sure what this class is for yet"""
 
     def __init__(self):
         """ClusterStuff constructor"""
+
+        initial_params = PhindConfig()
+        self.tilex = None
+        self.tiley = None
+        self.tilez = None
+        self.megaVoxelTileX = None
+        self.megaVoxelTileY = None
+        self.megaVoxelTileZ = None
+        self.numSuperVoxelZ = None
+        self.numMegaVoxelsXY = None
+        self.numMegaVoxels = None
+        self.pixelBinCenters = None
+        self.pixelBinCenterDifferences = None
+        self.superVoxelBinCenters = None
+        self.xOffsetStart = None
+        self.xOffsetEnd = None
+        self.yOffsetStart = None
+        self.yOffsetEnd = None
+        self.zOffsetStart = None
+        self.zOffsetEnd = None
+        self.croppedX = None
+        self.croppedY = None
+        self.croppedZ = None
+        self.origX = None
+        self.origY = None
+        self.origZ = None
+        self.superVoxelXOffsetStart = None
+        self.superVoxelXOffsetEnd = None
+        self.superVoxelXAddStart = None
+        self.superVoxelXAddEnd = None
+        self.superVoxelYAddStart = None
+        self.superVoxelYAddEnd = None
+        self.superVoxelZAddStart = None
+        self.superVoxelZAddEnd = None
+        self.superVoxelYOffsetStart = None
+        self.superVoxelYOffsetEnd = None
+        self.superVoxelZOffsetStart = None
+        self.superVoxelZOffsetEnd = None
+        self.numSuperVoxels = None
+        self.numSuperVoxelsXY = None
         pass
 
-# end class ClusterStuff
+# end class VoxelGrouping
 
 
 

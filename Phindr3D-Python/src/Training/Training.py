@@ -29,15 +29,34 @@ so metadata gets loaded, and then?
 
 
 from .TrainingFunctions import *
+from ..PhindConfig import *
 
-class Training:
+
+class Training(TrainingFunctions):
     """This class ...
        Static methods that draw closely from transliterations of the MATLAB functions
        can be found in the SegmentationFunctions class."""
 
     def __init__(self):
         """Training class constructor"""
+        # params defined in Phind Config
+        initial_params = PhindConfig()
+        self.intensityThresholdTuningFactor = initial_params.intensityThresholdTuningFactor
+        self.minQuantileScaling = initial_params.minQuantileScaling
+        self.maxQuantileScaling = initial_params.maxQuantileScaling
+        self.randTrainingSuperVoxel = initial_params.randTrainingSuperVoxel
+        self.superVoxelThresholdTuningFactor = initial_params.superVoxelThresholdTuningFactor
+        self.megaVoxelThresholdTuningFactor = initial_params.megaVoxelThresholdTuningFactor
+        self.randTrainingFields = initial_params.randTrainingFields
+        self.pixelsPerImage = initial_params.pixelsPerImage
+        self.trainingPerColumn = initial_params.trainingPerColumn
+        self.superVoxelPerField = initial_params.superVoxelPerField
 
+        # params to be defined later (in training functions)
+        self.intensityThresholdValues = None
+        self.randZForTraining = None
+        self.randFieldID = None
+        self.randTrainingPerTreatment = None
 
     # end constructor
 

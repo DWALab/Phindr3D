@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
-class ClusteringFunctions:
+class VoxelGroupingFunctions:
     """Static methods for cluster analysis. Referenced from
     https://github.com/DWALab/Phindr3D/tree/9b95aebbd2a62c41d3c87a36f1122a78a21019c8/Lib
     and
@@ -23,7 +23,10 @@ class ClusteringFunctions:
     """
 
     @staticmethod
-    def dosomething():
+    # Main function for returning bin centers of pixels, supervoxels, and mega voxels
+    # x - m x n (m is number of observations, n is number of channels/category fractions
+    # numBins - number of categories
+    def getPixelBins(x, numBins):
         pass
 
 
