@@ -640,32 +640,45 @@ class Metadata:
 # end class Metadata
 
 if __name__ == '__main__':
+    import json
     """Tests of the Metadata class that can be run directly."""
     # For testing purposes:
     # Running will prompt user for a text file, image id, stack id, and channel number
     # Since this is only for testing purposes, assume inputted values are all correct types
 
-    metadatafile = r"R:\\Phindr3D-Dataset\\neurondata\\Phindr3D_neuron-sample-data\\builder_test.txt"
-    #metadatafile = r"R:\\Phindr3D-Dataset\\Phindr3D_TreatmentID_sample_data\\mike_test.txt"
-    #metadatafile = r"C:\\mschumaker\\projects\\Phindr3D\\Phindr3D-Python\\testdata\\metadata_tests\\set1_treatments\\mike_test.txt"
+    Generator = np.random.default_rng(1234)
 
+    metadatafile = r'testdata\metadata_tests\metadatatest_metadata.txt'
 
-    # metadatafile = input("Metadata file: ")
-    # imageid = float(input("Image ID: "))
-    # stackid = int(input("Stack ID: "))
-    # channelnumber = int(input("Channel Number: "))
     test = Metadata()
     if test.loadMetadataFile(metadatafile):
-        # print('Result:', test.images[imageid].layers[stackid].channels[channelnumber].channelpath)
-        # using pandas, search through dataframe to find the correct element
-        # metadata = pandas.read_table(metadatafile, usecols=lambda c: not c.startswith('Unnamed:'), delimiter='\t')
-        # numrows = metadata.shape[0]
-        # for i in range(numrows):
-        #    if (metadata.at[i, 'Stack'] == stackid) and (metadata.at[i, 'ImageID'] == imageid):
-        #        print('Expect:', metadata.at[i, f'Channel_{channelnumber}'])
+
+        with open('testdata\\metadata_tests\\expected.json', 'r') as js:
+            expected = json.load(js)
+            js.close()
+
         print("So, did it load? " + "Yes!" if test.metadataLoadSuccess else "No.")
         print("===")
         print("Running computeImageParameters: " + "Successful" if test.computeImageParameters() else "Unsuccessful")
+        print("===")
+        print('Calculated image parameter comparisons...')
+        lowerequal = (test.lowerbound == np.array(expected['lowerbound'])).all()
+        upperequal = (test.upperbound == np.array(expected['upperbound'])).all()
+        intequal = (test.intensityThreshold == np.array(expected['intensity_threshold'])).all()
+        print(f'Scaling factor expected result: { lowerequal and upperequal }')
+        print(f'Intensity threshold expected result: {intequal}')
+        print("===")
+        test.intensityNormPerTreatment = True
+        print("Running computeImageParameters by treatment: " + "Successful" if test.computeImageParameters() else "Unsuccessful")
+        print("===")
+        treatlowerequal = (test.lowerbound == np.array(expected['treatment_lowerbound'])).all()
+        treatupperequal = (test.upperbound == np.array(expected['treatment_upperbound'])).all()
+        treatintequal = (test.intensityThreshold == np.array(expected['treatment_intensity_threshold'])).all()
+        print(f'Scaling factors by treatment expected result: {treatlowerequal and treatupperequal}')
+        print(f'Intensity threshold expected result: {treatintequal}')
+
     else:
         print("loadMetadataFile was unsuccessful")
+
+
 # end main
