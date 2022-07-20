@@ -15,22 +15,16 @@
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
 try:
-    #from .PixelImage import *
-    #from .SuperVoxelImage import *
-    #from .MegaVoxelImage import *
-    from .VoxelGroupingFunctions import *
+    from .VoxelFunctions import *
 except ImportError:
-    #from PixelImage import *
-    #from SuperVoxelImage import *
-    #from MegaVoxelImage import *
-    from VoxelGroupingFunctions import *
+    from VoxelFunctions import *
 
 try:
     from ..PhindConfig.PhindConfig import *
 except ImportError:
     from src.PhindConfig.PhindConfig import *
 
-class VoxelGrouping:
+class VoxelBase:
     """From pixels to supervoxels to megavoxels"""
 
     def __init__(self):
@@ -76,11 +70,13 @@ class VoxelGrouping:
         self.numSuperVoxelsXY = None
         pass
 
-    def action(self):
-        print("Running the VoxelGrouping action method")
+    ## Main function for returning bin centers of pixels, supervoxels, and mega voxels
+    ## x - m x n (m is number of observations, n is number of channels/category fractions
+    ## numBins - number of categories
+    def getPixelBins(x, numBins):
+        pass
 
-
-# end class VoxelGrouping
+# end class VoxelBase
 
 
 

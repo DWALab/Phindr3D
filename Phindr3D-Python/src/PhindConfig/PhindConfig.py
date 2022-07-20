@@ -122,7 +122,9 @@ class TileInfo:
         self.superVoxelZAddStart = None
         self.superVoxelZAddEnd = None
         # Num super and mega voxels
+        # One of these is redundant
         self.numSuperVoxels = None
+        self.numSuperVoxelZ = None
         self.numSuperVoxelsXY = None
         self.numMegaVoxels = None
         self.numMegaVoxelsXY = None

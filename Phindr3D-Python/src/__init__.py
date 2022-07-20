@@ -7,5 +7,5 @@ from .GUI import *
 from .PhindConfig import *
 from .Segmentation import *
 from .Training import *
-from .VoxelGrouping import *
+from .VoxelGroups import *
 

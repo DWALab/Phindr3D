@@ -28,10 +28,10 @@ import sys
 import random
 
 try:
-    from ..VoxelGrouping.VoxelGrouping import *
+    from ..VoxelGroups.VoxelGroups import *
     from ..Clustering.Clustering import *
 except ImportError:
-    from src.VoxelGrouping.VoxelGrouping import *
+    from src.VoxelGroups.VoxelGroups import *
     from src.Clustering.Clustering import *
 
 class MainGUI(QWidget, external_windows):
@@ -42,7 +42,7 @@ class MainGUI(QWidget, external_windows):
         QMainWindow.__init__(self)
         super(MainGUI, self).__init__()
         self.metadata = Metadata()
-        self.voxelGrouping = VoxelGrouping()
+        self.voxelGroups = VoxelGroups()
         self.clustering = Clustering()
         self.setWindowTitle("Phindr3D")
         self.image_grid=0
@@ -379,11 +379,14 @@ class MainGUI(QWidget, external_windows):
 
     def phindButtonAction(self):
         """Actions performed when the Phind button is pressed and metadata has been loaded"""
-        # From pixels to supervoxels to megavoxels
-        self.voxelGrouping.action()
-        # Clustering
-        self.clustering.action()
-
+        if self.metadata.GetMetadataFilename():
+            # From pixels to supervoxels to megavoxels
+            self.voxelGroups.action()
+            # Clustering
+            self.clustering.action()
+        else:
+            # do nothing? display error window?
+            pass
     # end phindButtonAction
 
     def buildErrorWindow(self, errormessage, icon, errortitle="ErrorDialog"):
