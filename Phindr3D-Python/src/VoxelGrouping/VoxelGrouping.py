@@ -24,6 +24,7 @@ class VoxelGrouping(VoxelGroupingFunctions):
         """ClusterStuff constructor"""
 
         initial_params = PhindConfig()
+        self.numVoxelBins = initial_params.numVoxelBins
         pass
 
 # end class VoxelGrouping

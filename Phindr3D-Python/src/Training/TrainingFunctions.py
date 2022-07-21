@@ -14,6 +14,8 @@
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
+
 class TrainingFunctions:
     """Static methods for training. Referenced from
     https://github.com/DWALab/Phindr3D/tree/9b95aebbd2a62c41d3c87a36f1122a78a21019c8/Lib
@@ -30,11 +32,13 @@ class TrainingFunctions:
     # https://github.com/SRI-RSST/Phindr3D-python/blob/main/phindr_functions.py
     # Work on copying functionality later. For now, functions do nothing
 
-    def getTrainingPixels(self):
-        pass
-
-    def rescaleIntensity(self):
-        pass
+    def rescaleIntensity(self, im, low=0, high=1):
+        im = im.astype(np.float64)
+        diffIM = high - low
+        im = (im - low)/diffIM
+        im[im>1] = 1
+        im[im<0] = 0
+        return im
 
 
 # end TrainingFunctions
