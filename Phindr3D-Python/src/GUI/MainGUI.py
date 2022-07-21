@@ -42,7 +42,7 @@ class MainGUI(QWidget, external_windows):
         QMainWindow.__init__(self)
         super(MainGUI, self).__init__()
         self.metadata = Metadata()
-        self.voxelGroups = VoxelGroups()
+        self.voxelGroups = VoxelGroups(self.metadata)
         self.clustering = Clustering()
         self.setWindowTitle("Phindr3D")
         self.image_grid=0
@@ -381,9 +381,13 @@ class MainGUI(QWidget, external_windows):
         """Actions performed when the Phind button is pressed and metadata has been loaded"""
         if self.metadata.GetMetadataFilename():
             # From pixels to supervoxels to megavoxels
-            self.voxelGroups.action()
-            # Clustering
-            self.clustering.action()
+            if self.voxelGroups.action():
+                # Clustering
+                if not self.clustering.action():
+                    print("clustering failed")
+            else:
+                # error
+                print("voxel grouping failed")
         else:
             # do nothing? display error window?
             pass

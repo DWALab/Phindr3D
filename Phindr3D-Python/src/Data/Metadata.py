@@ -403,7 +403,7 @@ class Metadata:
         return (lowerbound, upperbound)
     # end getScalingFactorforImages
 
-    def getImageInformation(self, theImage):
+    def getImageInformation(self, theImage, chan=0):
         """Get information about the image files.
             Called in getPixelBinCenters, getImageThresholdValues,
             extractImageLevelTextureFeatures"""
@@ -418,8 +418,8 @@ class Metadata:
             # dictionaries are ordered as of Python 3.7,
             # but we will not assume what version of Python 3 is being used
             firstStack = theImage.stackLayers[list(theImage.stackLayers.keys())[0]]
-            firstChannel = firstStack.channels[list(firstStack.channels.keys())[0]]
-            imFileName = firstChannel.channelpath
+            theChannel = firstStack.channels[list(firstStack.channels.keys())[chan]]
+            imFileName = theChannel.channelpath
             # imfinfo is matlab built-in,
             # so replicate its action in DataFunctions
             info = DataFunctions.imfinfo(imFileName)
