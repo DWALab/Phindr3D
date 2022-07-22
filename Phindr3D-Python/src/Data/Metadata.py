@@ -33,13 +33,14 @@ try:
 except ImportError:
     from src.PhindConfig.PhindConfig import *
 
-# Initialize a random number generator
-Generator = np.random.default_rng()
 
 class Metadata:
     """This class handles groups of image files and the associated metadata.
        Static methods that draw closely from transliterations of the MATLAB functions
        can be found in the DataFunctions class."""
+
+    # Initialize a random number generator
+    Generator = np.random.default_rng()
 
     def __init__(self):
         """Metadata class constructor"""
@@ -297,7 +298,7 @@ class Metadata:
 
         if not self.intensityNormPerTreatment:
             randFieldID = np.array([uniqueImageID[i] for i in
-                Generator.choice(uniqueImageID.size, size=randTrainingFields,
+                self.Generator.choice(uniqueImageID.size, size=randTrainingFields,
                     replace=False, shuffle=False)])
         else:
             # have different treatments, want to choose training images from each treatment.
@@ -314,7 +315,7 @@ class Metadata:
                     treatmentIDs = allTrKeys[allTrValues == treat]
                     if len(treatmentIDs) > 0:
                         tempList = [treatmentIDs[j] for j in
-                            Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
+                            self.Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
                                 replace=False, shuffle=False)]
                 except (ValueError,KeyError):
                     tempList = []
@@ -356,7 +357,7 @@ class Metadata:
             zStackKeys = list(zStack.keys())
             randHalf = int(depth // 2)
             # choose half of the stack, randomly
-            generatedArray = Generator.choice(depth, size=randHalf, replace=False, shuffle=False)
+            generatedArray = self.Generator.choice(depth, size=randHalf, replace=False, shuffle=False)
             # TO DO Add try-catch here for KeyError
             randZ = [zStackKeys[int(j)] for j in generatedArray]
             minVal = np.zeros((randHalf, numChannels))
