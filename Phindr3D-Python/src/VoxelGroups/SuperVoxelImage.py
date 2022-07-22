@@ -24,9 +24,9 @@ class SuperVoxelImage(VoxelBase):
         super().__init__()
         self.superVoxelBinCenters = None # np array
 
-    def getPixelBinCenters(self, x, metadata):
-        # Creates x (tilesForTraining) based on data, then passes x with numBinCenters into getPixelBins
-        # required parameters: pixelbincenters(voxels), randFieldID, metadata, image params (tileinfo)
+    def getSuperVoxelBinCenters(self, x, metadata):
+        # Same as getPixelBinCenters, but super
+        # required: randFieldID, metadata, pixels, image params (tileinfo)
         tilesForTraining = []
         # do stuff here
 

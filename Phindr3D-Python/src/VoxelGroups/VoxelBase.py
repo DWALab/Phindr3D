@@ -29,15 +29,13 @@ class VoxelBase:
 
     def __init__(self):
         """Constructor"""
-        initial_params = PhindConfig()
-        self.numVoxelBins = initial_params.numVoxelBins
+        self.numVoxelBins = PhindConfig.numVoxelBins
         pass
 
-    ## Main function for returning bin centers of pixels, supervoxels, and mega voxels
-    ## x - m x n (m is number of observations, n is number of channels/category fractions
-    ## numBins - number of categories
-    def getPixelBins(x, numBins):
-        pass
+    def getPixelBins(self, x, metadata, numBins):
+        """Base class redirect to the static method in the VoxelFunctions class"""
+        return VoxelFunctions.getPixelBins(x, metadata, numBins)
+    # end getPixelBins (base class)
 
 # end class VoxelBase
 
@@ -45,7 +43,7 @@ class VoxelBase:
 
 
 if __name__ == '__main__':
-    """Not sure what this will do yet"""
+    """Unit tests"""
 
     pass
 

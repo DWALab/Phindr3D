@@ -120,8 +120,8 @@ class VoxelGroups:
             id = uniqueImageID[iImages]
             tmpmdata = self.metadata.GetImage(id)
             d = self.metadata.getImageInformation(tmpmdata,0)
-            theInfo = TileInfo()
-            self.metadata.getTileInfo(d, theInfo)
+            defaultInfo = TileInfo()
+            theInfo = self.metadata.getTileInfo(d, defaultInfo)
 
 
 
