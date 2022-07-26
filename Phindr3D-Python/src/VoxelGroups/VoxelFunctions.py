@@ -28,11 +28,10 @@ class VoxelFunctions:
     """
 
     @staticmethod
-    # Main function for returning bin centers of pixels, supervoxels, and mega voxels
-    # x - m x n (m is number of observations, n is number of channels/category fractions
-    # numBins - number of categories
     def getPixelBins(x, metadata, numBins):
-        # Copied from Teo's code
+        """Main function for returning bin centers of pixels, supervoxels, and mega voxels
+            x - m x n (m is number of observations, n is number of channels/category fractions
+            numBins - number of categories"""
         Generator = metadata.Generator
         m = x.shape[0]
         if m > 50000:
@@ -62,6 +61,44 @@ class VoxelFunctions:
             binCenters = kmeans.cluster_centers_
         return np.abs(binCenters)
     # end getPixelBins
+
+    @staticmethod
+    def getTileProfiles(imageObject, pixelBinCenters, tileInfo, intensityNormPerTreatment): # , param, analysis=False):
+        """Tile profiles. Called in extractImageLevelTextureFeatures, getMegaVoxelBinCenters,
+            called in getSuperVoxelBinCenters.
+            Computes low level categorical features for supervoxels
+            function assigns categories for each pixel, computes supervoxel profiles for each supervoxel
+            % Inputs:
+            % an Image object (with Stack and Channel member objects)
+            % pixelBinCenters - Location of pixel categories: number of bins x number of channels
+            param: parameter object
+            ii: current image id
+            % Output:
+            % superVoxelProfile: number of supervoxels by number of supervoxelbins plus a background
+            % fgSuperVoxel: Foreground supervoxels - At lease one of the channels
+            % should be higher than the respective threshold
+            % TASScores: If TAS score is selected
+            """
+        numTilesXY = int((tileInfo.croppedX * tileInfo.croppedY) / (tileInfo.tileX * tileInfo.tileY))
+        zEnd = -tileInfo.zOffsetEnd
+        if zEnd == -0:
+            zEnd = None
+        zStack = imageObject.stackLayers
+        zStackKeys = list(zStack.keys())
+        # keep z stacks that are divisible by stack count
+        slices = zStackKeys[tileInfo.zOffsetStart:zEnd]
+        sliceCounter = 0
+        startVal = 0
+        endVal = numTilesXY
+        startCol = 0
+        endCol = tileInfo.tileX * tileInfo.tileY
+
+        if intensityNormPerTreatment:
+            grpVal = 1 #np.argwhere(param.allTreatments == tmpmdata[param.treatmentCol].values[0])
+
+
+    # end getTileProfiles
+
 
 # end VoxelFunctions
 

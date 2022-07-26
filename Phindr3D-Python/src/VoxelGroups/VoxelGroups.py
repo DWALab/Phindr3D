@@ -48,7 +48,6 @@ class VoxelGroups:
     def action(self):
         """Action performed by this class when user requests the Phind operation.
             Returns the True/False result of the phindVoxelGroups method."""
-        print("Running the VoxelGroups action method")
         return self.phindVoxelGroups()
     # end action
 
@@ -56,12 +55,11 @@ class VoxelGroups:
     def phindVoxelGroups(self):
         """Phind operation.
             Returns True if successful, False on failure or error"""
-
-        # Steps:
+        print("Entered the phindVoxelGroups method")
+        # Steps (MATLAB)
         # param = getPixelBinCenters(mData, allImageId, param);
         # param = getSuperVoxelBinCenters(mData, allImageId, param);
         # param = getMegaVoxelBinCenters(mData, allImageId, param);
-        # In the matlab version, it just blasts through these
 
         # Then...
         # In MATLAB
@@ -71,23 +69,32 @@ class VoxelGroups:
         # = phi.extractImageLevelTextureFeatures(mdata, param, outputFileName=output_file_name, outputDir='')
         # This is the step that outputs a feature file
 
+        pixelBinCenters = 1
+
         self.extractImageLevelTextureFeatures()
 
 
 
+        print("Finished the phindVoxelGroups method")
         # temporary
         return True
     # end phindVoxelGroups
 
 
-    def extractImageLevelTextureFeatures(self, outputFileName='imagefeatures.csv', outputDir=''):
+    def extractImageLevelTextureFeatures(self,
+        outputFileName='imagefeatures.csv', outputDir=''):
         """Given pixel/super/megavoxel bin centers, creates a feature file"""
+        print("Entered the extractImageLevelTextureFeatures method")
+
         countBackground = PhindConfig.countBackground
         textureFeatures = PhindConfig.textureFeatures
         treatmentCol = self.metadata.GetAllTreatments()
         numVoxelBins = self.numVoxelBins
         numSuperVoxelBins = self.numSuperVoxelBins
         numMegaVoxelBins = self.numMegaVoxelBins
+
+        # Previously calculated - dummy type for now
+        pixelBinCenters = np.zeros((200,3))
         #outputFileName
         #outputDir
 
@@ -107,8 +114,6 @@ class VoxelGroups:
             Treatments = []
         timeupdates = len(uniqueImageID)//5
 
-        # print("In extractImageLevelTextureFeatures, the timeupdates is: "+str(timeupdates))
-
         # default value for timeperimage
         timeperimage = 0
         for iImages in range(len(uniqueImageID)):
@@ -119,20 +124,37 @@ class VoxelGroups:
                 a = time.time()
             id = uniqueImageID[iImages]
             tmpmdata = self.metadata.GetImage(id)
-            d = self.metadata.getImageInformation(tmpmdata,0)
-            defaultInfo = TileInfo()
-            theInfo = self.metadata.getTileInfo(d, defaultInfo)
+            d = self.metadata.getImageInformation(tmpmdata, 0)
+            # Pass in a new TileInfo object to provide default values
+            theInfo = self.metadata.getTileInfo(d, TileInfo())
+
+
+            superVoxelProfile, fgSuperVoxel \
+                = self.getTileProfiles(tmpmdata, pixelBinCenters, theInfo)
+            #    = getTileProfiles(tmpmdata, param.pixelBinCenters, param, analysis=True)
 
 
 
 
 
+        # print('Writing data to file ...')
+        # Output feature file to csv
 
-        print('Writing data to file ...')
+        # ...
 
-
+        # Final output from previous version
+        #print('\nAll done.')
+        #return param, resultIM, resultRaw, df #, metaIndexTmp
+        print("Finished the extractImageLevelTextureFeatures method")
     # end extractImageLevelTextureFeatures
 
+
+    def getTileProfiles(self, tmpmdata, pixelBinCenters, tileInfo):
+        """Method that is a member of VoxelGroups that redirects
+            to the VoxelFunctions getTileProfiles."""
+        intensityNormPerTreatment = self.metadata.intensityNormPerTreatment
+        return dfunc.getTileProfiles(tmpmdata, pixelBinCenters, tileInfo, intensityNormPerTreatment)
+    # end getTileProfiles
 
 
 # end class VoxelGroups
