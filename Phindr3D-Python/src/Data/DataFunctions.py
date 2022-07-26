@@ -167,7 +167,6 @@ class DataFunctions:
     # end mat_dot
 
     # regexpi
-    # imfinfo
     # im2col
 
     @staticmethod

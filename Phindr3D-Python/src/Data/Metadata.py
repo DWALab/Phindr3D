@@ -33,13 +33,14 @@ try:
 except ImportError:
     from src.PhindConfig.PhindConfig import *
 
-# Initialize a random number generator
-Generator = np.random.default_rng()
 
 class Metadata:
     """This class handles groups of image files and the associated metadata.
        Static methods that draw closely from transliterations of the MATLAB functions
        can be found in the DataFunctions class."""
+
+    # Initialize a random number generator
+    Generator = np.random.default_rng()
 
     def __init__(self):
         """Metadata class constructor"""
@@ -297,7 +298,7 @@ class Metadata:
 
         if not self.intensityNormPerTreatment:
             randFieldID = np.array([uniqueImageID[i] for i in
-                Generator.choice(uniqueImageID.size, size=randTrainingFields,
+                self.Generator.choice(uniqueImageID.size, size=randTrainingFields,
                     replace=False, shuffle=False)])
         else:
             # have different treatments, want to choose training images from each treatment.
@@ -314,7 +315,7 @@ class Metadata:
                     treatmentIDs = allTrKeys[allTrValues == treat]
                     if len(treatmentIDs) > 0:
                         tempList = [treatmentIDs[j] for j in
-                            Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
+                            self.Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
                                 replace=False, shuffle=False)]
                 except (ValueError,KeyError):
                     tempList = []
@@ -356,7 +357,7 @@ class Metadata:
             zStackKeys = list(zStack.keys())
             randHalf = int(depth // 2)
             # choose half of the stack, randomly
-            generatedArray = Generator.choice(depth, size=randHalf, replace=False, shuffle=False)
+            generatedArray = self.Generator.choice(depth, size=randHalf, replace=False, shuffle=False)
             # TO DO Add try-catch here for KeyError
             randZ = [zStackKeys[int(j)] for j in generatedArray]
             minVal = np.zeros((randHalf, numChannels))
@@ -403,7 +404,7 @@ class Metadata:
         return (lowerbound, upperbound)
     # end getScalingFactorforImages
 
-    def getImageInformation(self, theImage):
+    def getImageInformation(self, theImage, chan=0):
         """Get information about the image files.
             Called in getPixelBinCenters, getImageThresholdValues,
             extractImageLevelTextureFeatures"""
@@ -418,8 +419,8 @@ class Metadata:
             # dictionaries are ordered as of Python 3.7,
             # but we will not assume what version of Python 3 is being used
             firstStack = theImage.stackLayers[list(theImage.stackLayers.keys())[0]]
-            firstChannel = firstStack.channels[list(firstStack.channels.keys())[0]]
-            imFileName = firstChannel.channelpath
+            theChannel = firstStack.channels[list(firstStack.channels.keys())[chan]]
+            imFileName = theChannel.channelpath
             # imfinfo is matlab built-in,
             # so replicate its action in DataFunctions
             info = DataFunctions.imfinfo(imFileName)
@@ -640,32 +641,45 @@ class Metadata:
 # end class Metadata
 
 if __name__ == '__main__':
+    import json
     """Tests of the Metadata class that can be run directly."""
     # For testing purposes:
     # Running will prompt user for a text file, image id, stack id, and channel number
     # Since this is only for testing purposes, assume inputted values are all correct types
 
-    metadatafile = r"R:\\Phindr3D-Dataset\\neurondata\\Phindr3D_neuron-sample-data\\builder_test.txt"
-    #metadatafile = r"R:\\Phindr3D-Dataset\\Phindr3D_TreatmentID_sample_data\\mike_test.txt"
-    #metadatafile = r"C:\\mschumaker\\projects\\Phindr3D\\Phindr3D-Python\\testdata\\metadata_tests\\set1_treatments\\mike_test.txt"
+    Generator = np.random.default_rng(1234)
 
+    metadatafile = r'testdata\metadata_tests\metadatatest_metadata.txt'
 
-    # metadatafile = input("Metadata file: ")
-    # imageid = float(input("Image ID: "))
-    # stackid = int(input("Stack ID: "))
-    # channelnumber = int(input("Channel Number: "))
     test = Metadata()
     if test.loadMetadataFile(metadatafile):
-        # print('Result:', test.images[imageid].layers[stackid].channels[channelnumber].channelpath)
-        # using pandas, search through dataframe to find the correct element
-        # metadata = pandas.read_table(metadatafile, usecols=lambda c: not c.startswith('Unnamed:'), delimiter='\t')
-        # numrows = metadata.shape[0]
-        # for i in range(numrows):
-        #    if (metadata.at[i, 'Stack'] == stackid) and (metadata.at[i, 'ImageID'] == imageid):
-        #        print('Expect:', metadata.at[i, f'Channel_{channelnumber}'])
+
+        with open('testdata\\metadata_tests\\expected.json', 'r') as js:
+            expected = json.load(js)
+            js.close()
+
         print("So, did it load? " + "Yes!" if test.metadataLoadSuccess else "No.")
         print("===")
         print("Running computeImageParameters: " + "Successful" if test.computeImageParameters() else "Unsuccessful")
+        print("===")
+        print('Calculated image parameter comparisons...')
+        lowerequal = (test.lowerbound == np.array(expected['lowerbound'])).all()
+        upperequal = (test.upperbound == np.array(expected['upperbound'])).all()
+        intequal = (test.intensityThreshold == np.array(expected['intensity_threshold'])).all()
+        print(f'Scaling factor expected result: { lowerequal and upperequal }')
+        print(f'Intensity threshold expected result: {intequal}')
+        print("===")
+        test.intensityNormPerTreatment = True
+        print("Running computeImageParameters by treatment: " + "Successful" if test.computeImageParameters() else "Unsuccessful")
+        print("===")
+        treatlowerequal = (test.lowerbound == np.array(expected['treatment_lowerbound'])).all()
+        treatupperequal = (test.upperbound == np.array(expected['treatment_upperbound'])).all()
+        treatintequal = (test.intensityThreshold == np.array(expected['treatment_intensity_threshold'])).all()
+        print(f'Scaling factors by treatment expected result: {treatlowerequal and treatupperequal}')
+        print(f'Intensity threshold expected result: {treatintequal}')
+
     else:
         print("loadMetadataFile was unsuccessful")
+
+
 # end main

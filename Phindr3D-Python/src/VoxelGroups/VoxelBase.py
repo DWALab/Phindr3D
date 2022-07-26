@@ -29,52 +29,13 @@ class VoxelBase:
 
     def __init__(self):
         """Constructor"""
-        initial_params = PhindConfig()
-        self.tilex = None
-        self.tiley = None
-        self.tilez = None
-        self.megaVoxelTileX = None
-        self.megaVoxelTileY = None
-        self.megaVoxelTileZ = None
-        self.numSuperVoxelZ = None
-        self.numMegaVoxelsXY = None
-        self.numMegaVoxels = None
-        self.pixelBinCenters = None
-        self.pixelBinCenterDifferences = None
-        self.superVoxelBinCenters = None
-        self.xOffsetStart = None
-        self.xOffsetEnd = None
-        self.yOffsetStart = None
-        self.yOffsetEnd = None
-        self.zOffsetStart = None
-        self.zOffsetEnd = None
-        self.croppedX = None
-        self.croppedY = None
-        self.croppedZ = None
-        self.origX = None
-        self.origY = None
-        self.origZ = None
-        self.superVoxelXOffsetStart = None
-        self.superVoxelXOffsetEnd = None
-        self.superVoxelXAddStart = None
-        self.superVoxelXAddEnd = None
-        self.superVoxelYAddStart = None
-        self.superVoxelYAddEnd = None
-        self.superVoxelZAddStart = None
-        self.superVoxelZAddEnd = None
-        self.superVoxelYOffsetStart = None
-        self.superVoxelYOffsetEnd = None
-        self.superVoxelZOffsetStart = None
-        self.superVoxelZOffsetEnd = None
-        self.numSuperVoxels = None
-        self.numSuperVoxelsXY = None
+        self.numVoxelBins = PhindConfig.numVoxelBins
         pass
 
-    ## Main function for returning bin centers of pixels, supervoxels, and mega voxels
-    ## x - m x n (m is number of observations, n is number of channels/category fractions
-    ## numBins - number of categories
-    def getPixelBins(x, numBins):
-        pass
+    def getPixelBins(self, x, metadata, numBins):
+        """Base class redirect to the static method in the VoxelFunctions class"""
+        return VoxelFunctions.getPixelBins(x, metadata, numBins)
+    # end getPixelBins (base class)
 
 # end class VoxelBase
 
@@ -82,7 +43,7 @@ class VoxelBase:
 
 
 if __name__ == '__main__':
-    """Not sure what this will do yet"""
+    """Unit tests"""
 
     pass
 

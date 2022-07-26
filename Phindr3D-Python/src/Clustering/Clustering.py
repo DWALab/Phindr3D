@@ -37,7 +37,20 @@ class Clustering:
         pass
 
     def action(self):
+        """Action performed by this class when user requests the Phind operation.
+            Returns the True/False result of the phindClusters method."""
         print("Running the Clustering action method")
+        return self.phindClusters()
+    # end action
+
+    def phindClusters(self):
+        """Phind operation.
+            Returns True if successful, False on failure or error"""
+
+
+        # temporary
+        return True
+    # end phindClusters
 
 # end class Clustering
 
