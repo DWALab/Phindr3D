@@ -13,11 +13,14 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
+import imageio as io
 
 try:
     from .VoxelBase import *
+    from ..Data import DataFunctions
 except ImportError:
     from VoxelBase import *
+    from src.Data import DataFunctions
 
 class PixelImage(VoxelBase):
     def __init__(self):
@@ -41,7 +44,7 @@ class PixelImage(VoxelBase):
         self.pixelBinCenters = self.getPixelBins(pixelsForTraining, metadata, self.numVoxelBins)
 
     def getTrainingPixels(self, image, metadata, randZ, training, tileinfo):
-        slices = image.stackLayers.keys()
+        slices = list(image.stackLayers)
         slices = np.array(
             [slices[i] for i in metadata.Generator.choice(len(slices), size=randZ, replace=False, shuffle=False)])
         trPixels = np.zeros((training.pixelsPerImage * randZ, metadata.GetNumChannels()))
@@ -51,13 +54,13 @@ class PixelImage(VoxelBase):
         slices = slices[0:(len(slices) // 2)]
         for zplane in slices:
             croppedIM = np.zeros((tileinfo.origX, tileinfo.origY, metadata.GetNumChannels()))
-            for jChan in range(metadata.GetNumChannels):
+            for jChan in range(metadata.GetNumChannels()):
                 if metadata.intensityNormPerTreatment:
-                    img = image.stackLayers[zplane].channels[jChan + 1].channelPath
-                    croppedIM[:, :, jChan] = training.rescaleIntensity(io.imread(img, '.tif'))  # add params later
+                    img = image.stackLayers[zplane].channels[jChan + 1].channelpath
+                    croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(io.imread(img, '.tif'), low=metadata.lowerbound[jChan], high=metadata.upperbound[jChan])  # add params later
                 else:
-                    img = image.stackLayers[zplane].channels[jChan + 1].channelPath
-                    croppedIM[:, :, jChan] = training.rescaleIntensity(io.imread(img, '.tif'))  # add params later
+                    img = image.stackLayers[zplane].channels[jChan + 1].channelpath
+                    croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(io.imread(img, '.tif'), low=metadata.lowerbound[jChan], high=metadata.upperbound[jChan])  # add params later
             xEnd = -tileinfo.xOffsetEnd
             if xEnd == -0:
                 xEnd = None
@@ -75,6 +78,9 @@ class PixelImage(VoxelBase):
                                                                                          croppedIM.shape[0],
                                                                                          size=training.pixelsPerImage,
                                                                                          replace=False, shuffle=False)])
+                startVal += training.pixelsPerImage
+            else:
+                trPixels[startVal:(startVal+croppedIM.shape[0])] = croppedIM
                 startVal += croppedIM.shape[0]
         if trPixels.size == 0:
             trPixels = np.zeros((training.pixelsPerImage * randZ, metadata.GetNumChannels()))

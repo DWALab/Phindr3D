@@ -39,11 +39,12 @@ class Metadata:
        Static methods that draw closely from transliterations of the MATLAB functions
        can be found in the DataFunctions class."""
 
-    # Initialize a random number generator
-    Generator = np.random.default_rng()
 
     def __init__(self):
         """Metadata class constructor"""
+        # Initialize a random number generator
+        self.Generator = np.random.default_rng()
+
         # Define user-controlled parameters and set default values
         self.intensityNormPerTreatment = False
         self.randTrainingPerTreatment = 1
