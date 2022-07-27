@@ -27,8 +27,10 @@ except ImportError:
 
 try:
     from ..PhindConfig.PhindConfig import *
+    from ..Data.Metadata import *
 except ImportError:
     from src.PhindConfig.PhindConfig import *
+    from src.Data.Metadata import *
 
 import time
 
@@ -129,8 +131,8 @@ class VoxelGroups:
             theInfo = self.metadata.getTileInfo(d, TileInfo())
 
 
-            superVoxelProfile, fgSuperVoxel \
-                = self.getTileProfiles(tmpmdata, pixelBinCenters, theInfo)
+            # superVoxelProfile, fgSuperVoxel = \
+            self.getTileProfiles(tmpmdata, pixelBinCenters, theInfo)
             #    = getTileProfiles(tmpmdata, param.pixelBinCenters, param, analysis=True)
 
 
@@ -149,11 +151,15 @@ class VoxelGroups:
     # end extractImageLevelTextureFeatures
 
 
-    def getTileProfiles(self, tmpmdata, pixelBinCenters, tileInfo):
+    def getTileProfiles(self, imageObject, pixelBinCenters, tileInfo):
         """Method that is a member of VoxelGroups that redirects
             to the VoxelFunctions getTileProfiles."""
         intensityNormPerTreatment = self.metadata.intensityNormPerTreatment
-        return dfunc.getTileProfiles(tmpmdata, pixelBinCenters, tileInfo, intensityNormPerTreatment)
+        allTreatmentTypes = self.metadata.GetTreatmentTypes()
+        computeTAS = PhindConfig.computeTAS
+        return VoxelFunctions.getTileProfiles(imageObject, pixelBinCenters, tileInfo,
+            self.numVoxelBins, intensityNormPerTreatment,
+            allTreatmentTypes, computeTAS)
     # end getTileProfiles
 
 

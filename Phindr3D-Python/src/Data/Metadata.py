@@ -226,7 +226,7 @@ class Metadata:
             This method collects the treatment types, including multiple treatments
             in the same image, if this condition exists.
             This method returns a list of strings of all treatment types if they
-            exist, or an empty string if not. Returns an empty string on error. """
+            exist, or an empty list if not. Returns an empty list on error. """
         treatmentList = []
         try:
             if len(self.images) > 0:
