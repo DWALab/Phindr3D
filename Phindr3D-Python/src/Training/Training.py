@@ -29,7 +29,7 @@ so metadata gets loaded, and then?
 
 
 from .TrainingFunctions import *
-from ..PhindConfig import *
+from ..PhindConfig.PhindConfig import *
 
 
 class Training:
@@ -40,17 +40,16 @@ class Training:
     def __init__(self):
         """Training class constructor"""
         # params defined in Phind Config
-        initial_params = PhindConfig()
-        self.intensityThresholdTuningFactor = initial_params.intensityThresholdTuningFactor
-        self.minQuantileScaling = initial_params.minQuantileScaling
-        self.maxQuantileScaling = initial_params.maxQuantileScaling
-        self.randTrainingSuperVoxel = initial_params.randTrainingSuperVoxel
-        self.superVoxelThresholdTuningFactor = initial_params.superVoxelThresholdTuningFactor
-        self.megaVoxelThresholdTuningFactor = initial_params.megaVoxelThresholdTuningFactor
-        self.randTrainingFields = initial_params.randTrainingFields
-        self.pixelsPerImage = initial_params.pixelsPerImage
-        self.trainingPerColumn = initial_params.trainingPerColumn
-        self.superVoxelPerField = initial_params.superVoxelPerField
+        self.intensityThresholdTuningFactor = PhindConfig.intensityThresholdTuningFactor
+        self.minQuantileScaling = PhindConfig.minQuantileScaling
+        self.maxQuantileScaling = PhindConfig.maxQuantileScaling
+        self.randTrainingSuperVoxel = PhindConfig.randTrainingSuperVoxel
+        self.superVoxelThresholdTuningFactor = PhindConfig.superVoxelThresholdTuningFactor
+        self.megaVoxelThresholdTuningFactor = PhindConfig.megaVoxelThresholdTuningFactor
+        self.randTrainingFields = PhindConfig.randTrainingFields
+        self.pixelsPerImage = PhindConfig.pixelsPerImage
+        self.trainingPerColumn = PhindConfig.trainingPerColumn
+        self.superVoxelPerField = PhindConfig.superVoxelPerField
 
         # params to be defined later (in training functions)
         self.intensityThresholdValues = None

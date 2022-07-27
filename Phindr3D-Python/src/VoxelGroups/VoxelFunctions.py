@@ -16,8 +16,10 @@
 
 from sklearn import cluster
 import numpy as np
-
-from src.Data import DataFunctions as dfunc
+try:
+    from ..Data import DataFunctions as dfunc
+except ImportError:
+    from src.Data import DataFunctions as dfunc
 
 class VoxelFunctions:
     """Static methods for finding voxel properties. Referenced from

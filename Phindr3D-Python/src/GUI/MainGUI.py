@@ -30,9 +30,11 @@ import random
 try:
     from ..VoxelGroups.VoxelGroups import *
     from ..Clustering.Clustering import *
+    from ..Training.Training import *
 except ImportError:
     from src.VoxelGroups.VoxelGroups import *
     from src.Clustering.Clustering import *
+    from src.Training.Training import *
 
 class MainGUI(QWidget, external_windows):
     """Defines the main GUI window of Phindr3D"""
@@ -41,6 +43,7 @@ class MainGUI(QWidget, external_windows):
         """MainGUI constructor"""
         QMainWindow.__init__(self)
         super(MainGUI, self).__init__()
+        self.training = Training()
         self.metadata = Metadata()
         self.voxelGroups = VoxelGroups(self.metadata)
         self.clustering = Clustering()
@@ -200,7 +203,12 @@ class MainGUI(QWidget, external_windows):
 
         # Function purely for testing purposes, this function will switch 'foundMetadata' to true or false
         def testMetadata():
-            slicescrollbar.setMaximum(5)
+            pixels = PixelImage()
+            try:
+                pixels.getPixelBinCenters(3, self.metadata, training)
+                print(pixels.pixelBinCenters)
+            except Exception as e:
+                print(e)
 
         createmetadata.triggered.connect(extractMetadata)
         viewresults.triggered.connect(viewResults)
