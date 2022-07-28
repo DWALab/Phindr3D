@@ -541,26 +541,26 @@ class Metadata:
         return tileInfo
     # end getTileInfo
 
-    def getIndividualChannelThreshold(self, theImage, theTileInfo):
+    def getIndividualChannelThreshold(self, imageObject, theTileInfo):
         """individual channel threshold"""
         numChannels = self.GetNumChannels()
         allTreatmentTypes = self.GetTreatmentTypes()
-        errorVal = np.zeros((len(theImage.stackLayers), numChannels))
-        thresh = np.zeros((len(theImage.stackLayers), numChannels))
+        errorVal = np.zeros((len(imageObject.stackLayers), numChannels))
+        thresh = np.zeros((len(imageObject.stackLayers), numChannels))
 
         if self.intensityNormPerTreatment:
             # index of the treatment for this image in the list of all treatments
             # if the treatment type is not found (or there are no treatments), return error
             try:
-                grpVal = allTreatmentTypes.index(theImage.GetTreatment()[0])
+                grpVal = allTreatmentTypes.index(imageObject.GetTreatment()[0])
             except (ValueError, IndexError):
                 return errorVal
         # end if
-        for iImages in range(len(theImage.stackLayers)):
+        for iImages in range(len(imageObject.stackLayers)):
             for iChannels in range(numChannels):
                 try:
-                    stackIndex = list(theImage.stackLayers.keys())[iImages]
-                    theStack = theImage.stackLayers[stackIndex]
+                    stackIndex = list(imageObject.stackLayers.keys())[iImages]
+                    theStack = imageObject.stackLayers[stackIndex]
                     channelIndex = list(theStack.channels.keys())[iChannels]
                     theChannel = theStack.channels[channelIndex]
                     imFileName = theChannel.channelpath
