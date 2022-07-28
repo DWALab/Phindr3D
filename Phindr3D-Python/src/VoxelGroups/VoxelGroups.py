@@ -59,8 +59,8 @@ class VoxelGroups:
     def phindVoxelGroups(self):
         """Phind operation.
             Returns True if successful, False on failure or error"""
-        print("Entered the phindVoxelGroups method")
-        # Steps (MATLAB)
+
+        # Steps:
         # param = getPixelBinCenters(mData, allImageId, param);
         # param = getSuperVoxelBinCenters(mData, allImageId, param);
         # param = getMegaVoxelBinCenters(mData, allImageId, param);
@@ -79,7 +79,6 @@ class VoxelGroups:
 
 
 
-        print("Finished the phindVoxelGroups method")
         # temporary
         return True
     # end phindVoxelGroups
@@ -88,8 +87,6 @@ class VoxelGroups:
     def extractImageLevelTextureFeatures(self,
         outputFileName='imagefeatures.csv', outputDir=''):
         """Given pixel/super/megavoxel bin centers, creates a feature file"""
-        print("Entered the extractImageLevelTextureFeatures method")
-
         countBackground = PhindConfig.countBackground
         textureFeatures = PhindConfig.textureFeatures
         treatmentCol = self.metadata.GetAllTreatments()
