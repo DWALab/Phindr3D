@@ -136,6 +136,7 @@ class VoxelGroups:
             superVoxelProfile, fgSuperVoxel = \
             self.getTileProfiles(tmpmdata, pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
 
+            self.getMegaVoxelProfile()
 
         # print('Writing data to file ...')
         # Output feature file to csv
@@ -148,8 +149,7 @@ class VoxelGroups:
         print("Finished the extractImageLevelTextureFeatures method")
     # end extractImageLevelTextureFeatures
 
-
-    def getTileProfiles(self, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo):
+    def getTileProfiles(self, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo, analysis=False):
         """Tile profiles. Called in extractImageLevelTextureFeatures, getMegaVoxelBinCenters,
             called in getSuperVoxelBinCenters.
             Computes low level categorical features for supervoxels
@@ -319,6 +319,25 @@ class VoxelGroups:
         ##fgSuperVoxel used to be fgSuperVoxel.T
         return superVoxelProfile, fgSuperVoxel
     # end getTileProfiles
+
+    def getMegaVoxelProfile(self, tileProfile, fgSuperVoxel, analysis=False):
+        """"""
+
+
+
+
+
+
+
+
+
+
+
+
+    # end getMegaVoxelProfile
+
+
+
 
 
 
