@@ -205,7 +205,7 @@ class MainGUI(QWidget, external_windows):
         def testMetadata():
             pixels = PixelImage()
             try:
-                pixels.getPixelBinCenters(3, self.metadata, training)
+                pixels.getPixelBinCenters(3, self.metadata, self.training)
                 print(pixels.pixelBinCenters)
             except Exception as e:
                 print(e)

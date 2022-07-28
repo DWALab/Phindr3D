@@ -64,7 +64,7 @@ class PhindConfig:
     endZPlane = 500
     numRemoveZStart = 1
     numRemoveZEnd = 1
-    computeTAS = 0
+    computeTAS = False
     trainingPerColumn = False
     # treatmentColNameForNormalization = ''
     # imageTreatments = []

@@ -30,11 +30,10 @@ class VoxelFunctions:
     """
 
     @staticmethod
-    # Main function for returning bin centers of pixels, supervoxels, and mega voxels
-    # x - m x n (m is number of observations, n is number of channels/category fractions
-    # numBins - number of categories
     def getPixelBins(x, metadata, numBins):
-        # Copied from Teo's code
+        """Main function for returning bin centers of pixels, supervoxels, and mega voxels
+            x - m x n (m is number of observations, n is number of channels/category fractions
+            numBins - number of categories"""
         Generator = metadata.Generator
         m = x.shape[0]
         if m > 50000:
@@ -64,6 +63,7 @@ class VoxelFunctions:
             binCenters = kmeans.cluster_centers_
         return np.abs(binCenters)
     # end getPixelBins
+
 
 # end VoxelFunctions
 
