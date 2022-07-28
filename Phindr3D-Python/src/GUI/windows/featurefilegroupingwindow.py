@@ -44,6 +44,7 @@ class featurefilegroupingWindow(object):
         ok_button.clicked.connect(lambda :self.selected(grp_checkbox, win, groupings))
 
         win.show()
+        win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         win.exec()
     #change ResultsWindow GUI dropdown to contain groupings
     def selected(self, grp_checkbox, win, groupings):

@@ -15,19 +15,10 @@ from more_itertools import locate
 from PIL import Image
 from ..analysis_scripts import *
 from .helperclasses import MplCanvas
+from .plot_functions import *
+from .colorchannelWindow import *
 
 #Callback will open image associated with data point. Note: in 3D plot pan is hold left-click swipe, zoom is hold right-click swipe
-#Matplotlib Figure
-class MplCanvas(FigureCanvasQTAgg):
-
-    def __init__(self, parent=None, width=5, height=5, dpi=100, projection="3d"):
-        self.fig = Figure(figsize=(width, height), dpi=dpi)
-        #col*100+row*
-        if projection=="3d":
-            self.axes = self.fig.add_subplot(1,1,1, projection=projection)
-        else:
-            self.axes = self.fig.add_subplot(1,1,1, projection=None)
-        super(MplCanvas, self).__init__(self.fig)
 
 #imported matplotlib toolbar. Only use desired functions.
 class NavigationToolbar(NavigationToolbar):
@@ -51,7 +42,7 @@ class interactive_points():
         self.data=data
         self.labels=labels
         self.feature_file=feature_file
-        self.color=color
+        self.color=color[:]
         self.imageID=imageID
 
     def buildImageViewer(self, label, cur_label, index, color, feature_file, imageID):
@@ -78,7 +69,7 @@ class interactive_points():
                 info_box.addWidget(file_info)
                 info_box.addWidget(ch_info)
                 info_box.addStretch()
-
+                ch_colour=QPushButton("Set Channel Colours")
                 #projection layout
                 pjt_box = QGroupBox("Projection Type")
                 pjt_type= QHBoxLayout()
@@ -117,16 +108,18 @@ class interactive_points():
                 #parent layout
                 grid.addLayout(info_box, 0, 0)
                 grid.addWidget(main_plot, 0, 1)
+                grid.addWidget(ch_colour, 1, 0)
                 grid.addWidget(pjt_box, 1, 1, Qt.AlignCenter)
                 grid.addWidget(adjustbar, 0, 2)
-
                 win.setLayout(grid)
+
                 #callbacks
-                self.plot_img(adjustbar, main_plot, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box)
-                adjustbar.valueChanged.connect(lambda: self.plot_img(adjustbar, main_plot, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box))
-                slice_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[0].isChecked() else None)
-                mit_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[1].isChecked() else None)
-                montage_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[2].isChecked() else None)
+                self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box)
+                adjustbar.valueChanged.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box))
+                slice_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[0].isChecked() else None)
+                mit_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[1].isChecked() else None)
+                montage_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[2].isChecked() else None)
+                ch_colour.clicked.connect(lambda: self.color_change((ch_info.text()).count("Channel_"), self.color, "Custom Colour Picker", "Channels", ["Channel_" +str(i+1) for i in range((ch_info.text()).count("Channel_"))], adjustbar, main_plot, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box))
                 win.show()
                 win.exec()
     def read_featurefile(self, slicescrollbar, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
@@ -167,29 +160,8 @@ class interactive_points():
             empty_img = Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]).size
             empty_img = np.empty((ch_len, empty_img[1], empty_img[0], 3))
             return(data, empty_img, meta_loc, stacks, ch_len)
-
-    def channel_display(self, data, rgb_img, ch_len, slicescrollbar, color, meta_loc, pjt):
-        #threshold/colour each image channel
-        for ind, rgb_color in zip(range(slicescrollbar.value(), slicescrollbar.value() + ch_len),color):
-            ch_num = str(ind - slicescrollbar.value() + 1)
-            data['Channel_' + ch_num] = data['Channel_' + ch_num].str.replace(r'\\', '/', regex=True)
-            cur_img = np.array(Image.open(data['Channel_' + ch_num].iloc[meta_loc+slicescrollbar.value()]))
-            #medianfilter for slice or MIP projection
-            if pjt.findChildren(QRadioButton)[2].isChecked()==False:
-                cur_img=medianBlur(cur_img, 3)
-            threshold = getImageThreshold(cur_img)
-            cur_img[cur_img <= threshold] = 0
-            cur_img = np.dstack((cur_img, cur_img, cur_img))
-            rgb_img[int(ch_num) - 1, :, :, :] = np.multiply(cur_img, rgb_color)
-        # compute average and norm to mix colours
-        divisor = np.sum(rgb_img != 0, axis=0)
-        tot = np.sum(rgb_img, axis=0)
-        rgb_img = np.divide(tot, divisor, out=np.zeros_like(tot), where=divisor != 0)
-        max_rng = [np.max(rgb_img[:, :, i]) if np.max(rgb_img[:, :, i]) > 0 else 1 for i in range(ch_len)]
-        rgb_img = np.divide(rgb_img, max_rng)
-        return(rgb_img)
-
     def plot_img(self, slicescrollbar, img_plot, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
+        start=time.time()
         #reset subplots
         allaxes = img_plot.fig.get_axes()
         for ax in allaxes:
@@ -204,7 +176,7 @@ class interactive_points():
             max_img = np.full((empty_img.shape[1], empty_img.shape[2], 3), np.NINF)
 
         for x in range(1, stacks+1):
-            img=self.channel_display(data, empty_img, ch_len,slicescrollbar, color, metaloc+x-1, pjt)
+            img=merge_channels(data, empty_img, ch_len, slicescrollbar.value(), color, metaloc+x-1, pjt.findChildren(QRadioButton)[2].isChecked())
             #MIP Projection (max intensity projection - take largest element-wise from image stack)
             if pjt.findChildren(QRadioButton)[1].isChecked():
                 max_img=np.maximum(max_img, img)
@@ -219,9 +191,15 @@ class interactive_points():
                 axes.imshow(img)
                 axes.set_aspect(aspect='auto')
                 axes.axis('off')
-        start = time.time()
         img_plot.fig.subplots_adjust(wspace=0.0075, hspace=0.0075)
         img_plot.draw()
+        end=time.time()
+        print(end-start)
+    def color_change(self, ch, color, win_title, col_title, labels, slicescrollbar, img_plot, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
+        print(ch, color, labels)
+        colors=colorchannelWindow(ch, color, win_title, col_title, labels)
+        self.color=colors.color
+        self.plot_img(slicescrollbar, img_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt)
 
     def __call__ (self, event): #picker is right-click activation
         if event.mouseevent.inaxes is not None and event.mouseevent.button is MouseButton.RIGHT:

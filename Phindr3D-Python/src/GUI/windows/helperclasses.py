@@ -20,7 +20,6 @@ class MplCanvas(FigureCanvasQTAgg):
         self.axes.set_aspect('auto')
         self.axes.set_position([0.01, 0.01, 0.98, 0.98])
     
-    
 
 #imported matplotlib toolbar. Only use desired functions.
 class NavigationToolbar(NavigationToolbar):
