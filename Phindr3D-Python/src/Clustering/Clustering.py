@@ -23,7 +23,6 @@ import numpy as np
 from src.GUI.windows.helperclasses import *
 from PyQt5.QtWidgets import *
 import matplotlib
-from kneed import KneeLocator
 import scipy as sc
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 
