@@ -73,9 +73,16 @@ class VoxelGroups:
         # = phi.extractImageLevelTextureFeatures(mdata, param, outputFileName=output_file_name, outputDir='')
         # This is the step that outputs a feature file
 
-        pixelBinCenters = 1
+        theBase = VoxelBase()
+        superVoxelBinCenters = np.zeros((1,1))
+        tileProfile = np.zeros((1,1))
+        fgSuperVoxel = np.zeros((1,1))
+        tileInfo = TileInfo()
+        theBase.getMegaVoxelProfile(superVoxelBinCenters, tileProfile, tileInfo, fgSuperVoxel)
 
-        self.extractImageLevelTextureFeatures()
+
+        #pixelBinCenters = 1
+        #self.extractImageLevelTextureFeatures()
 
 
 
@@ -132,8 +139,6 @@ class VoxelGroups:
             pixelBinCenterDifferences = 1
             superVoxelProfile, fgSuperVoxel = \
             self.getTileProfiles(tmpmdata, pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
-
-            self.getMegaVoxelProfile()
 
         # print('Writing data to file ...')
         # Output feature file to csv
@@ -316,22 +321,6 @@ class VoxelGroups:
         ##fgSuperVoxel used to be fgSuperVoxel.T
         return superVoxelProfile, fgSuperVoxel
     # end getTileProfiles
-
-    def getMegaVoxelProfile(self, tileProfile, fgSuperVoxel, analysis=False):
-        """"""
-
-
-
-
-
-
-
-
-
-
-
-
-    # end getMegaVoxelProfile
 
 
 

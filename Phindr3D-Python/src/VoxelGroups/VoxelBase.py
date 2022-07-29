@@ -37,6 +37,53 @@ class VoxelBase:
         return VoxelFunctions.getPixelBins(x, metadata, numBins)
     # end getPixelBins (base class)
 
+
+
+
+
+
+
+
+    # Will this go here? Will it go to one of the derived classes? I don't know.
+    def getMegaVoxelProfile(self, superVoxelBinCenters, tileProfile,
+        tileInfo, fgSuperVoxel, analysis=False):
+        """called in extractImageLevelTextureFeatures and getMegaVoxelBinCenters"""
+        # Create local copies of external variables (easier to merge code)
+        showImage = PhindConfig.showImage
+        textureFeatures = PhindConfig.textureFeatures
+        temp1 = np.array([dfunc.mat_dot(superVoxelBinCenters, superVoxelBinCenters, axis=1)]).T
+        temp2 = dfunc.mat_dot(tileProfile[fgSuperVoxel], tileProfile[fgSuperVoxel], axis=1)
+        a = np.add(temp1, temp2).T - 2*(tileProfile[fgSuperVoxel] @ superVoxelBinCenters.T)
+        minDis = np.argmin(a, axis=1) + 1 #mindis+1 here
+        x = np.zeros(tileProfile.shape[0], dtype='uint8') #x is the right shape
+        x[fgSuperVoxel] = minDis
+        #had to change x shape here from matlab form to more numpy like shape.
+        x = np.reshape(x, (int(tileInfo.croppedZ/tileInfo.tileZ),
+            int(tileInfo.croppedX/tileInfo.tileX), int(tileInfo.croppedY/tileInfo.tileY))) #new shape (z, x, y)
+
+        if showImage:
+
+
+
+
+        # end if
+
+        if analysis and textureFeatures:
+            pass
+
+
+        else:
+
+        # end if
+
+
+    # end getMegaVoxelProfile
+
+
+
+
+
+
 # end class VoxelBase
 
 
