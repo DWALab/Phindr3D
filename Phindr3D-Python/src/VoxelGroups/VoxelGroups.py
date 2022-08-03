@@ -25,7 +25,7 @@ try:
     from .SuperVoxelImage import *
     from .MegaVoxelImage import *
 except ImportError:
-    from VoxelBase import *
+    from src.VoxelGroups.VoxelBase import *
     from PixelImage import *
     from SuperVoxelImage import *
     from MegaVoxelImage import *
@@ -80,7 +80,7 @@ class VoxelGroups:
         tileProfile = np.zeros((1,1))
         fgSuperVoxel = np.zeros((1,1))
         tileInfo = TileInfo()
-        theBase.getMegaVoxelProfile(superVoxelBinCenters, tileProfile, tileInfo, fgSuperVoxel)
+        #theBase.getMegaVoxelProfile(superVoxelBinCenters, tileProfile, tileInfo, fgSuperVoxel)
 
 
         #pixelBinCenters = 1
@@ -142,15 +142,54 @@ class VoxelGroups:
             superVoxelProfile, fgSuperVoxel = \
             self.getTileProfiles(tmpmdata, pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
 
+            # These functions are in VoxelBase
+            # megaVoxelProfile, fgMegaVoxel, texture_features = getMegaVoxelProfile(superVoxelProfile,
+            #     fgSuperVoxel, param, analysis=True)
+            # imgProfile, rawProfile = getImageProfile(megaVoxelProfile, fgMegaVoxel, param)
+            # temp!!!!
+            megaVoxelProfile = None
+            fgMegaVoxel = None
+            texture_features = None
+            imgProfile = None
+            rawProfile = None
+
+            resultIM[iImages, :] = imgProfile
+            resultRaw[iImages, :] = rawProfile
+            if textureFeatures:
+                textureResults[iImages, :] = texture_features
+            if useTreatment:
+                Treatments.append(tmpmdata)
+            if iImages == 0:
+                timeperimage = time.time() - a
         # print('Writing data to file ...')
         # Output feature file to csv
+        numRawMV = np.sum(resultRaw, axis=1)  # one value per image, gives number of megavoxels
+        dictResults = {
+            'ImageID': uniqueImageID
+        }
+        if useTreatment:
+            dictResults['Treatment'] = Treatments
+        else:
+            dictResults['Treatment'] = np.full((len(uniqueImageID),), 'RR', dtype='object')
+        dictResults['NumMV'] = numRawMV
 
-        # ...
-
-        # Final output from previous version
-        #print('\nAll done.')
+        for i in range(resultIM.shape[1]):
+            mvlabel = f'MV{i + 1}'
+            dictResults[mvlabel] = resultIM[:, i]  # e.g. mv cat 1: for each image, put here frequency of mvs of type 1.
+        if textureFeatures:
+            for i, name in enumerate(['text_ASM', 'text_entropy', 'text_info_corr1', 'text_infor_corr2']):
+                dictResults[name] = textureResults[:, i]
+        df = pd.DataFrame(dictResults)
+        csv_name = outputFileName
+        if len(outputDir) > 0:
+            csv_name = outputDir + '\\' + csv_name
+        if csv_name[-4:] != '.csv':
+            csv_name = csv_name + '.csv'
+        df.to_csv(csv_name)
+        print('\nAll done.')
         #return param, resultIM, resultRaw, df #, metaIndexTmp
-        print("Finished the extractImageLevelTextureFeatures method")
+        # Missing a first parameter from the return list
+        return resultIM, resultRaw, df  # , metaIndexTmp
     # end extractImageLevelTextureFeatures
 
     def getTileProfiles(self, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo, analysis=False):
