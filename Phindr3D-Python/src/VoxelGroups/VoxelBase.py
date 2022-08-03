@@ -24,13 +24,18 @@ try:
 except ImportError:
     from src.PhindConfig.PhindConfig import *
 
+import matplotlib.pyplot as plt
+import mahotas as mt
+
 class VoxelBase:
     """From pixels to supervoxels to megavoxels"""
 
     def __init__(self):
         """Constructor"""
         self.numVoxelBins = PhindConfig.numVoxelBins
-        pass
+        self.textureFeatures = PhindConfig.textureFeatures
+        # This is confusing and hopefully we can change it
+        self.texture_features = False
 
     def getPixelBins(self, x, metadata, numBins):
         """Base class redirect to the static method in the VoxelFunctions class"""
@@ -38,19 +43,14 @@ class VoxelBase:
     # end getPixelBins (base class)
 
 
-
-
-
-
-
-
-    # Will this go here? Will it go to one of the derived classes? I don't know.
     def getMegaVoxelProfile(self, superVoxelBinCenters, tileProfile,
         tileInfo, fgSuperVoxel, analysis=False):
         """called in extractImageLevelTextureFeatures and getMegaVoxelBinCenters"""
         # Create local copies of external variables (easier to merge code)
+        errorVal = (None, None)
         showImage = PhindConfig.showImage
-        textureFeatures = PhindConfig.textureFeatures
+        countBackground = PhindConfig.countBackground
+        svcolormap = PhindConfig.svcolormap
         temp1 = np.array([dfunc.mat_dot(superVoxelBinCenters, superVoxelBinCenters, axis=1)]).T
         temp2 = dfunc.mat_dot(tileProfile[fgSuperVoxel], tileProfile[fgSuperVoxel], axis=1)
         a = np.add(temp1, temp2).T - 2*(tileProfile[fgSuperVoxel] @ superVoxelBinCenters.T)
@@ -62,21 +62,115 @@ class VoxelBase:
             int(tileInfo.croppedX/tileInfo.tileX), int(tileInfo.croppedY/tileInfo.tileY))) #new shape (z, x, y)
 
         if showImage:
-
-
-
-
+            for i in range(x.shape[0]):
+                plt.figure()
+                title = f'Supervoxel image'
+                plt.title(title)
+                plt.imshow(x[i, :, :], svcolormap)
+                plt.colorbar()
+                plt.show()
         # end if
 
-        if analysis and textureFeatures:
-            pass
-
-
+        if analysis and self.textureFeatures:
+            sv_image = np.reshape(x,
+                (int(tileInfo.croppedZ / tileInfo.tileZ),
+                 int(tileInfo.croppedX / tileInfo.tileX),
+                 int(tileInfo.croppedY / tileInfo.tileY)))
+            tileInfo.numSuperVoxelZ = int(tileInfo.croppedZ / tileInfo.tileZ)
+            total_mean_textures = np.full((tileInfo.numSuperVoxelZ, 4), np.nan)
+            for i in range(sv_image.shape[0]):
+                texture_features = np.full((2, 13), np.nan)
+                try:
+                    texture_features[0, :] = mt.features.haralick(sv_image[i, :, :],
+                        distance=1, ignore_zeros=True, return_mean=True)
+                except ValueError:
+                    return errorVal
+                try:
+                    texture_features[1, :] = mt.features.haralick(sv_image[i, :, :],
+                        distance=2, ignore_zeros=True, return_mean=True)
+                except ValueError:
+                    return errorVal
+                texture_features = texture_features[:, [0, 8, 11, 12]]
+                texture_features = texture_features[~np.isnan(texture_features).any(axis=1), :]
+                if len(texture_features) > 1:
+                    texture_features = np.mean(texture_features, axis=0)
+                if texture_features.size > 0:
+                    total_mean_textures[i, :] = texture_features
+            # end for
+            total_mean_textures = total_mean_textures[~np.isnan(total_mean_textures).any(axis=1), :]
+            textureFeatures = np.mean(total_mean_textures, axis=0)
+            try:
+                if texture_features.size == 0:
+                    self.texture_features = False
+                    print(f'Texture feature extraction failed. continuing with default phindr3D')
+                    textureFeatures = None
+            except AttributeError:
+                return errorVal
         else:
-
+            textureFeatures = None
         # end if
 
+        #pad first dimension
+        x = np.concatenate([ np.zeros((tileInfo.superVoxelZAddStart, x.shape[1], x.shape[2])),
+            x, np.zeros((tileInfo.superVoxelZAddEnd, x.shape[1], x.shape[2])) ], axis=0) #new (z, x, y) shape
+        #pad second dimension
+        x = np.concatenate([ np.zeros((x.shape[0], tileInfo.superVoxelXAddStart, x.shape[2])),
+            x, np.zeros((x.shape[0], tileInfo.superVoxelXAddEnd, x.shape[2])) ], axis=1) #new (z, x, y) shape
+        #pad third dimension
+        x = np.concatenate([ np.zeros((x.shape[0], x.shape[1], tileInfo.superVoxelYAddStart)),
+            x, np.zeros((x.shape[0], x.shape[1], tileInfo.superVoxelYAddEnd)) ], axis=2) #for new (z, x, y) shape
+        x = x.astype(np.uint8)
+        tileInfo.numMegaVoxelX = x.shape[1]//tileInfo.megaVoxelTileX
+        tileInfo.numMegaVoxelY = x.shape[2]//tileInfo.megaVoxelTileY
+        tileInfo.numMegaVoxelZ = x.shape[0]//tileInfo.megaVoxelTileZ
+        tileInfo.numMegaVoxelsXY = int(x.shape[1] * x.shape[2] / (tileInfo.megaVoxelTileY * tileInfo.megaVoxelTileX)) #for new shape
+        tileInfo.numMegaVoxels = int((tileInfo.numMegaVoxelsXY*x.shape[0])/tileInfo.megaVoxelTileZ)
+        sliceCounter = 0
+        startVal = 0
+        endVal = tileInfo.numMegaVoxelsXY
+        try:
+             megaVoxelProfile = np.zeros((tileInfo.numMegaVoxels, tileInfo.numSuperVoxelBins+1))
+        except Exception as e:
+            print(e)
+            return errorVal
+        fgMegaVoxel = np.zeros(tileInfo.numMegaVoxels)
+        tmpData = np.zeros((tileInfo.numMegaVoxelsXY,
+            int(tileInfo.megaVoxelTileX*tileInfo.megaVoxelTileY*tileInfo.megaVoxelTileZ)))
+        startCol = 0
+        endCol = (tileInfo.megaVoxelTileX*tileInfo.megaVoxelTileY)
 
+        for iSuperVoxelImagesZ in range(0, x.shape[0]):
+            sliceCounter += 1
+            # changed which axis is used to iterate through z.
+            tmpData[:, startCol:endCol] = dfunc.im2col(x[iSuperVoxelImagesZ, :, :],
+                (tileInfo.megaVoxelTileX, tileInfo.megaVoxelTileY)).T
+            startCol += (tileInfo.megaVoxelTileX * tileInfo.megaVoxelTileY)
+            endCol += (tileInfo.megaVoxelTileX * tileInfo.megaVoxelTileY)
+
+            if sliceCounter == tileInfo.megaVoxelTileZ:
+                fgMegaVoxel[startVal:endVal] \
+                    = (np.sum(tmpData!= 0, axis=1)/tmpData.shape[1]) >= tileInfo.megaVoxelThresholdTuningFactor
+                for i in range(0, tileInfo.numSuperVoxelBins+1):
+                    # value of zeros means background supervoxel
+                    megaVoxelProfile[startVal:endVal, i] = np.sum(tmpData == i, axis=1)
+                sliceCounter = 0
+                tmpData = np.zeros((tileInfo.numMegaVoxelsXY,
+                    tileInfo.megaVoxelTileX*tileInfo.megaVoxelTileY*tileInfo.megaVoxelTileZ))
+                startCol = 0
+                endCol = (tileInfo.megaVoxelTileX*tileInfo.megaVoxelTileY)
+                startVal += tileInfo.numMegaVoxelsXY
+                endVal += tileInfo.numMegaVoxelsXY
+        # end for
+
+        if not countBackground:
+            megaVoxelProfile = megaVoxelProfile[:, 1:]
+        megaVoxelProfile = np.divide(megaVoxelProfile,
+            np.array([np.sum(megaVoxelProfile, axis=1)]).T) #dont worry about divide by zero here either
+        fgMegaVoxel = fgMegaVoxel.astype(bool)
+        if analysis:
+            return megaVoxelProfile, fgMegaVoxel, textureFeatures
+        else:
+            return megaVoxelProfile, fgMegaVoxel
     # end getMegaVoxelProfile
 
 
