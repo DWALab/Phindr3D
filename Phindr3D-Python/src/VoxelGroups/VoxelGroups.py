@@ -14,6 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
+from mahotas.features import texture
+import time
+import imageio.v2 as io
+import matplotlib.pyplot as plt
+
 try:
     from .VoxelBase import *
     from .PixelImage import *
@@ -32,9 +37,6 @@ except ImportError:
     from src.PhindConfig.PhindConfig import *
     from src.Data.Metadata import *
 
-import time
-import imageio.v2 as io
-import matplotlib.pyplot as plt
 
 class VoxelGroups:
     """From pixels to supervoxels to megavoxels"""
