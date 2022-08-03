@@ -23,7 +23,7 @@ import matplotlib
 import matplotlib.colors as mcolors
 import pandas as pd
 import numpy as np
-from PIL import Image
+from PIL import Image as im
 import sys
 import random
 
@@ -132,6 +132,9 @@ class MainGUI(QWidget, external_windows):
                     errortext = "Metadata Extraction Failed: Invalid Image type (must be grayscale)."
                     alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
                     alert.exec()
+                except Exception as e:
+                    print(e)
+                    return
             else:
                 load_metadata_win = self.buildErrorWindow("Select Valid Metadatafile (.txt)", QMessageBox.Critical)
                 load_metadata_win.show()
@@ -204,9 +207,16 @@ class MainGUI(QWidget, external_windows):
         # Function purely for testing purposes, this function will switch 'foundMetadata' to true or false
         def testMetadata():
             pixels = PixelImage()
+            superVoxels = SuperVoxelImage()
+            megaVoxels = MegaVoxelImage()
             try:
                 pixels.getPixelBinCenters(3, self.metadata, self.training)
                 print(pixels.pixelBinCenters)
+                self.training.randFieldID = self.metadata.getTrainingFields()
+                superVoxels.getSuperVoxelBinCenters(self.metadata, self.training, pixels)
+                print(superVoxels.superVoxelBinCenters)
+                megaVoxels.getMegaVoxelBinCenters(self.metadata, self.training, pixels)
+                print(megaVoxels.megaVoxelBinCenters)
             except Exception as e:
                 print(e)
 
@@ -351,14 +361,14 @@ class MainGUI(QWidget, external_windows):
                 color=color[:-(len(color)-self.ch_len)]
 
             #initialize array as image size with # channels
-            rgb_img = Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[slicescrollbar.value()]).size
+            rgb_img = im.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[slicescrollbar.value()]).size
             rgb_img = np.empty((self.ch_len, rgb_img[1], rgb_img[0], 3))
 
             #threshold/colour each image channel
             for ind, rgb_color in zip(range(slicescrollbar.value(), slicescrollbar.value()+ self.ch_len), color):
                 ch_num=str(ind-slicescrollbar.value()+1)
                 data['Channel_'+ch_num]=data['Channel_'+ch_num].str.replace(r'\\', '/', regex=True)
-                img = Image.open(data['Channel_'+ch_num].iloc[slicescrollbar.value()])
+                img = im.open(data['Channel_'+ch_num].iloc[slicescrollbar.value()])
                 if img.mode != "I" and img.mode != "I;16":
                     raise InvalidImageError
                 cur_img = np.array(img)
