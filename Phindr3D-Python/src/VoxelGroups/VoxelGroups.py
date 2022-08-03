@@ -14,6 +14,11 @@
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
+
+import time
+import imageio.v2 as io
+import matplotlib.pyplot as plt
+
 try:
     from .VoxelBase import *
     from .PixelImage import *
@@ -32,9 +37,6 @@ except ImportError:
     from src.PhindConfig.PhindConfig import *
     from src.Data.Metadata import *
 
-import time
-import imageio.v2 as io
-import matplotlib.pyplot as plt
 
 class VoxelGroups:
     """From pixels to supervoxels to megavoxels"""
@@ -59,8 +61,8 @@ class VoxelGroups:
     def phindVoxelGroups(self):
         """Phind operation.
             Returns True if successful, False on failure or error"""
-        print("Entered the phindVoxelGroups method")
-        # Steps (MATLAB)
+
+        # Steps:
         # param = getPixelBinCenters(mData, allImageId, param);
         # param = getSuperVoxelBinCenters(mData, allImageId, param);
         # param = getMegaVoxelBinCenters(mData, allImageId, param);
@@ -73,13 +75,19 @@ class VoxelGroups:
         # = phi.extractImageLevelTextureFeatures(mdata, param, outputFileName=output_file_name, outputDir='')
         # This is the step that outputs a feature file
 
-        pixelBinCenters = 1
+        theBase = VoxelBase()
+        superVoxelBinCenters = np.zeros((1,1))
+        tileProfile = np.zeros((1,1))
+        fgSuperVoxel = np.zeros((1,1))
+        tileInfo = TileInfo()
+        #theBase.getMegaVoxelProfile(superVoxelBinCenters, tileProfile, tileInfo, fgSuperVoxel)
 
-        self.extractImageLevelTextureFeatures()
+
+        #pixelBinCenters = 1
+        #self.extractImageLevelTextureFeatures()
 
 
 
-        print("Finished the phindVoxelGroups method")
         # temporary
         return True
     # end phindVoxelGroups
@@ -88,8 +96,6 @@ class VoxelGroups:
     def extractImageLevelTextureFeatures(self,
         outputFileName='imagefeatures.csv', outputDir=''):
         """Given pixel/super/megavoxel bin centers, creates a feature file"""
-        print("Entered the extractImageLevelTextureFeatures method")
-
         countBackground = PhindConfig.countBackground
         textureFeatures = PhindConfig.textureFeatures
         treatmentCol = self.metadata.GetAllTreatments()
@@ -136,20 +142,57 @@ class VoxelGroups:
             superVoxelProfile, fgSuperVoxel = \
             self.getTileProfiles(tmpmdata, pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
 
+            # These functions are in VoxelBase
+            # megaVoxelProfile, fgMegaVoxel, texture_features = getMegaVoxelProfile(superVoxelProfile,
+            #     fgSuperVoxel, param, analysis=True)
+            # imgProfile, rawProfile = getImageProfile(megaVoxelProfile, fgMegaVoxel, param)
+            # temp!!!!
+            megaVoxelProfile = None
+            fgMegaVoxel = None
+            texture_features = None
+            imgProfile = None
+            rawProfile = None
 
+            resultIM[iImages, :] = imgProfile
+            resultRaw[iImages, :] = rawProfile
+            if textureFeatures:
+                textureResults[iImages, :] = texture_features
+            if useTreatment:
+                Treatments.append(tmpmdata)
+            if iImages == 0:
+                timeperimage = time.time() - a
         # print('Writing data to file ...')
         # Output feature file to csv
+        numRawMV = np.sum(resultRaw, axis=1)  # one value per image, gives number of megavoxels
+        dictResults = {
+            'ImageID': uniqueImageID
+        }
+        if useTreatment:
+            dictResults['Treatment'] = Treatments
+        else:
+            dictResults['Treatment'] = np.full((len(uniqueImageID),), 'RR', dtype='object')
+        dictResults['NumMV'] = numRawMV
 
-        # ...
-
-        # Final output from previous version
-        #print('\nAll done.')
+        for i in range(resultIM.shape[1]):
+            mvlabel = f'MV{i + 1}'
+            dictResults[mvlabel] = resultIM[:, i]  # e.g. mv cat 1: for each image, put here frequency of mvs of type 1.
+        if textureFeatures:
+            for i, name in enumerate(['text_ASM', 'text_entropy', 'text_info_corr1', 'text_infor_corr2']):
+                dictResults[name] = textureResults[:, i]
+        df = pd.DataFrame(dictResults)
+        csv_name = outputFileName
+        if len(outputDir) > 0:
+            csv_name = outputDir + '\\' + csv_name
+        if csv_name[-4:] != '.csv':
+            csv_name = csv_name + '.csv'
+        df.to_csv(csv_name)
+        print('\nAll done.')
         #return param, resultIM, resultRaw, df #, metaIndexTmp
-        print("Finished the extractImageLevelTextureFeatures method")
+        # Missing a first parameter from the return list
+        return resultIM, resultRaw, df  # , metaIndexTmp
     # end extractImageLevelTextureFeatures
 
-
-    def getTileProfiles(self, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo):
+    def getTileProfiles(self, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo, analysis=False):
         """Tile profiles. Called in extractImageLevelTextureFeatures, getMegaVoxelBinCenters,
             called in getSuperVoxelBinCenters.
             Computes low level categorical features for supervoxels
@@ -313,13 +356,15 @@ class VoxelGroups:
 
         if not countBackground:
             superVoxelProfile = superVoxelProfile[:, 1:]
-        #dont worry about divide by zero errors, they are handled by the following line!
-        superVoxelProfile = np.divide(superVoxelProfile, np.array([np.sum(superVoxelProfile, axis=1)]).T)
+        superVoxelProfile = np.divide(superVoxelProfile, np.array([np.sum(superVoxelProfile, axis=1)]).T) #dont worry about divide by zero errors, they are supposed to happen here!
         superVoxelProfile[superVoxelProfile == np.nan] = 0
         fgSuperVoxel = fgSuperVoxel.astype(bool)
         ##fgSuperVoxel used to be fgSuperVoxel.T
         return superVoxelProfile, fgSuperVoxel
     # end getTileProfiles
+
+
+
 
 
 

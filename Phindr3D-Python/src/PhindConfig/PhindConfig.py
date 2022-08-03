@@ -53,7 +53,7 @@ class PhindConfig:
     showImage = False
     showChannels = False # show individual channels instead of rgb images.
 
-    # Include texture features of Mega Voxel image
+    # Include texture features of Mega Voxel image (default value)
     textureFeatures = True
 
     # Misc.
