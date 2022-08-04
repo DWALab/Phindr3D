@@ -16,21 +16,35 @@
 
 try:
     from .VoxelBase import *
+    from .SuperVoxelImage import *
 except ImportError:
     from VoxelBase import *
+    from SuperVoxelImage import *
 
 class MegaVoxelImage(VoxelBase):
     def __init__(self):
         super().__init__()
         self.megaVoxelBinCenters = None # np array
 
-    def getMegaVoxelBinCenters(self, x, metadata):
+    def getMegaVoxelBinCenters(self, metadata, training, pixelImage):
         # Same as getSuperVoxelBinCenters, but mega
         # required: randFieldID, metadata, supervoxels, image params (tileinfo)
         megaVoxelsforTraining = []
-
+        superVoxel = SuperVoxelImage()
+        superVoxel.getSuperVoxelBinCenters(metadata, training, pixelImage)
+        for id in training.randFieldID:
+            d = metadata.getImageInformation(metadata.GetImage(id))
+            pixelCenters = pixelImage.pixelBinCenters
+            pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(pixelCenters, pixelCenters, axis=1)]).T
+            print('here')
+            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(metadata.GetImage(id), pixelCenters, pixelBinCenterDifferences, metadata.theTileInfo, metadata)
+            megaVoxelProfile, fgMegaVoxel = self.getMegaVoxelProfile(superVoxel.superVoxelBinCenters, superVoxelProfile, metadata.theTileInfo, fgSuperVoxel, training)
+            if len(megaVoxelsforTraining) == 0:
+                megaVoxelsforTraining = megaVoxelProfile[fgMegaVoxel]
+            else:
+                megaVoxelsforTraining = np.concatenate((megaVoxelsforTraining, megaVoxelProfile[fgMegaVoxel]))
         # megaVoxelBinCenters is an np array that represents the megavoxels
-        self.megaVoxelBinCenters = self.getPixelBins(megaVoxelsforTraining)
+        self.megaVoxelBinCenters = self.getPixelBins(megaVoxelsforTraining, metadata, self.numMegaVoxelBins)
 
 
 # end class MegaVoxelImage

@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
-
+#from mahotas.features import texture
 import time
 import imageio.v2 as io
 import matplotlib.pyplot as plt
@@ -25,7 +25,7 @@ try:
     from .SuperVoxelImage import *
     from .MegaVoxelImage import *
 except ImportError:
-    from VoxelBase import *
+    from src.VoxelGroups.VoxelBase import *
     from PixelImage import *
     from SuperVoxelImage import *
     from MegaVoxelImage import *
