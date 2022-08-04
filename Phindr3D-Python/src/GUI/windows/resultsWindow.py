@@ -11,12 +11,10 @@ import pandas as pd
 from .featurefilegroupingwindow import featurefilegroupingWindow
 from .helperclasses import MplCanvas
 from .plot_functions import *
-#from Clustering import *
-#from ...Clustering.__init__ import *
-#try:
-#    from ...Clustering.Clustering_Functions import *
-#except ImportError:
-#    from src.Clustering.Clustering_Functions import *
+from sklearn.datasets import make_blobs
+
+#test
+
 class resultsWindow(QDialog):
     def __init__(self, color):
         super(resultsWindow, self).__init__()
@@ -25,6 +23,8 @@ class resultsWindow(QDialog):
         self.imageIDs=[]
         self.plots=[]
         self.filtered_data=0
+        self.numcluster=None
+
         menubar = QMenuBar()
         file = menubar.addMenu("File")
         inputfile = file.addAction("Input Feature File")
@@ -33,9 +33,12 @@ class resultsWindow(QDialog):
         selectclasses = classification.addAction("Select Classes")
         clustering = data.addMenu("Clustering")
         estimate = clustering.addAction("Estimate Clusters")
-        estimate.triggered.connect(lambda: Clustering().clusterest(self.filtered_data) if len(self.plot_data)>0 else None)
+        estimate.triggered.connect(lambda: Clustering().cluster_est(self.filtered_data) if len(self.plot_data)>0 else None)
         setnumber = clustering.addAction("Set Number of Clusters")
+        setnumber.triggered.connect(lambda: self.setnumcluster(colordropdown.currentText()) if len(self.plot_data) > 0 else None)
+
         piemaps = clustering.addAction("Pie Maps")
+        piemaps.triggered.connect(lambda: piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
         export = clustering.addAction("Export Cluster Results")
         plotproperties = menubar.addMenu("Plot Properties")
         rotation_enable = plotproperties.addAction("3D Rotation Enable")
@@ -89,9 +92,9 @@ class resultsWindow(QDialog):
         self.main_plot.axes.set_position([-0.25, -0.05, 1, 1])
         #self.main_plot.fig.canvas.setFocusPolicy(Qt.ClickFocus)
         #self.main_plot.fig.canvas.setFocus()
-        if not self.plot_data:
-            self.main_plot.axes.set_ylim(bottom=0)
-            self.main_plot.axes.set_xlim(left=0)
+        #if not self.plot_data:
+        #    self.main_plot.axes.set_ylim(bottom=0)
+        #    self.main_plot.axes.set_xlim(left=0)
         self.original_xlim = sc_plot.axes.get_xlim3d()
         self.original_ylim = sc_plot.axes.get_ylim3d()
         self.original_zlim = sc_plot.axes.get_zlim3d()
@@ -105,7 +108,7 @@ class resultsWindow(QDialog):
             if dim == "2d":
                 self.projection = dim
                 self.main_plot.axes.mouse_init()
-                self.main_plot.axes.view_init(azim=-90, elev=89)
+                self.main_plot.axes.view_init(azim=-90, elev=-90)
                 self.main_plot.axes.get_zaxis().line.set_linewidth(0)
                 self.main_plot.axes.tick_params(axis='z', labelsize=0)
                 self.main_plot.draw()
@@ -188,22 +191,18 @@ class resultsWindow(QDialog):
         mdatacols = columns.drop(featurecols)
 
         # drop duplicate data rows:
-        #image_feature_data.drop_duplicates(subset=featurecols, inplace=True)
-
+        image_feature_data.drop_duplicates(subset=featurecols, inplace=True)
 
         # remove non-finite/ non-scalar valued rows in both
-        #image_feature_data = image_feature_data[np.isfinite(image_feature_data[featurecols]).all(1)]
-        #image_feature_data.sort_values(list(featurecols), axis=0, inplace=True)
+        image_feature_data = image_feature_data[np.isfinite(image_feature_data[featurecols]).all(1)]
+        image_feature_data.sort_values(list(featurecols), axis=0, inplace=True)
 
         # min-max scale all data and split to feature and metadata
         mind = np.min(image_feature_data[featurecols], axis=0)
         maxd = np.max(image_feature_data[featurecols], axis=0)
-        print(mind, maxd)
         featuredf = (image_feature_data[featurecols] - mind) / (maxd - mind)
         mdatadf = image_feature_data[mdatacols]
         featuredf.dropna(axis=0, thresh=int(0.2 * featuredf.shape[0]), inplace=True)
-
-        np.savetxt('/home/kjok/phindr_matlab_numpy/datarawPY.txt', featuredf.to_numpy().astype(np.float64))
 
         # select data
         if datachoice.lower() == 'mv':
@@ -216,7 +215,6 @@ class resultsWindow(QDialog):
             X = featuredf[mv_cols].to_numpy().astype(np.float64)
             print('Invalid data set choice. Using Megavoxel frequencies.')
         print('Dataset shape:', X.shape)
-        np.savetxt('/home/kjok/phindr_matlab_numpy/dataPy.txt', X)
         self.filtered_data=X
         #reset imageIDs
         self.imageIDs.clear()
@@ -238,4 +236,7 @@ class resultsWindow(QDialog):
         alert.setText(errormessage)
         alert.setIcon(icon)
         return alert
+    def setnumcluster(self, group):
+        clustnum=setcluster(self.numcluster, self.filtered_data, self.plot_data, np.array(self.labels), group)
+        self.numcluster=clustnum.clust
 # end resultsWindow

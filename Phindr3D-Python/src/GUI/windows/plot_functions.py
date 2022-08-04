@@ -58,7 +58,7 @@ def result_plot(self, X, projection, plot, new_plot):
     if new_plot:
         dim=int(projection[0])
         #send to clustering.py for PCA, Sammon, t-SNE analysis
-        title, xlabel, ylabel, P=Clustering().plot_type(X, dim, plot)
+        P=Clustering().plot_type(X, dim, plot)
         self.plot_data.clear()
         #save new x, y, z data
         self.plot_data.append(P[:,0])
@@ -113,7 +113,7 @@ def reset_view(self):
     self.main_plot.axes.set_ylim3d(self.original_ylim)
     self.main_plot.axes.set_zlim3d(self.original_zlim)
     #xy-plane view
-    self.main_plot.axes.view_init(azim=-90, elev=89)
+    self.main_plot.axes.view_init(azim=-90, elev=-90)
     self.main_plot.draw()
 
 def legend_colors(self):
