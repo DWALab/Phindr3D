@@ -40,7 +40,6 @@ class setcluster(object):
         win.setLayout(QFormLayout())
 
         label=QLabel("Enter number of clusters")
-
         clusterset=QSpinBox()
         btn_ok=QPushButton("OK")
         btn_close=QPushButton("Close")
@@ -66,6 +65,7 @@ class setcluster(object):
         win.show()
         win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         win.exec()
+    #return number of clusters. If current colorby is "Treatment" displays mutual information.
     def confirmed_cluster(self, num, datafilt, numclusters, plot_data, labels, labelc1, labelc2, labelc3, group):
         if num.value()>0:
             self.clust=num.value()

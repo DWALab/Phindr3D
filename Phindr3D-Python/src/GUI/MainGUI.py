@@ -143,7 +143,6 @@ class MainGUI(QWidget, external_windows):
 
         # Declaring menu actions, to be placed in their proper section of the menubar
         menubar = QMenuBar()
-
         file = menubar.addMenu("File")
         imp = file.addMenu("Import")
         impsession = imp.addAction("Session")
@@ -298,7 +297,7 @@ class MainGUI(QWidget, external_windows):
                 checkbox_prev.setChecked(False)
             if checkbox_cur.isChecked():
                 #plot SV/MV GRID
-                overlay=getImageWithSVMVOverlay(img_grid, params, type)
+                overlay=DataFunctions.getImageWithSVMVOverlay(img_grid, params, type)
                 cmap=[[0,0,0,0],[255,255,255,1]]
                 cmap = matplotlib.colors.LinearSegmentedColormap.from_list('map_white', cmap)
                 img_plot.axes.imshow(overlay, zorder=5, cmap=cmap, interpolation=None)

@@ -13,7 +13,6 @@ from cv2 import medianBlur
 import time
 from more_itertools import locate
 from PIL import Image
-from ..analysis_scripts import *
 from .helperclasses import MplCanvas
 from .plot_functions import *
 from .colorchannelWindow import *

@@ -17,19 +17,17 @@
 import numpy as np
 from cv2 import medianBlur
 from PIL import Image
-from ..analysis_scripts import *
 from .colorchannelWindow import *
 import matplotlib
 import matplotlib.pyplot as plt
 from math import ceil, floor
-#from ...Clustering.Clustering_Functions import *
-#try:
-#    from ...Clustering.Clustering_Functions import *
-#except ImportError:
-#    from src.Clustering.Clustering_Functions import *
-from Clustering import *
 from textwrap import wrap, fill
-
+try:
+    from ...Clustering import Clustering
+    from ...Data.DataFunctions import *
+except ImportError:
+    from src.Clustering import Clustering
+    from src.Data.DataFunctions import *
 def merge_channels(data, rgb_img, ch_len, scroller_value, color, meta_loc, box):
     # threshold/colour each image channel
     for ind, rgb_color in zip(range(scroller_value, scroller_value + ch_len), color):
@@ -39,7 +37,7 @@ def merge_channels(data, rgb_img, ch_len, scroller_value, color, meta_loc, box):
         # medianfilter for slice or MIP projection
         if box == False:
             cur_img = medianBlur(cur_img, 3)
-        threshold = getImageThreshold(cur_img)
+        threshold = DataFunctions.getImageThreshold(cur_img)
         cur_img[cur_img <= threshold] = 0
         cur_img = np.dstack((cur_img, cur_img, cur_img))
         rgb_img[int(ch_num) - 1, :, :, :] = np.multiply(cur_img, rgb_color)
@@ -58,7 +56,7 @@ def result_plot(self, X, projection, plot, new_plot):
     if new_plot:
         dim=int(projection[0])
         #send to clustering.py for PCA, Sammon, t-SNE analysis
-        P=Clustering().plot_type(X, dim, plot)
+        P=Clustering.Clustering().plot_type(X, dim, plot)
         self.plot_data.clear()
         #save new x, y, z data
         self.plot_data.append(P[:,0])

@@ -13,8 +13,6 @@ from .helperclasses import MplCanvas
 from .plot_functions import *
 from sklearn.datasets import make_blobs
 
-#test
-
 class resultsWindow(QDialog):
     def __init__(self, color):
         super(resultsWindow, self).__init__()
@@ -33,12 +31,12 @@ class resultsWindow(QDialog):
         selectclasses = classification.addAction("Select Classes")
         clustering = data.addMenu("Clustering")
         estimate = clustering.addAction("Estimate Clusters")
-        estimate.triggered.connect(lambda: Clustering().cluster_est(self.filtered_data) if len(self.plot_data)>0 else None)
+        estimate.triggered.connect(lambda: Clustering.Clustering().cluster_est(self.filtered_data) if len(self.plot_data)>0 else None)
         setnumber = clustering.addAction("Set Number of Clusters")
         setnumber.triggered.connect(lambda: self.setnumcluster(colordropdown.currentText()) if len(self.plot_data) > 0 else None)
 
         piemaps = clustering.addAction("Pie Maps")
-        piemaps.triggered.connect(lambda: piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
+        piemaps.triggered.connect(lambda: Clustering.piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
         export = clustering.addAction("Export Cluster Results")
         plotproperties = menubar.addMenu("Plot Properties")
         rotation_enable = plotproperties.addAction("3D Rotation Enable")
@@ -237,6 +235,6 @@ class resultsWindow(QDialog):
         alert.setIcon(icon)
         return alert
     def setnumcluster(self, group):
-        clustnum=setcluster(self.numcluster, self.filtered_data, self.plot_data, np.array(self.labels), group)
+        clustnum=Clustering.setcluster(self.numcluster, self.filtered_data, self.plot_data, np.array(self.labels), group)
         self.numcluster=clustnum.clust
 # end resultsWindow
