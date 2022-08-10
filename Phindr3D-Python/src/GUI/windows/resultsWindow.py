@@ -4,14 +4,11 @@ from PyQt5.QtCore import *
 import numpy as np
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from mpl_toolkits.mplot3d import proj3d
-from matplotlib import rcParams, cycler
 from .interactive_click import interactive_points
 import pandas as pd
-from .featurefilegroupingwindow import featurefilegroupingWindow
-from .helperclasses import MplCanvas
 from .plot_functions import *
 from sklearn.datasets import make_blobs
+from ...Training import *
 
 class resultsWindow(QDialog):
     def __init__(self, color):
@@ -22,7 +19,7 @@ class resultsWindow(QDialog):
         self.plots=[]
         self.filtered_data=0
         self.numcluster=None
-
+        #menu tabs
         menubar = QMenuBar()
         file = menubar.addMenu("File")
         inputfile = file.addAction("Input Feature File")
@@ -31,23 +28,13 @@ class resultsWindow(QDialog):
         selectclasses = classification.addAction("Select Classes")
         clustering = data.addMenu("Clustering")
         estimate = clustering.addAction("Estimate Clusters")
-        estimate.triggered.connect(lambda: Clustering.Clustering().cluster_est(self.filtered_data) if len(self.plot_data)>0 else None)
         setnumber = clustering.addAction("Set Number of Clusters")
-        setnumber.triggered.connect(lambda: self.setnumcluster(colordropdown.currentText()) if len(self.plot_data) > 0 else None)
-
         piemaps = clustering.addAction("Pie Maps")
-        piemaps.triggered.connect(lambda: Clustering.piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
         export = clustering.addAction("Export Cluster Results")
         plotproperties = menubar.addMenu("Plot Properties")
         rotation_enable = plotproperties.addAction("3D Rotation Enable")
-        rotation_enable.triggered.connect(lambda: self.main_plot.axes.mouse_init())
         rotation_disable = plotproperties.addAction("3D Rotation Disable")
-        rotation_disable.triggered.connect(lambda: self.main_plot.axes.disable_mouse_rotation())
-        reset_action = QAction("Reset Plot View", self)
-        reset_action.triggered.connect(lambda: reset_view(self))
-        resetview = plotproperties.addAction(reset_action)
-
-        # menu features go here
+        resetview = plotproperties.addAction("Reset Plot View")
 
         # defining widgets
         box = QGroupBox()
@@ -79,6 +66,13 @@ class resultsWindow(QDialog):
         box.setLayout(boxlayout)
         #menu actions activated
         inputfile.triggered.connect(lambda: self.loadFeaturefile(colordropdown, map_type.currentText(), True))
+        selectclasses.triggered.connect(lambda: TrainingFunctions().selectclasses(np.array(self.filtered_data), np.array(self.labels)) if len(self.plot_data)>0 else None)
+        estimate.triggered.connect(lambda: Clustering.Clustering().cluster_est(self.filtered_data) if len(self.plot_data) > 0 else None)
+        setnumber.triggered.connect(lambda: self.setnumcluster(colordropdown.currentText()) if len(self.plot_data) > 0 else None)
+        piemaps.triggered.connect(lambda: Clustering.piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
+        rotation_enable.triggered.connect(lambda: self.main_plot.axes.mouse_init())
+        rotation_disable.triggered.connect(lambda: self.main_plot.axes.disable_mouse_rotation())
+        resetview.triggered.connect(lambda: reset_view(self))
         exportdata.clicked.connect(lambda: save_file(self, map_type.currentText()))
         prevdata.clicked.connect(lambda: import_file(self, map_type, colordropdown, twod, threed))
         #setup Matplotlib
@@ -88,11 +82,6 @@ class resultsWindow(QDialog):
         self.main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection="3d")
         sc_plot = self.main_plot.axes.scatter3D([], [], [], s=10, alpha=1, depthshade=False)  # , picker=True)
         self.main_plot.axes.set_position([-0.25, -0.05, 1, 1])
-        #self.main_plot.fig.canvas.setFocusPolicy(Qt.ClickFocus)
-        #self.main_plot.fig.canvas.setFocus()
-        #if not self.plot_data:
-        #    self.main_plot.axes.set_ylim(bottom=0)
-        #    self.main_plot.axes.set_xlim(left=0)
         self.original_xlim = sc_plot.axes.get_xlim3d()
         self.original_ylim = sc_plot.axes.get_ylim3d()
         self.original_zlim = sc_plot.axes.get_zlim3d()
@@ -149,23 +138,34 @@ class resultsWindow(QDialog):
             self.feature_file.clear()
             self.feature_file.append(filename)
             print(self.feature_file)
-            grouping=self.color_groupings(grouping)
-            self.data_filt(grouping, self.projection, plot, new_plot)
+            grouping, cancel=self.color_groupings(grouping)
+            if not cancel:
+                self.data_filt(grouping, self.projection, plot, new_plot)
         else:
             load_featurefile_win = self.buildErrorWindow("Select Valid Feature File (.txt)", QMessageBox.Critical)
             load_featurefile_win.exec()
 
     def color_groupings(self, grouping):
+        #read feature file
         feature_data = pd.read_csv(self.feature_file[0], sep='\t', na_values='        NaN')
         grouping.blockSignals(True)
         grps=[]
-        featurefilegroupingWindow(feature_data.columns, grps)
-        grouping.clear()
-        grouping.addItem("No Grouping")
-        for col in grps:
-            grouping.addItem(col)
-        grouping.blockSignals(False)
-        return(grouping)
+        #Get Channels
+        col_lbl=np.array([lbl if lbl.find("Channel_")>-1 else np.nan for lbl in feature_data.columns])
+        col_lbl=col_lbl[col_lbl!='nan']
+        #get features
+        chk_lbl=np.array([lbl if lbl.find("MV")==-1 else np.nan for lbl in feature_data.columns.drop(labels=col_lbl)])
+        chk_lbl=chk_lbl[chk_lbl!='nan']
+        #select features window
+        win=selectWindow(chk_lbl, col_lbl, "Filter Feature File Groups and Channels", "Grouping", "Channels", grps)
+        if not win.x_press:
+            #change colorby window
+            grouping.clear()
+            grouping.addItem("No Grouping")
+            for col in grps:
+                grouping.addItem(col)
+            grouping.blockSignals(False)
+        return(grouping, win.x_press)
     def data_filt(self, grouping, projection, plot, new_plot):
         filter_data= grouping.currentText()
         print(filter_data)

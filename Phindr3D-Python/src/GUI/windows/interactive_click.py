@@ -1,39 +1,18 @@
-from PyQt5.QtWidgets import *
-from PyQt5.QtGui import *
-from PyQt5.QtCore import *
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+
 from matplotlib.backend_bases import MouseButton
-from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import proj3d
 import matplotlib
 matplotlib.use('Qt5Agg')
 import numpy as np
 import pandas as pd
-from cv2 import medianBlur
 import time
 from more_itertools import locate
-from PIL import Image
 from .helperclasses import MplCanvas
 from .plot_functions import *
 from .colorchannelWindow import *
 
-#Callback will open image associated with data point. Note: in 3D plot pan is hold left-click swipe, zoom is hold right-click swipe
+#Callback will open image associated with data point. Note: in 3D plot pan is hold left-click swipe, zoom is hold right-click swipe (disabled zoom)
 
-#imported matplotlib toolbar. Only use desired functions.
-class NavigationToolbar(NavigationToolbar):
-    NavigationToolbar.toolitems = (
-        (None, None, None, None),
-        (None, None, None, None),
-        (None, None, None, None),
-        (None, None, None, None),
-        (None, None, None, None),
-        ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-        ('Customize', 'Edit axis, curve and image parameters', 'qt4_editor_options', 'edit_parameters'),
-        (None, None, None, None),
-        ('Save', 'Save the figure', 'filesave', 'save_figure')
-    )
-
-#Callback will open image associated with data point. Note: in 3D plot pan is hold left-click swipe, zoom is hold right-click swipe
 class interactive_points():
     def __init__(self, main_plot, projection, data, labels, feature_file, color, imageID):
         self.main_plot=main_plot
