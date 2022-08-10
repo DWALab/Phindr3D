@@ -169,8 +169,6 @@ class resultsWindow(QDialog):
     def data_filt(self, grouping, projection, plot, new_plot):
         filter_data= grouping.currentText()
         print(filter_data)
-        # rescale texture features to the range [0, 1]
-        rescale_texture_features = False
 
         # choose dataset to use for clustering: EDIT HERE
         # Choices:
@@ -200,7 +198,7 @@ class resultsWindow(QDialog):
         maxd = np.max(image_feature_data[featurecols], axis=0)
         featuredf = (image_feature_data[featurecols] - mind) / (maxd - mind)
         mdatadf = image_feature_data[mdatacols]
-        featuredf.dropna(axis=0, thresh=int(0.2 * featuredf.shape[0]), inplace=True)
+        featuredf.dropna(axis=0, inplace=True) # thresh=int(0.2 * featuredf.shape[0]) )
 
         # select data
         if datachoice.lower() == 'mv':
@@ -224,7 +222,6 @@ class resultsWindow(QDialog):
         self.labels.clear()
         self.labels.extend(list(map(str, z)))
         # misc info
-        numMVperImg = np.array(image_feature_data['NumMV']).astype(np.float64)
         num_images_kept = X.shape[0]
         print(f'\nNumber of images: {num_images_kept}\n')
         result_plot(self, X, projection, plot, new_plot)

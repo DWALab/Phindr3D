@@ -206,7 +206,8 @@ class Clustering:
             raise Exception("Invalid plot")
 
     def cluster_est(self, X):
-        self.estimateNumClusters(self, X)
+        numclust = self.estimateNumClusters(self, X)
+
 
     #cluster functions from Matlab - Python Translation
     """Static methods for cluster analysis. Referenced from
@@ -537,7 +538,6 @@ class Clustering:
         #Nclusters = 4  # number of clusters to try to hit
         #add to input function. temp
         percent_dev = 1  # percentage by which final number of clusters may deviate from Nclusters
-        print('ran')
         type = type.upper()
         C = self.clsIn(self,data)
         print(C.pmed)
@@ -549,13 +549,6 @@ class Clustering:
                 print(f'cluster{i + 1}: {counts[i]} counts')
         else:
             clusterResult = np.arange(0, data.shape[0])
-        ''' unused...
-        elif type == 'SK':
-            print(C.pmed)
-            clusterResult = self.apcluster_sklearn(projection_data, numberClusters, sparse=sparse, maxits=maxits, convits=convits,
-                                              dampfact=dampfact, plot=plot, details=details, nonoise=nonoise)
-        '''
-
         return (clusters, counts, idx)
 
 
@@ -589,7 +582,7 @@ class Clustering:
         C.pmin, C.pmax = self.preferenceRange(self, sim)
         C.S = sim  # similarity matrix
         return C
-    
+
     # https://www.mathworks.com/matlabcentral/mlc-downloads/downloads/submissions/14620/versions/4/previews/apcluster.m/index.html
     # https://www.mathworks.com/matlabcentral/fileexchange/25722-fast-affinity-propagation-clustering-under-given-number-of-clusters?tab=discussions
     @staticmethod
@@ -793,7 +786,6 @@ class Clustering:
         dS = np.diag(S)
         A = np.zeros((N, N))
         R = np.zeros((N, N))
-        t = 1
         if plot:
             netsim = np.zeros(maxits + 1)
         if details:
@@ -816,7 +808,6 @@ class Clustering:
             for k in range(N):
                 AS[k, I[k]] = -self.realmax
             Y2 = np.amax(AS, axis=1)
-            I2 = np.argmax(AS, axis=1)
             R = S - np.transpose(np.tile(Y, [N, 1]))
             for k in range(N):
                 R[k, I[k]] = S[k, I[k]] - Y2[k]
@@ -879,16 +870,13 @@ class Clustering:
         K = max(I.shape)  # fixed len to matlab "Length"
         if K > 0:
             # identify clusters
-            tmp = np.amax(S[:, I], axis=1)  # all rows, columns from I, max along column axis
             c = np.argmax(S[:, I], axis=1)  # index of maximum along axis()
             c[I] = np.arange(0, K)
             # refine the final set of exemplars and clusters and return results
             for k in range(K):
                 ii = np.nonzero(c == k)[0]
-                # y = np.max(np.sum(S[ii, ii], axis=0))
-                j = np.argmax(np.sum(S[ii, ii], axis=0))
+                j = np.argmax(np.sum(S[np.ix_(ii, ii)], axis=0))
                 I[k] = ii[j]
-            tmp = np.amax(S[:, I], axis=1)
             c = np.argmax(S[:, I], axis=1)
             c[I] = np.arange(0, K)
             tmpidx = I[c]  # choose I's based on c
@@ -926,23 +914,7 @@ class Clustering:
             print(
                 'To monitor net similarity, activate plotting. Also consider increasing maxits and if necessary, dampfact.')
         return idx, netsim, dpsim, expref, unconverged
-    @staticmethod
-    def apcluster_sklearn(s, p, sparse=False, maxits=500, convits=15, dampfact=0.5, plot=False, details=False,
-                          nonoise=False):
-        """
-        litterally just cluster, no statistics given or nothing.
-        """
-        af = AffinityPropagation(damping=dampfact, max_iter=maxits, convergence_iter=convits, preference=p,
-                                 affinity='euclidean', verbose=details).fit(s)
-        print(af)
-        print("centers",af.cluster_centers_)
-
-        center_indices = af.cluster_centers_indices_
-        which_cluster = af.labels_
-        idx = center_indices[which_cluster]
-        nice_labels = which_cluster + 1
-        print(idx, nice_labels, which_cluster, center_indices)
-        return idx, nice_labels
+    
     @staticmethod
     def apclusterK(self, s, kk, prc=10):
         """called in computeClustering"""
@@ -1044,11 +1016,12 @@ class Clustering:
         pref = tmppref
         print(f'Found {tmpk} clusters using a preference of {pref}')
         return idx, netsim, dpsim, expref, pref
+
     @staticmethod
-    def estimateNumClusters(self, X):
+    def estimateNumClusters(self, X, pl=True):
         C = self.clsIn(self, X)  # make similarity matrix
         step = 100
-        pref = np.linspace(C.pmin, C.pmax, 100, endpoint=True)
+        pref = np.linspace(C.pmin, C.pmax, step, endpoint=True)
         yCls = np.zeros(pref.shape)
         for i in range(len(pref)):
             idx, netsim, dpsim, expref, unconverged = self.apcluster(self, C.S, pref[i], dampfact=0.9)
@@ -1060,8 +1033,9 @@ class Clustering:
                     yCls[i] = yCls[i - 1]
             else:
                 yCls[i] = len(uIdx)
-        numclust = self.getBestPreference(pref, yCls, pl=True)
+        numclust = self.getBestPreference(pref, yCls, pl=pl)
         print(f'Estimated optimal number of clusters: {numclust}')
+        return numclust
 
     #   getBestPreference.m
     @staticmethod
@@ -1121,3 +1095,18 @@ class Clustering:
                                   '# Clusters', 'Optimal Cluster', [xCent, yCent, optText], 1)
         return yp
     # end Clustering
+
+#unit test for clustering.py
+if __name__ == '__main__':
+    #want to test cluster estimation function
+
+    testdata = "testdata\\cluster_test\\iris.txt"   #Data in sample file is already rescaled and filtered as it would be by phindr3D (0-1 along columns, drop duplicates, sort by feature columns in ascending order.)
+    testdata = np.loadtxt(testdata, delimiter='\t', skiprows=1, usecols=(2,3,4,5))
+    clusterTest = Clustering()
+    print('\nTesting Cluster estimation...\n')
+    numclust = clusterTest.estimateNumClusters(clusterTest, testdata, pl=False)
+    print(f'\tEstimated 3 clusters from iris dataset: {numclust == 3}')
+
+    #want to test clustering result
+    
+
