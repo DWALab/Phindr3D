@@ -39,7 +39,7 @@ class PhindConfig:
     # Number of categories for binning
     numVoxelBins = 20
     numSuperVoxelBins = 15
-    numMegaVoxelBins = 30
+    numMegaVoxelBins = 40
     # Foreground thresholds
     intensityThresholdTuningFactor = 0.5
     superVoxelThresholdTuningFactor = 0.5

@@ -26,17 +26,15 @@ class MegaVoxelImage(VoxelBase):
         super().__init__()
         self.megaVoxelBinCenters = None # np array
 
-    def getMegaVoxelBinCenters(self, metadata, training, pixelImage):
+    def getMegaVoxelBinCenters(self, metadata, training, pixelImage, superVoxel):
         # Same as getSuperVoxelBinCenters, but mega
         # required: randFieldID, metadata, supervoxels, image params (tileinfo)
+        # superVoxel and pixelImage need to have gotten bincenters already
         megaVoxelsforTraining = []
-        superVoxel = SuperVoxelImage()
-        superVoxel.getSuperVoxelBinCenters(metadata, training, pixelImage)
-        for id in training.randFieldID:
+        for id in metadata.theTrainingFields:
             d = metadata.getImageInformation(metadata.GetImage(id))
             pixelCenters = pixelImage.pixelBinCenters
             pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(pixelCenters, pixelCenters, axis=1)]).T
-            print('here')
             superVoxelProfile, fgSuperVoxel = self.getTileProfiles(metadata.GetImage(id), pixelCenters, pixelBinCenterDifferences, metadata.theTileInfo, metadata)
             megaVoxelProfile, fgMegaVoxel = self.getMegaVoxelProfile(superVoxel.superVoxelBinCenters, superVoxelProfile, metadata.theTileInfo, fgSuperVoxel, training)
             if len(megaVoxelsforTraining) == 0:
