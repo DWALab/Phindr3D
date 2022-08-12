@@ -29,30 +29,32 @@ try:
 except ImportError:
     from src.PhindConfig.PhindConfig import *
 
-class Clustering:
-    """This class"""
 
-    def __init__(self):
-        """Clustering constructor"""
-        pass
+"""No reason to have this class, clustering occurs in the view results part of the code. """
+# class Clustering:
+#     """This class"""
 
-    def action(self):
-        """Action performed by this class when user requests the Phind operation.
-            Returns the True/False result of the phindClusters method."""
-        print("Running the Clustering action method")
-        return self.phindClusters()
-    # end action
+#     def __init__(self):
+#         """Clustering constructor"""
+#         pass
 
-    def phindClusters(self):
-        """Phind operation.
-            Returns True if successful, False on failure or error"""
+#     def action(self):
+#         """Action performed by this class when user requests the Phind operation.
+#             Returns the True/False result of the phindClusters method."""
+#         print("Running the Clustering action method")
+#         return self.phindClusters()
+#     # end action
+
+#     def phindClusters(self):
+#         """Phind operation.
+#             Returns True if successful, False on failure or error"""
 
 
-        # temporary
-        return True
-    # end phindClusters
+#         # temporary
+#         return True
+#     # end phindClusters
 
-# end class Clustering
+# # end class Clustering
 
 
 

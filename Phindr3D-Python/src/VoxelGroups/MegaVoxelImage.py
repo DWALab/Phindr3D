@@ -31,7 +31,7 @@ class MegaVoxelImage(VoxelBase):
         # required: randFieldID, metadata, supervoxels, image params (tileinfo)
         # superVoxel and pixelImage need to have gotten bincenters already
         megaVoxelsforTraining = []
-        for id in metadata.theTrainingFields:
+        for id in metadata.trainingSet:
             d = metadata.getImageInformation(metadata.GetImage(id))
             pixelCenters = pixelImage.pixelBinCenters
             pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(pixelCenters, pixelCenters, axis=1)]).T

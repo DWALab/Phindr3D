@@ -46,7 +46,7 @@ class MainGUI(QWidget, external_windows):
         self.training = Training()
         self.metadata = Metadata()
         self.voxelGroups = VoxelGroups(self.metadata)
-        self.clustering = Clustering()
+        # self.clustering = Clustering() #dont need this, clustering occurs in the view results parts and the clustering object isnt relevant.
         self.setWindowTitle("Phindr3D")
         self.image_grid=0
         self.rgb_img=[]
@@ -398,16 +398,17 @@ class MainGUI(QWidget, external_windows):
     def phindButtonAction(self):
         """Actions performed when the Phind button is pressed and metadata has been loaded"""
         if self.metadata.GetMetadataFilename():
-            # From pixels to supervoxels to megavoxels
-            self.training.randFieldID = self.metadata.theTrainingFields
-            if self.voxelGroups.action(self.training):
-                # Clustering
-                print('ok')
-                #if not self.clustering.action():
-                    #print("clustering failed")
-            else:
-                # error
-                print("voxel grouping failed")
+            #get output dir:
+            self.training.randFieldID = self.metadata.trainingSet
+            savefile, dump = QFileDialog.getSaveFileName(self, 'Phindr3D Results', '', 'Text file (*.txt)')
+            if len(savefile) > 0:
+                if self.voxelGroups.action(savefile, self.training):
+                    print(self.voxelGroups.metadata.trainingSet)
+                    print(self.voxelGroups.metadata.upperbound)
+                else:
+                    # error
+                    print('something went wrong.')
+                    print("voxel grouping failed")
         else:
             # do nothing? display error window?
             pass

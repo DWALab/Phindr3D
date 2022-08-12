@@ -32,8 +32,7 @@ class PixelImage(VoxelBase):
         pixelsForTraining = np.zeros((300000, metadata.GetNumChannels()))
         startVal = 0
         endVal = 0
-        randFieldID = metadata.theTrainingFields
-        for i, id in enumerate(randFieldID):
+        for id in metadata.trainingSet:
             d = metadata.getImageInformation(metadata.GetImage(id))
             info = metadata.getTileInfo(d, metadata.theTileInfo)
             randZ = d[2] // 2
