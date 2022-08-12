@@ -46,7 +46,7 @@ class MainGUI(QWidget, external_windows):
         self.training = Training()
         self.metadata = Metadata()
         self.voxelGroups = VoxelGroups(self.metadata)
-        self.clustering = Clustering()
+        # self.clustering = Clustering() #dont need this, clustering occurs in the view results parts and the clustering object isnt relevant.
         self.setWindowTitle("Phindr3D")
         self.image_grid=0
         self.rgb_img=[]
@@ -400,14 +400,15 @@ class MainGUI(QWidget, external_windows):
         if self.metadata.GetMetadataFilename():
             # From pixels to supervoxels to megavoxels
             #get output dir:
-            savefile, dump = QFileDialog.getSaveFileName(self, 'Phindr3D Results', '', 'Text file (*.json)')
-            if self.voxelGroups.action(savefile):
-                print(self.voxelGroups.metadata.trainingSet)
-                print(self.voxelGroups.metadata.upperbound)
-            else:
-                # error
-                print('something went wrong.')
-                print("voxel grouping failed")
+            savefile, dump = QFileDialog.getSaveFileName(self, 'Phindr3D Results', '', 'Text file (*.txt)')
+            if len(savefile) > 0:
+                if self.voxelGroups.action(savefile):
+                    print(self.voxelGroups.metadata.trainingSet)
+                    print(self.voxelGroups.metadata.upperbound)
+                else:
+                    # error
+                    print('something went wrong.')
+                    print("voxel grouping failed")
         else:
             # do nothing? display error window?
             pass

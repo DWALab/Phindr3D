@@ -54,10 +54,13 @@ class VoxelGroups:
     def action(self, outputFileName):
         """Action performed by this class when user requests the Phind operation.
             Returns the True/False result of the phindVoxelGroups method."""
-        
-        self.phindVoxelGroups()
-        self.extractImageLevelTextureFeatures(outputFileName=outputFileName)
-        return 
+        if self.phindVoxelGroups():
+            re
+            # if self.extractImageLevelTextureFeatures(outputFileName=outputFileName):
+            #     return True
+        else:
+            return False
+
 
     # end action
 
@@ -79,7 +82,18 @@ class VoxelGroups:
         # = phi.extractImageLevelTextureFeatures(mdata, param, outputFileName=output_file_name, outputDir='')
         # This is the step that outputs a feature file
 
-        theBase = VoxelBase()
+
+        #voxel bincenters, 
+        #supervoxelbincenters,
+        #megavoxelbincenters.
+        Base = VoxelBase()
+        voxel = PixelImage(Base)
+        voxel.getPixelBinCenters(x, self.metadata)
+        SuperVoxel = SuperVoxelImage(Base)
+        MegaVoxel = MegaVoxelImage(Base)
+
+        
+
 
         superVoxelBinCenters = np.zeros((1,1))
         tileProfile = np.zeros((1,1))
