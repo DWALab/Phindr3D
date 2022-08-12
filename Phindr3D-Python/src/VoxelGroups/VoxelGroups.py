@@ -50,22 +50,20 @@ class VoxelGroups:
 
     # end constructor
 
-
     def action(self, outputFileName):
         """Action performed by this class when user requests the Phind operation.
             Returns the True/False result of the phindVoxelGroups method."""
         if self.phindVoxelGroups():
-            re
+            return True
             # if self.extractImageLevelTextureFeatures(outputFileName=outputFileName):
             #     return True
         else:
             return False
 
-
     # end action
 
 
-    def phindVoxelGroups(self):
+    def phindVoxelGroups(self, training):
         """Phind operation.
             Returns True if successful, False on failure or error"""
 
@@ -73,7 +71,17 @@ class VoxelGroups:
         # param = getPixelBinCenters(mData, allImageId, param);
         # param = getSuperVoxelBinCenters(mData, allImageId, param);
         # param = getMegaVoxelBinCenters(mData, allImageId, param);
+        pixelImage = PixelImage()
+        superVoxelImage = SuperVoxelImage()
+        megaVoxelImage = MegaVoxelImage()
 
+        pixelImage.getPixelBinCenters(self.metadata, training)
+        superVoxelImage.getSuperVoxelBinCenters(self.metadata, training, pixelImage)
+        megaVoxelImage.getMegaVoxelBinCenters(self.metadata, training, pixelImage, superVoxelImage)
+
+        print("Pixels:", pixelImage.pixelBinCenters)
+        print("Super Voxels:", superVoxelImage.superVoxelBinCenters)
+        print("Mega Voxels:", megaVoxelImage.megaVoxelBinCenters)
         # Then...
         # In MATLAB
         # extractImageLevelTextureFeatures(mData,allImageId,param,outputFileName,outputDir);
@@ -88,7 +96,7 @@ class VoxelGroups:
         #megavoxelbincenters.
         Base = VoxelBase()
         voxel = PixelImage(Base)
-        voxel.getPixelBinCenters(x, self.metadata)
+        voxel.getPixelBinCenters(self.metadata) ########NEED PROPER ARGUMENTS FOR ALL THESE FUNCTIONS.
         SuperVoxel = SuperVoxelImage(Base)
         MegaVoxel = MegaVoxelImage(Base)
 
@@ -271,7 +279,6 @@ class VoxelGroups:
         # tmpData holds the binned pixel image (ONE LAYER OF SUPERVOXELS AT A TIME.)
         # dimensions: number of supervoxels in a 2D cropped image x number of voxels in a supervoxel.
         tmpData = np.zeros((numTilesXY, int(theTileInfo.tileX * theTileInfo.tileY * theTileInfo.tileZ)))
-        print(tmpData)
         for iImages, zslice in enumerate(slices):
             sliceCounter += 1
             # just one slice in all channels

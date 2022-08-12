@@ -26,7 +26,7 @@ import numpy as np
 from PIL import Image as im
 import sys
 import random
-
+from scipy.spatial import distance as dist
 try:
     from ..VoxelGroups.VoxelGroups import *
     from ..Clustering.Clustering import *
@@ -110,6 +110,7 @@ class MainGUI(QWidget, external_windows):
                 try:
                     self.metadata.loadMetadataFile(filename)
                     #print(self.metadata.GetMetadataFilename())
+                    self.voxelGroups.metadata = self.metadata
 
                     adjustbar.setValue(0)
                     slicescrollbar.setValue(0)
@@ -210,12 +211,11 @@ class MainGUI(QWidget, external_windows):
             superVoxels = SuperVoxelImage()
             megaVoxels = MegaVoxelImage()
             try:
-                pixels.getPixelBinCenters(3, self.metadata, self.training)
+                pixels.getPixelBinCenters(self.metadata, self.training)
                 print(pixels.pixelBinCenters)
-                self.training.randFieldID = self.metadata.getTrainingFields()
                 superVoxels.getSuperVoxelBinCenters(self.metadata, self.training, pixels)
                 print(superVoxels.superVoxelBinCenters)
-                megaVoxels.getMegaVoxelBinCenters(self.metadata, self.training, pixels)
+                megaVoxels.getMegaVoxelBinCenters(self.metadata, self.training, pixels, superVoxels)
                 print(megaVoxels.megaVoxelBinCenters)
             except Exception as e:
                 print(e)
@@ -398,8 +398,8 @@ class MainGUI(QWidget, external_windows):
     def phindButtonAction(self):
         """Actions performed when the Phind button is pressed and metadata has been loaded"""
         if self.metadata.GetMetadataFilename():
-            # From pixels to supervoxels to megavoxels
             #get output dir:
+            self.training.randFieldID = self.metadata.theTrainingFields
             savefile, dump = QFileDialog.getSaveFileName(self, 'Phindr3D Results', '', 'Text file (*.txt)')
             if len(savefile) > 0:
                 if self.voxelGroups.action(savefile):

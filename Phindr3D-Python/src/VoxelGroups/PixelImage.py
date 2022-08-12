@@ -13,7 +13,7 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
-import imageio as io
+import skimage.io as io
 
 try:
     from .VoxelBase import *
@@ -32,11 +32,12 @@ class PixelImage(VoxelBase):
         pixelsForTraining = np.zeros((300000, metadata.GetNumChannels()))
         startVal = 0
         endVal = 0
-        for id in metadata.trainingSet:
+        randFieldID = metadata.theTrainingFields
+        for id in enumerate(randFieldID):
             d = metadata.getImageInformation(metadata.GetImage(id))
             info = metadata.getTileInfo(d, metadata.theTileInfo)
             randZ = d[2] // 2
-            iTmp = self.getTrainingPixels(metadata.GetImage(id), metadata, randZ, training, metadata.theTileInfo)
+            iTmp = self.getTrainingPixels(metadata.GetImage(id), metadata, randZ, metadata.theTileInfo)
             pixelsForTraining[startVal:endVal + iTmp.shape[0], :] = iTmp
             startVal += iTmp.shape[0]
             endVal += iTmp.shape[0]
@@ -69,8 +70,9 @@ class PixelImage(VoxelBase):
                 yEnd = None
             croppedIM = croppedIM[tileinfo.xOffsetStart:xEnd, tileinfo.yOffsetStart:yEnd, :]
             croppedIM = np.reshape(croppedIM, (tileinfo.croppedX * tileinfo.croppedY, metadata.GetNumChannels()))
-            croppedIM = croppedIM[
-                        np.sum(croppedIM > metadata.intensityThreshold, axis=1) > metadata.GetNumChannels() / 3, :]
+            croppedIM = \
+                croppedIM[
+                np.sum(croppedIM > metadata.intensityThreshold, axis=1) >= metadata.GetNumChannels() / 3, :]
             croppedIM = self.selectPixelsbyWeights(croppedIM)
             if croppedIM.shape[0] >= training.pixelsPerImage:
                 trPixels[startVal:startVal + training.pixelsPerImage, :] = np.array([croppedIM[i, :] for i in

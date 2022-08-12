@@ -43,7 +43,8 @@ class Metadata:
     def __init__(self):
         """Metadata class constructor"""
         # Initialize a random number generator
-        self.Generator = np.random.default_rng()
+        # NOTE: 12345 is set as seed for testing purposes
+        self.Generator = np.random.default_rng(12345)
 
         # Define user-controlled parameters and set default values
         self.intensityNormPerTreatment = False
@@ -629,9 +630,9 @@ class Metadata:
             return False
         # else
         # TO DO: catch errors, return False if caught
-        theTrainingFields = self.getTrainingFields(PhindConfig.randTrainingFields)
-        (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(theTrainingFields)
-        self.intensityThresholdValues = self.getImageThresholdValues(theTrainingFields)
+        self.theTrainingFields = self.getTrainingFields(PhindConfig.randTrainingFields)
+        (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(self.theTrainingFields)
+        self.intensityThresholdValues = self.getImageThresholdValues(self.theTrainingFields)
 
         intensityThreshold = np.quantile(self.intensityThresholdValues,
             PhindConfig.intensityThresholdTuningFactor, axis=0)
