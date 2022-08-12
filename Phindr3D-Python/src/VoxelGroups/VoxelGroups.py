@@ -15,6 +15,7 @@
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
 #from mahotas.features import texture
+from selectors import EpollSelector
 import time
 import imageio.v2 as io
 import matplotlib.pyplot as plt
@@ -50,13 +51,15 @@ class VoxelGroups:
 
     # end constructor
 
-    def action(self, outputFileName):
+    def actionphind(self, outputFileName, training):
         """Action performed by this class when user requests the Phind operation.
             Returns the True/False result of the phindVoxelGroups method."""
-        if self.phindVoxelGroups():
-            return True
-            # if self.extractImageLevelTextureFeatures(outputFileName=outputFileName):
-            #     return True
+        if self.phindVoxelGroups(training):
+
+            if self.extractImageLevelTextureFeatures(outputFileName=outputFileName):
+                return True
+            else:
+                return False
         else:
             return False
 
@@ -66,11 +69,6 @@ class VoxelGroups:
     def phindVoxelGroups(self, training):
         """Phind operation.
             Returns True if successful, False on failure or error"""
-
-        # Steps:
-        # param = getPixelBinCenters(mData, allImageId, param);
-        # param = getSuperVoxelBinCenters(mData, allImageId, param);
-        # param = getMegaVoxelBinCenters(mData, allImageId, param);
         pixelImage = PixelImage()
         superVoxelImage = SuperVoxelImage()
         megaVoxelImage = MegaVoxelImage()
@@ -82,46 +80,14 @@ class VoxelGroups:
         print("Pixels:", pixelImage.pixelBinCenters)
         print("Super Voxels:", superVoxelImage.superVoxelBinCenters)
         print("Mega Voxels:", megaVoxelImage.megaVoxelBinCenters)
-        # Then...
-        # In MATLAB
-        # extractImageLevelTextureFeatures(mData,allImageId,param,outputFileName,outputDir);
-        # In Python
-        # param, resultIM, resultRaw, df
-        # = phi.extractImageLevelTextureFeatures(mdata, param, outputFileName=output_file_name, outputDir='')
-        # This is the step that outputs a feature file
 
-
-        #voxel bincenters, 
-        #supervoxelbincenters,
-        #megavoxelbincenters.
-        Base = VoxelBase()
-        voxel = PixelImage(Base)
-        voxel.getPixelBinCenters(self.metadata) ########NEED PROPER ARGUMENTS FOR ALL THESE FUNCTIONS.
-        SuperVoxel = SuperVoxelImage(Base)
-        MegaVoxel = MegaVoxelImage(Base)
-
-        
-
-
-        superVoxelBinCenters = np.zeros((1,1))
-        tileProfile = np.zeros((1,1))
-        fgSuperVoxel = np.zeros((1,1))
-        tileInfo = TileInfo()
-        #theBase.getMegaVoxelProfile(superVoxelBinCenters, tileProfile, tileInfo, fgSuperVoxel)
-
-
-        #pixelBinCenters = 1
-        #self.extractImageLevelTextureFeatures()
-
-
-
-        # temporary
         return True
     # end phindVoxelGroups
 
 
-    def extractImageLevelTextureFeatures(self,
-        outputFileName='imagefeatures.csv'):
+
+################ this isn't done yet and wont work properly yet.
+    def extractImageLevelTextureFeatures(self, outputFileName='imagefeatures.csv'):
         """Given pixel/super/megavoxel bin centers, creates a feature file"""
         countBackground = PhindConfig.countBackground
         textureFeatures = PhindConfig.textureFeatures
@@ -164,8 +130,7 @@ class VoxelGroups:
             theTileInfo = self.metadata.getTileInfo(d, TileInfo())
 
             pixelBinCenterDifferences = 1
-            superVoxelProfile, fgSuperVoxel = \
-            self.getTileProfiles(tmpmdata, pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
+            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(tmpmdata, pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
 
             # These functions are in VoxelBase
             # megaVoxelProfile, fgMegaVoxel, texture_features = getMegaVoxelProfile(superVoxelProfile,

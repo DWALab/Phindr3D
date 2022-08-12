@@ -27,17 +27,16 @@ class PixelImage(VoxelBase):
         super().__init__()
         self.pixelBinCenters = None  # np array
 
-    def getPixelBinCenters(self, x, metadata):
+    def getPixelBinCenters(self, metadata, training):
         # required: randFieldID, metadata, image params (tileinfo)
         pixelsForTraining = np.zeros((300000, metadata.GetNumChannels()))
         startVal = 0
         endVal = 0
-        randFieldID = metadata.theTrainingFields
-        for id in enumerate(randFieldID):
+        for id in metadata.trainingSet:
             d = metadata.getImageInformation(metadata.GetImage(id))
             info = metadata.getTileInfo(d, metadata.theTileInfo)
             randZ = d[2] // 2
-            iTmp = self.getTrainingPixels(metadata.GetImage(id), metadata, randZ, metadata.theTileInfo)
+            iTmp = self.getTrainingPixels(metadata.GetImage(id), metadata, randZ, training, metadata.theTileInfo)
             pixelsForTraining[startVal:endVal + iTmp.shape[0], :] = iTmp
             startVal += iTmp.shape[0]
             endVal += iTmp.shape[0]

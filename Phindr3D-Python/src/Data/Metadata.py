@@ -630,14 +630,13 @@ class Metadata:
             return False
         # else
         # TO DO: catch errors, return False if caught
-        self.theTrainingFields = self.getTrainingFields(PhindConfig.randTrainingFields)
-        (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(self.theTrainingFields)
-        self.intensityThresholdValues = self.getImageThresholdValues(self.theTrainingFields)
+        self.trainingSet = self.getTrainingFields(PhindConfig.randTrainingFields)
+        (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(self.trainingSet)
+        self.intensityThresholdValues = self.getImageThresholdValues(self.trainingSet)
 
         intensityThreshold = np.quantile(self.intensityThresholdValues,
             PhindConfig.intensityThresholdTuningFactor, axis=0)
         self.intensityThreshold = np.reshape(intensityThreshold, (1, self.GetNumChannels()))
-        self.trainingSet = theTrainingFields
         return True
     # end computeImageParameters
 

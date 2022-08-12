@@ -52,10 +52,10 @@ class Training:
         self.superVoxelPerField = PhindConfig.superVoxelPerField
 
         # params to be defined later (in training functions)
-        self.intensityThresholdValues = None
-        self.randZForTraining = None
-        self.randFieldID = None
-        self.randTrainingPerTreatment = None
+        # self.intensityThresholdValues = None  #gets computed at metadata loading stage
+        # self.randZForTraining = None          #gets computed on a per-image basis during category making
+        # self.randFieldID = None               #gets determined at metadata loading stage for scaling and thresholding
+        # self.randTrainingPerTreatment = None  #not sure about this one (intensity threshold values and scaling factors should already reflect training per treatment if chosen)
 
     # end constructor
 

@@ -32,7 +32,7 @@ class SuperVoxelImage(VoxelBase):
         pixelCenters = pixelImage.pixelBinCenters
         pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(pixelCenters, pixelCenters, axis=1)]).T
         tilesForTraining = []
-        for id in metadata.theTrainingFields:
+        for id in metadata.trainingSet:
             d = metadata.getImageInformation(metadata.GetImage(id))
             info = metadata.getTileInfo(d, metadata.theTileInfo)
             superVoxelProfile, fgSuperVoxel = self.getTileProfiles(metadata.GetImage(id), pixelCenters,

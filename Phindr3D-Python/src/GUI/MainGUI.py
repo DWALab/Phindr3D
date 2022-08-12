@@ -399,10 +399,10 @@ class MainGUI(QWidget, external_windows):
         """Actions performed when the Phind button is pressed and metadata has been loaded"""
         if self.metadata.GetMetadataFilename():
             #get output dir:
-            self.training.randFieldID = self.metadata.theTrainingFields
+            self.training.randFieldID = self.metadata.trainingSet
             savefile, dump = QFileDialog.getSaveFileName(self, 'Phindr3D Results', '', 'Text file (*.txt)')
             if len(savefile) > 0:
-                if self.voxelGroups.action(savefile):
+                if self.voxelGroups.action(savefile, self.training):
                     print(self.voxelGroups.metadata.trainingSet)
                     print(self.voxelGroups.metadata.upperbound)
                 else:
