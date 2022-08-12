@@ -399,12 +399,14 @@ class MainGUI(QWidget, external_windows):
         """Actions performed when the Phind button is pressed and metadata has been loaded"""
         if self.metadata.GetMetadataFilename():
             # From pixels to supervoxels to megavoxels
-            if self.voxelGroups.action():
-                # Clustering
-                if not self.clustering.action():
-                    print("clustering failed")
+            #get output dir:
+            savefile, dump = QFileDialog.getSaveFileName(self, 'Phindr3D Results', '', 'Text file (*.json)')
+            if self.voxelGroups.action(savefile):
+                print(self.voxelGroups.metadata.trainingSet)
+                print(self.voxelGroups.metadata.upperbound)
             else:
                 # error
+                print('something went wrong.')
                 print("voxel grouping failed")
         else:
             # do nothing? display error window?

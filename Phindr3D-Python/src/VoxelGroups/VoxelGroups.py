@@ -51,10 +51,14 @@ class VoxelGroups:
     # end constructor
 
 
-    def action(self):
+    def action(self, outputFileName):
         """Action performed by this class when user requests the Phind operation.
             Returns the True/False result of the phindVoxelGroups method."""
-        return self.phindVoxelGroups()
+        
+        self.phindVoxelGroups()
+        self.extractImageLevelTextureFeatures(outputFileName=outputFileName)
+        return 
+
     # end action
 
 
@@ -76,6 +80,7 @@ class VoxelGroups:
         # This is the step that outputs a feature file
 
         theBase = VoxelBase()
+
         superVoxelBinCenters = np.zeros((1,1))
         tileProfile = np.zeros((1,1))
         fgSuperVoxel = np.zeros((1,1))
@@ -94,7 +99,7 @@ class VoxelGroups:
 
 
     def extractImageLevelTextureFeatures(self,
-        outputFileName='imagefeatures.csv', outputDir=''):
+        outputFileName='imagefeatures.csv'):
         """Given pixel/super/megavoxel bin centers, creates a feature file"""
         countBackground = PhindConfig.countBackground
         textureFeatures = PhindConfig.textureFeatures
@@ -105,8 +110,6 @@ class VoxelGroups:
 
         # Previously calculated - dummy type for now
         pixelBinCenters = np.zeros((200,3))
-        #outputFileName
-        #outputDir
 
         if countBackground:
             totalBins = numMegaVoxelBins + 1
@@ -181,11 +184,9 @@ class VoxelGroups:
                 dictResults[name] = textureResults[:, i]
         df = pd.DataFrame(dictResults)
         csv_name = outputFileName
-        if len(outputDir) > 0:
-            csv_name = outputDir + '\\' + csv_name
-        if csv_name[-4:] != '.csv':
-            csv_name = csv_name + '.csv'
-        df.to_csv(csv_name)
+        if csv_name[-4:] != '.txt':
+            csv_name = csv_name + '.txt'
+        df.to_csv(csv_name, index=None, sep='\t')
         print('\nAll done.')
         #return param, resultIM, resultRaw, df #, metaIndexTmp
         # Missing a first parameter from the return list

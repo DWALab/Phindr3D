@@ -636,6 +636,7 @@ class Metadata:
         intensityThreshold = np.quantile(self.intensityThresholdValues,
             PhindConfig.intensityThresholdTuningFactor, axis=0)
         self.intensityThreshold = np.reshape(intensityThreshold, (1, self.GetNumChannels()))
+        self.trainingSet = theTrainingFields
         return True
     # end computeImageParameters
 
