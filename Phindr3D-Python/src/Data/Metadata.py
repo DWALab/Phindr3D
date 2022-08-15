@@ -200,6 +200,9 @@ class Metadata:
             This method chooses the first from the list.
             This method creates a dictionary of imageIDs and the Treatment values,
             if they exist, or None if not. On error, returns an empty dictionary."""
+        """
+        dictionary: { key=imageID : value=treatment, ... }
+        """
         allTreatments = {}
         try:
             if len(self.images) > 0:
@@ -229,6 +232,9 @@ class Metadata:
             in the same image, if this condition exists.
             This method returns a list of strings of all treatment types if they
             exist, or an empty list if not. Returns an empty list on error. """
+        """
+        list: [treatments found in the metadata]
+        """
         treatmentList = []
         try:
             if len(self.images) > 0:
