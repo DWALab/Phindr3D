@@ -135,7 +135,7 @@ class VoxelGroups(VoxelBase):
             if textureFeatures:
                 textureResults[iImages, :] = texture_features
             if useTreatment:
-                Treatments.append(currentImage.GetTreatment)
+                Treatments.append(currentImage.GetTreatment())
             b = time.time() - a
             times[iImages % 5] = b
         numRawMV = np.sum(resultRaw, axis=1)  # one value per image, gives number of megavoxels
