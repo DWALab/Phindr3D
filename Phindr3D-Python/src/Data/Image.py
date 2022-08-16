@@ -63,6 +63,15 @@ class Image:
             return treatmentValList
     # end GetTreatment
 
+    def GetOtherParams(self):
+        """
+        Get otherparams attribute from first stack instance in stacklayers
+        """
+        for stack in self.stackLayers:
+            return self.stackLayers[stack].otherparams 
+
+    # end GetOtherParams
+
     def GetNumChannels(self):
         """Get the number of channels associated with the stacks in this image,
             only if all stacks have the same number of channels. If they have different

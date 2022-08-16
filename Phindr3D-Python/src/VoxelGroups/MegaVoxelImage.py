@@ -35,8 +35,8 @@ class MegaVoxelImage(VoxelBase):
             d = metadata.getImageInformation(metadata.GetImage(id))
             pixelCenters = pixelImage.pixelBinCenters
             pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(pixelCenters, pixelCenters, axis=1)]).T
-            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(metadata.GetImage(id), pixelCenters, pixelBinCenterDifferences, metadata.theTileInfo, metadata)
-            megaVoxelProfile, fgMegaVoxel = self.getMegaVoxelProfile(superVoxel.superVoxelBinCenters, superVoxelProfile, metadata.theTileInfo, fgSuperVoxel, training)
+            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(metadata, metadata.GetImage(id), pixelCenters, pixelBinCenterDifferences, metadata.theTileInfo)
+            megaVoxelProfile, fgMegaVoxel, dump = self.getMegaVoxelProfile(superVoxel.superVoxelBinCenters, superVoxelProfile, metadata.theTileInfo, fgSuperVoxel, training, analysis=False)
             if len(megaVoxelsforTraining) == 0:
                 megaVoxelsforTraining = megaVoxelProfile[fgMegaVoxel]
             else:

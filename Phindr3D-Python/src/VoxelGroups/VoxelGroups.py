@@ -15,7 +15,6 @@
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
 #from mahotas.features import texture
-from selectors import EpollSelector
 import time
 import imageio.v2 as io
 import matplotlib.pyplot as plt
@@ -39,7 +38,7 @@ except ImportError:
     from src.Data.Metadata import *
 
 
-class VoxelGroups:
+class VoxelGroups(VoxelBase):
     """From pixels to supervoxels to megavoxels"""
 
     def __init__(self, metaref):
@@ -48,15 +47,18 @@ class VoxelGroups:
         self.numVoxelBins = 20
         self.numSuperVoxelBins = 15
         self.numMegaVoxelBins = 40
+        self.pixelImage = PixelImage()
+        self.superVoxelImage = SuperVoxelImage()
+        self.megaVoxelImage = MegaVoxelImage()
+
 
     # end constructor
 
-    def actionphind(self, outputFileName, training):
+    def action(self, outputFileName, training):
         """Action performed by this class when user requests the Phind operation.
             Returns the True/False result of the phindVoxelGroups method."""
         if self.phindVoxelGroups(training):
-
-            if self.extractImageLevelTextureFeatures(outputFileName=outputFileName):
+            if self.extractImageLevelTextureFeatures(outputFileName=outputFileName, training=training):
                 return True
             else:
                 return False
@@ -65,45 +67,37 @@ class VoxelGroups:
 
     # end action
 
-
     def phindVoxelGroups(self, training):
         """Phind operation.
             Returns True if successful, False on failure or error"""
-        pixelImage = PixelImage()
-        superVoxelImage = SuperVoxelImage()
-        megaVoxelImage = MegaVoxelImage()
 
-        pixelImage.getPixelBinCenters(self.metadata, training)
-        superVoxelImage.getSuperVoxelBinCenters(self.metadata, training, pixelImage)
-        megaVoxelImage.getMegaVoxelBinCenters(self.metadata, training, pixelImage, superVoxelImage)
+        self.pixelImage.getPixelBinCenters(self.metadata, training)
+        self.superVoxelImage.getSuperVoxelBinCenters(self.metadata, training, self.pixelImage)
+        self.megaVoxelImage.getMegaVoxelBinCenters(self.metadata, training, self.pixelImage, self.superVoxelImage)
 
-        print("Pixels:", pixelImage.pixelBinCenters)
-        print("Super Voxels:", superVoxelImage.superVoxelBinCenters)
-        print("Mega Voxels:", megaVoxelImage.megaVoxelBinCenters)
+        print("Pixels:", self.pixelImage.pixelBinCenters)
+        print("Super Voxels:", self.superVoxelImage.superVoxelBinCenters)
+        print("Mega Voxels:", self.megaVoxelImage.megaVoxelBinCenters)
 
         return True
     # end phindVoxelGroups
 
-
-
-################ this isn't done yet and wont work properly yet.
-    def extractImageLevelTextureFeatures(self, outputFileName='imagefeatures.csv'):
+    def extractImageLevelTextureFeatures(self, outputFileName='imagefeatures.csv', training=None):
         """Given pixel/super/megavoxel bin centers, creates a feature file"""
+        #collect parameters from phindconfig
         countBackground = PhindConfig.countBackground
         textureFeatures = PhindConfig.textureFeatures
         treatmentCol = self.metadata.GetAllTreatments()
-        numVoxelBins = self.numVoxelBins
-        numSuperVoxelBins = self.numSuperVoxelBins
         numMegaVoxelBins = self.numMegaVoxelBins
-
-        # Previously calculated - dummy type for now
-        pixelBinCenters = np.zeros((200,3))
-
         if countBackground:
             totalBins = numMegaVoxelBins + 1
         else:
             totalBins = numMegaVoxelBins
+        #set up arrays to hold results
         uniqueImageID = self.metadata.GetAllImageIDs()
+        tmpim = self.metadata.GetImage(uniqueImageID[0])
+        tmpotherparams = tmpim.GetOtherParams()
+        mdatavals = np.empty((len(uniqueImageID), len(tmpotherparams)), dtype='object')
         # for all images: put megavoxel frequencies
         resultIM = np.zeros((len(uniqueImageID), totalBins))
         resultRaw = np.zeros((len(uniqueImageID), totalBins))
@@ -113,56 +107,46 @@ class VoxelGroups:
         if len(treatmentCol) > 0:
             useTreatment = True
             Treatments = []
-        timeupdates = len(uniqueImageID)//5
-
-        # default value for timeperimage
-        timeperimage = 0
+        #timing things
+        times = np.zeros(5)
+        meantime = 0
+        
         for iImages in range(len(uniqueImageID)):
-            if (iImages == 1) or ((iImages > 3) and ((iImages + 1) % timeupdates == 0)):
-                print(
-                    f'Remaining time estimate ... {round(timeperimage * (len(uniqueImageID) - iImages) / 60, 2)} minutes')
-            if iImages == 0:
-                a = time.time()
+            a = time.time()
+            if iImages > 4 and iImages % 2 == 0:
+                if np.mean(times) > meantime:
+                    meantime = np.mean(times)
+                estimate = f'Remaining time estimate ... {round(meantime * (len(uniqueImageID)-iImages)/60, 2)} minutes'
+                print(estimate, end='\r')
             id = uniqueImageID[iImages]
-            tmpmdata = self.metadata.GetImage(id)
-            d = self.metadata.getImageInformation(tmpmdata, 0)
+            currentImage = self.metadata.GetImage(id)
+            currentOtherParams = currentImage.GetOtherParams()
+            for i, key in enumerate(list(currentOtherParams.keys())):
+                mdatavals[iImages, i] = currentOtherParams[key]
+            d = self.metadata.getImageInformation(currentImage, 0)
             # Pass in a new TileInfo object to provide default values
             theTileInfo = self.metadata.getTileInfo(d, TileInfo())
-
-            pixelBinCenterDifferences = 1
-            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(tmpmdata, pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
-
-            # These functions are in VoxelBase
-            # megaVoxelProfile, fgMegaVoxel, texture_features = getMegaVoxelProfile(superVoxelProfile,
-            #     fgSuperVoxel, param, analysis=True)
-            # imgProfile, rawProfile = getImageProfile(megaVoxelProfile, fgMegaVoxel, param)
-            # temp!!!!
-            megaVoxelProfile = None
-            fgMegaVoxel = None
-            texture_features = None
-            imgProfile = None
-            rawProfile = None
-
+            pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(self.pixelImage.pixelBinCenters, self.pixelImage.pixelBinCenters, axis=1)]).T
+            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(self.metadata, currentImage, self.pixelImage.pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
+            megaVoxelProfile, fgMegaVoxel, texture_features = self.getMegaVoxelProfile(self.superVoxelImage.superVoxelBinCenters, superVoxelProfile, theTileInfo, fgSuperVoxel, training, analysis=textureFeatures)
+            imgProfile, rawProfile = self.getImageProfile(self.megaVoxelImage.megaVoxelBinCenters, megaVoxelProfile, theTileInfo, fgMegaVoxel)
             resultIM[iImages, :] = imgProfile
             resultRaw[iImages, :] = rawProfile
             if textureFeatures:
                 textureResults[iImages, :] = texture_features
             if useTreatment:
-                Treatments.append(tmpmdata)
-            if iImages == 0:
-                timeperimage = time.time() - a
-        # print('Writing data to file ...')
-        # Output feature file to csv
+                Treatments.append(currentImage.GetTreatment)
+            b = time.time() - a
+            times[iImages % 5] = b
         numRawMV = np.sum(resultRaw, axis=1)  # one value per image, gives number of megavoxels
-        dictResults = {
-            'ImageID': uniqueImageID
-        }
+        dictResults = {}
+        for i, col in enumerate(list(currentOtherParams.keys())):
+            dictResults[col] = mdatavals[:, i]
         if useTreatment:
             dictResults['Treatment'] = Treatments
         else:
             dictResults['Treatment'] = np.full((len(uniqueImageID),), 'RR', dtype='object')
         dictResults['NumMV'] = numRawMV
-
         for i in range(resultIM.shape[1]):
             mvlabel = f'MV{i + 1}'
             dictResults[mvlabel] = resultIM[:, i]  # e.g. mv cat 1: for each image, put here frequency of mvs of type 1.
@@ -179,179 +163,6 @@ class VoxelGroups:
         # Missing a first parameter from the return list
         return resultIM, resultRaw, df  # , metaIndexTmp
     # end extractImageLevelTextureFeatures
-
-    def getTileProfiles(self, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo, analysis=False):
-        """Tile profiles. Called in extractImageLevelTextureFeatures, getMegaVoxelBinCenters,
-            called in getSuperVoxelBinCenters.
-            Computes low level categorical features for supervoxels
-            function assigns categories for each pixel, computes supervoxel profiles for each supervoxel
-            Inputs:
-
-            - an Image object (with Stack and Channel member objects)
-            - pixelBinCenters - Location of pixel categories: number of bins x number of channels
-            - tileInfo - a TileInfo object
-            - intensityNormPerTreatment - whether the treatment is considered when analyzing data
-
-            ii: current image id
-            % Output:
-            % superVoxelProfile: number of supervoxels by number of supervoxelbins plus a background
-            % fgSuperVoxel: Foreground supervoxels - At lease one of the channels
-            % should be higher than the respective threshold
-            % TASScores: If TAS score is selected
-            """
-        errorVal = (None, None)
-        # Create local copies of external variables (easier to merge code)
-        allTreatmentTypes = self.metadata.GetTreatmentTypes()
-        intensityNormPerTreatment = self.metadata.intensityNormPerTreatment
-        intensityThreshold = self.metadata.intensityThreshold
-        lowerbound = self.metadata.lowerbound
-        upperbound = self.metadata.upperbound
-        computeTAS = PhindConfig.computeTAS
-        showImage = PhindConfig.showImage
-        showChannels = PhindConfig.showChannels
-        countBackground = PhindConfig.countBackground
-        superVoxelThresholdTuningFactor = PhindConfig.superVoxelThresholdTuningFactor
-        numChannels = imageObject.GetNumChannels()
-        numVoxelBins = self.numVoxelBins
-        #
-        numTilesXY = int((theTileInfo.croppedX * theTileInfo.croppedY) / (theTileInfo.tileX * theTileInfo.tileY))
-        zEnd = -theTileInfo.zOffsetEnd
-        if zEnd == -0:
-            zEnd = None
-        zStack = imageObject.stackLayers
-        zStackKeys = list(zStack.keys())
-        # keep z stacks that are divisible by stack count
-        slices = zStackKeys[theTileInfo.zOffsetStart:zEnd]
-        sliceCounter = 0
-        startVal = 0
-        endVal = numTilesXY
-        startCol = 0
-        endCol = theTileInfo.tileX * theTileInfo.tileY
-
-        if intensityNormPerTreatment:
-            # index of the treatment for this image in the list of all treatments
-            # if the treatment type is not found (or there are no treatments), return error
-            try:
-                grpVal = allTreatmentTypes.index(imageObject.GetTreatment()[0])
-            except (ValueError, IndexError):
-                return errorVal
-        # end if
-        superVoxelProfile = np.zeros((theTileInfo.numSuperVoxels, numVoxelBins+1))
-        fgSuperVoxel = np.zeros(theTileInfo.numSuperVoxels)
-        if computeTAS:
-            categoricalImage = np.zeros((theTileInfo.croppedX, theTileInfo.croppedY, theTileInfo.croppedZ))
-        # loop over file names and extract super voxels
-        # tmpData holds the binned pixel image (ONE LAYER OF SUPERVOXELS AT A TIME.)
-        # dimensions: number of supervoxels in a 2D cropped image x number of voxels in a supervoxel.
-        tmpData = np.zeros((numTilesXY, int(theTileInfo.tileX * theTileInfo.tileY * theTileInfo.tileZ)))
-        for iImages, zslice in enumerate(slices):
-            sliceCounter += 1
-            # just one slice in all channels
-            croppedIM = np.zeros((theTileInfo.origX, theTileInfo.origY, numChannels))
-            for jChan in range(numChannels):
-                try:
-                    stackIndex = list(imageObject.stackLayers.keys())[iImages]
-                    theStack = imageObject.stackLayers[stackIndex]
-                    channelIndex = list(theStack.channels.keys())[jChan]
-                    theChannel = theStack.channels[channelIndex]
-                    imFileName = theChannel.channelpath
-                except (IndexError, AttributeError):
-                    return errorVal
-                IM = io.imread(imFileName)
-                try:
-                    if intensityNormPerTreatment:
-                        croppedIM[:, :, jChan] = dfunc.rescaleIntensity(IM,
-                            low=lowerbound[grpVal, jChan],
-                            high=upperbound[grpVal, jChan])
-                    else:
-                        croppedIM[:, :, jChan] = dfunc.rescaleIntensity(IM,
-                            low=lowerbound[jChan],
-                            high=upperbound[jChan])
-                except (ValueError, IndexError):
-                    return errorVal
-            xEnd = -theTileInfo.xOffsetEnd
-            if xEnd == -0:
-                # if the end index is -0, you just index from 1 to behind 1 and get an empty array.
-                # Change to 0 if the dimOffsetEnd value is 0.
-                xEnd = None
-            yEnd = -theTileInfo.yOffsetEnd
-            if yEnd == -0:
-                yEnd = None
-            # crop image to right dimensions for calculating supervoxels
-            # z portion of the offset has already been done by not loading the wrong slices
-            croppedIM = croppedIM[theTileInfo.xOffsetStart:xEnd, theTileInfo.yOffsetStart:yEnd, :]
-
-            if showImage:
-                if showChannels or numChannels != 3:
-                    fig, ax = plt.subplots(1, int(numChannels))
-                    for i in range(numChannels):
-                        ax[i].set_title(f'Channel {i+1}')
-                        ax[i].imshow(croppedIM[:, :, i], 'gray')
-                        ax[i].set_xticks([])
-                        ax[i].set_yticks([])
-                elif numChannels == 3:
-                    plt.figure()
-                    title = f'slice {zslice}'
-                    plt.title(title)
-                    # leaving it in multichannel gives rgb correctly for 3 channel image.
-                    # WILL Fail for numChannel != 3
-                    plt.imshow(croppedIM)
-                plt.show()
-            # end if
-
-            # flatten image, keeping channel dimension separate
-            x = np.reshape(croppedIM, (theTileInfo.croppedX*theTileInfo.croppedY, numChannels))
-            # want to be greater than threshold in at least 1 channel
-            fg = np.sum(x > intensityThreshold, axis=1) >= 1
-            pixelCategory = np.argmin(np.add(pixelBinCenterDifferences,
-                dfunc.mat_dot(x[fg,:], x[fg,:], axis=1)).T - 2*(x[fg,:] @ pixelBinCenters.T), axis=1) + 1
-            x = np.zeros(theTileInfo.croppedX*theTileInfo.croppedY, dtype='uint8')
-            # assign voxel bin categories to the flattened array
-            x[fg] = pixelCategory
-
-            ## uncomment for testing if needed.
-            # x_show = np.reshape(x, (theTileInfo.croppedX, param.croppedY))
-            # np.savetxt(r'<location>\pytvoxelim.csv', x_show, delimiter=',')
-
-            #here, x can be reshaped to croppedX by croppedY and will give the map
-            # of pixel assignments for the image slice
-            if computeTAS:
-                categoricalImage[:, :, iImages] = np.reshape(x, theTileInfo.croppedX, theTileInfo.croppedY)
-            # del fg, croppedIM, pixelCategory #not 100 on why to delete al here since things
-            # would just be overwritten anyway, but why not right, also, some of the variables
-            # to clear where already commented out so I removed them from the list
-            if sliceCounter == theTileInfo.tileZ:
-                # add the tmpData that has been accumulating for the past  to the fgsupervoxel
-                fgSuperVoxel[startVal:endVal] = (np.sum(tmpData != 0, axis=1) / tmpData.shape[
-                    1]) >= superVoxelThresholdTuningFactor
-                for i in range(0, numVoxelBins + 1):
-                    # 0 indicates background
-                    superVoxelProfile[startVal:endVal, i] = np.sum(tmpData == i, axis=1)
-                # reset for next image
-                sliceCounter = int(0)
-                startVal += numTilesXY
-                endVal += numTilesXY
-                startCol = 0
-                endCol = theTileInfo.tileX * theTileInfo.tileY
-                tmpData = np.zeros((numTilesXY, theTileInfo.tileX * theTileInfo.tileY * theTileInfo.tileZ))
-            else:
-                tmpData[:, startCol:endCol] = dfunc.im2col(np.reshape(x,
-                    (theTileInfo.croppedX, theTileInfo.croppedY)),
-                    (theTileInfo.tileX, theTileInfo.tileY)).T
-                startCol += (theTileInfo.tileX * theTileInfo.tileY)
-                endCol += (theTileInfo.tileX * theTileInfo.tileY)
-
-        if not countBackground:
-            superVoxelProfile = superVoxelProfile[:, 1:]
-        superVoxelProfile = np.divide(superVoxelProfile, np.array([np.sum(superVoxelProfile, axis=1)]).T) #dont worry about divide by zero errors, they are supposed to happen here!
-        superVoxelProfile[superVoxelProfile == np.nan] = 0
-        fgSuperVoxel = fgSuperVoxel.astype(bool)
-        ##fgSuperVoxel used to be fgSuperVoxel.T
-        return superVoxelProfile, fgSuperVoxel
-    # end getTileProfiles
-
-
-
 
 
 
@@ -375,6 +186,10 @@ if __name__ == '__main__':
         print("Phind voxel action")
         vox = VoxelGroups(test)
         vox.action()
+
+    #load metadata, compute parameters
+    #phind bincenters in a deterministic manner + compare to expected result
+    #compute phindr3D results on synthetic image set with the deterministic bincenters + compare to expected results.
 
     else:
         print("loadMetadataFile was unsuccessful")
