@@ -403,8 +403,9 @@ class MainGUI(QWidget, external_windows):
             savefile, dump = QFileDialog.getSaveFileName(self, 'Phindr3D Results', '', 'Text file (*.txt)')
             if len(savefile) > 0:
                 if self.voxelGroups.action(savefile, self.training):
-                    print(self.voxelGroups.metadata.trainingSet)
-                    print(self.voxelGroups.metadata.upperbound)
+                    message = f'All Done!\n\nResults saved at:\n{savefile}'
+                    alert = self.buildErrorWindow(message, QMessageBox.Information, "Notice")
+                    alert.exec()
                 else:
                     # error
                     print('something went wrong.')
