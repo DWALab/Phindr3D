@@ -15,7 +15,6 @@
 # along with src.  If not, see <http://www.gnu.org/licenses/>.
 
 #from mahotas.features import texture
-from selectors import EpollSelector
 import time
 import imageio.v2 as io
 import matplotlib.pyplot as plt
@@ -55,12 +54,11 @@ class VoxelGroups:
 
     # end constructor
 
-    def actionphind(self, outputFileName, training):
+    def action(self, outputFileName, training):
         """Action performed by this class when user requests the Phind operation.
             Returns the True/False result of the phindVoxelGroups method."""
         if self.phindVoxelGroups(training):
-
-            if self.extractImageLevelTextureFeatures(outputFileName=outputFileName):
+            if self.extractImageLevelTextureFeatures(outputFileName=outputFileName, training=training):
                 return True
             else:
                 return False
@@ -84,90 +82,6 @@ class VoxelGroups:
 
         return True
     # end phindVoxelGroups
-
-
-
-################ this isn't done yet and wont work properly yet.
-    def extractImageLevelTextureFeatures(self, outputFileName='imagefeatures.csv'):
-        """Given pixel/super/megavoxel bin centers, creates a feature file"""
-        #collect parameters from phindconfig
-        countBackground = PhindConfig.countBackground
-        textureFeatures = PhindConfig.textureFeatures
-        treatmentCol = self.metadata.GetAllTreatments()
-        numMegaVoxelBins = self.numMegaVoxelBins
-        if countBackground:
-            totalBins = numMegaVoxelBins + 1
-        else:
-            totalBins = numMegaVoxelBins
-        #set up arrays to hold results
-        uniqueImageID = self.metadata.GetAllImageIDs()
-        tmpim = self.metadata.GetImage(uniqueImageID[0])
-        tmpotherparams = tmpim.GetOtherParams()
-        mdatavals = np.empty((len(uniqueImageID), len(tmpotherparams)))
-        # for all images: put megavoxel frequencies
-        resultIM = np.zeros((len(uniqueImageID), totalBins))
-        resultRaw = np.zeros((len(uniqueImageID), totalBins))
-        if textureFeatures:
-            textureResults = np.zeros((len(uniqueImageID), 4))
-        useTreatment = False
-        if len(treatmentCol) > 0:
-            useTreatment = True
-            Treatments = []
-        #timing things
-        times = np.zeros(5)
-        meantime = 0
-        
-        for iImages in range(len(uniqueImageID)):
-            a = time.time()
-            if iImages > 4 and iImages % 2 == 0:
-                if np.mean(times) > meantime:
-                    meantime = np.mean(times)
-                estimate = f'Remaining time estimate ... {round(meantime * (len(uniqueImageID)-iImages)/60, 2)} minutes'
-                print(estimate, end='\r')
-            id = uniqueImageID[iImages]
-            currentImage = self.metadata.GetImage(id)
-            currentOtherParams = currentImage.GetOtherParams()
-            for i, key in enumerate(list(currentOtherParams.keys())):
-                mdatavals[iImages, i] = currentOtherParams[key]
-            d = self.metadata.getImageInformation(currentImage, 0)
-            # Pass in a new TileInfo object to provide default values
-            theTileInfo = self.metadata.getTileInfo(d, TileInfo())
-            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(currentImage, self.pixelBinCenters, theTileInfo)
-            megaVoxelProfile, fgMegaVoxel, texture_features = self.getMegaVoxelProfile(superVoxelProfile, fgSuperVoxel) #need arguments
-            imgProfile, rawProfile = self.getImageProfile(megaVoxelProfile, fgMegaVoxel) #need arguments
-            resultIM[iImages, :] = imgProfile
-            resultRaw[iImages, :] = rawProfile
-            if textureFeatures:
-                textureResults[iImages, :] = texture_features
-            if useTreatment:
-                Treatments.append(currentImage.getTreatment)
-            b = time.time() - a
-            times[iImages % 5] = b
-        numRawMV = np.sum(resultRaw, axis=1)  # one value per image, gives number of megavoxels
-        dictResults = {}
-        for i, col in enumerate(list(currentOtherParams.keys())):
-            dictResults[col] = mdatavals[:, i]
-        if useTreatment:
-            dictResults['Treatment'] = Treatments
-        else:
-            dictResults['Treatment'] = np.full((len(uniqueImageID),), 'RR', dtype='object')
-        dictResults['NumMV'] = numRawMV
-        for i in range(resultIM.shape[1]):
-            mvlabel = f'MV{i + 1}'
-            dictResults[mvlabel] = resultIM[:, i]  # e.g. mv cat 1: for each image, put here frequency of mvs of type 1.
-        if textureFeatures:
-            for i, name in enumerate(['text_ASM', 'text_entropy', 'text_info_corr1', 'text_infor_corr2']):
-                dictResults[name] = textureResults[:, i]
-        df = pd.DataFrame(dictResults)
-        csv_name = outputFileName
-        if csv_name[-4:] != '.txt':
-            csv_name = csv_name + '.txt'
-        df.to_csv(csv_name, index=None, sep='\t')
-        print('\nAll done.')
-        #return param, resultIM, resultRaw, df #, metaIndexTmp
-        # Missing a first parameter from the return list
-        return resultIM, resultRaw, df  # , metaIndexTmp
-    # end extractImageLevelTextureFeatures
 
     def getTileProfiles(self, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo, analysis=False):
         """Tile profiles. Called in extractImageLevelTextureFeatures, getMegaVoxelBinCenters,
@@ -292,8 +206,7 @@ class VoxelGroups:
             x = np.reshape(croppedIM, (theTileInfo.croppedX*theTileInfo.croppedY, numChannels))
             # want to be greater than threshold in at least 1 channel
             fg = np.sum(x > intensityThreshold, axis=1) >= 1
-            pixelCategory = np.argmin(np.add(pixelBinCenterDifferences,
-                dfunc.mat_dot(x[fg,:], x[fg,:], axis=1)).T - 2*(x[fg,:] @ pixelBinCenters.T), axis=1) + 1
+            pixelCategory = np.argmin(np.add(pixelBinCenterDifferences, dfunc.mat_dot(x[fg,:], x[fg,:], axis=1)).T - 2*(x[fg,:] @ pixelBinCenters.T), axis=1) + 1
             x = np.zeros(theTileInfo.croppedX*theTileInfo.croppedY, dtype='uint8')
             # assign voxel bin categories to the flattened array
             x[fg] = pixelCategory
@@ -367,7 +280,7 @@ class VoxelGroups:
                 plt.show()
         # end if
 
-        if analysis and self.textureFeatures:
+        if analysis:
             sv_image = np.reshape(x,
                 (int(tileInfo.croppedZ / tileInfo.tileZ),
                  int(tileInfo.croppedX / tileInfo.tileX),
@@ -463,10 +376,8 @@ class VoxelGroups:
         megaVoxelProfile = np.divide(megaVoxelProfile,
             np.array([np.sum(megaVoxelProfile, axis=1)]).T) #dont worry about divide by zero here either
         fgMegaVoxel = fgMegaVoxel.astype(bool)
-        if analysis:
-            return megaVoxelProfile, fgMegaVoxel, textureFeatures
-        else:
-            return megaVoxelProfile, fgMegaVoxel
+
+        return megaVoxelProfile, fgMegaVoxel, textureFeatures
     # end getMegaVoxelProfile
 
     def getImageProfile(self, megaVoxelBinCenters, megaVoxelProfile, tileInfo, fgMegaVoxel):
@@ -509,7 +420,88 @@ class VoxelGroups:
         return imageProfile, rawProfile  # , texture_features
     # end getImageProfile
 
-
+################ this isn't done yet and wont work properly yet.
+    def extractImageLevelTextureFeatures(self, outputFileName='imagefeatures.csv', training=None):
+        """Given pixel/super/megavoxel bin centers, creates a feature file"""
+        #collect parameters from phindconfig
+        countBackground = PhindConfig.countBackground
+        textureFeatures = PhindConfig.textureFeatures
+        treatmentCol = self.metadata.GetAllTreatments()
+        numMegaVoxelBins = self.numMegaVoxelBins
+        if countBackground:
+            totalBins = numMegaVoxelBins + 1
+        else:
+            totalBins = numMegaVoxelBins
+        #set up arrays to hold results
+        uniqueImageID = self.metadata.GetAllImageIDs()
+        tmpim = self.metadata.GetImage(uniqueImageID[0])
+        tmpotherparams = tmpim.GetOtherParams()
+        mdatavals = np.empty((len(uniqueImageID), len(tmpotherparams)), dtype='object')
+        # for all images: put megavoxel frequencies
+        resultIM = np.zeros((len(uniqueImageID), totalBins))
+        resultRaw = np.zeros((len(uniqueImageID), totalBins))
+        if textureFeatures:
+            textureResults = np.zeros((len(uniqueImageID), 4))
+        useTreatment = False
+        if len(treatmentCol) > 0:
+            useTreatment = True
+            Treatments = []
+        #timing things
+        times = np.zeros(5)
+        meantime = 0
+        
+        for iImages in range(len(uniqueImageID)):
+            a = time.time()
+            if iImages > 4 and iImages % 2 == 0:
+                if np.mean(times) > meantime:
+                    meantime = np.mean(times)
+                estimate = f'Remaining time estimate ... {round(meantime * (len(uniqueImageID)-iImages)/60, 2)} minutes'
+                print(estimate, end='\r')
+            id = uniqueImageID[iImages]
+            currentImage = self.metadata.GetImage(id)
+            currentOtherParams = currentImage.GetOtherParams()
+            for i, key in enumerate(list(currentOtherParams.keys())):
+                mdatavals[iImages, i] = currentOtherParams[key]
+            d = self.metadata.getImageInformation(currentImage, 0)
+            # Pass in a new TileInfo object to provide default values
+            theTileInfo = self.metadata.getTileInfo(d, TileInfo())
+            pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(self.pixelImage.pixelBinCenters, self.pixelImage.pixelBinCenters, axis=1)]).T
+            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(currentImage, self.pixelImage.pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
+            megaVoxelProfile, fgMegaVoxel, texture_features = self.getMegaVoxelProfile(self.superVoxelImage.superVoxelBinCenters, superVoxelProfile, theTileInfo, fgSuperVoxel, training, analysis=textureFeatures)
+            imgProfile, rawProfile = self.getImageProfile(self.megaVoxelImage.megaVoxelBinCenters, megaVoxelProfile, theTileInfo, fgMegaVoxel)
+            resultIM[iImages, :] = imgProfile
+            resultRaw[iImages, :] = rawProfile
+            if textureFeatures:
+                textureResults[iImages, :] = texture_features
+            if useTreatment:
+                Treatments.append(currentImage.GetTreatment)
+            b = time.time() - a
+            times[iImages % 5] = b
+        numRawMV = np.sum(resultRaw, axis=1)  # one value per image, gives number of megavoxels
+        dictResults = {}
+        for i, col in enumerate(list(currentOtherParams.keys())):
+            dictResults[col] = mdatavals[:, i]
+        if useTreatment:
+            dictResults['Treatment'] = Treatments
+        else:
+            dictResults['Treatment'] = np.full((len(uniqueImageID),), 'RR', dtype='object')
+        dictResults['NumMV'] = numRawMV
+        for i in range(resultIM.shape[1]):
+            mvlabel = f'MV{i + 1}'
+            dictResults[mvlabel] = resultIM[:, i]  # e.g. mv cat 1: for each image, put here frequency of mvs of type 1.
+        if textureFeatures:
+            for i, name in enumerate(['text_ASM', 'text_entropy', 'text_info_corr1', 'text_infor_corr2']):
+                dictResults[name] = textureResults[:, i]
+        df = pd.DataFrame(dictResults)
+        csv_name = outputFileName
+        if csv_name[-4:] != '.txt':
+            csv_name = csv_name + '.txt'
+        df.to_csv(csv_name, index=None, sep='\t')
+        print('\nAll done.')
+        #return param, resultIM, resultRaw, df #, metaIndexTmp
+        # Missing a first parameter from the return list
+        return resultIM, resultRaw, df  # , metaIndexTmp
+    # end extractImageLevelTextureFeatures
 
 
 

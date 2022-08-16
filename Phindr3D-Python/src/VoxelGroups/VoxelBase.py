@@ -47,7 +47,6 @@ class VoxelBase:
         return VoxelFunctions.getPixelBins(x, metadata, numBins)
     # end getPixelBins (base class)
 
-    @staticmethod
     def getTileProfiles(self, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo, metadata, analysis=False):
         """Tile profiles. Called in extractImageLevelTextureFeatures, getMegaVoxelBinCenters,
                    called in getSuperVoxelBinCenters.
@@ -222,7 +221,6 @@ class VoxelBase:
 
     # end getTileProfiles
 
-    @staticmethod
     def getMegaVoxelProfile(self, superVoxelBinCenters, tileProfile,
         tileInfo, fgSuperVoxel, training, analysis=False):
         """called in extractImageLevelTextureFeatures and getMegaVoxelBinCenters"""
@@ -353,7 +351,6 @@ class VoxelBase:
             return megaVoxelProfile, fgMegaVoxel
     # end getMegaVoxelProfile
 
-    @staticmethod
     def getImageProfile(self, megaVoxelBinCenters, megaVoxelProfile, tileInfo, fgMegaVoxel):
         """provides multi-parametric representation of image based on megavoxel categories.
             called in extractImageLevelTextureFeatures"""

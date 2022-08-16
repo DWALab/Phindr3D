@@ -68,7 +68,7 @@ class Image:
         Get otherparams attribute from first stack instance in stacklayers
         """
         for stack in self.stackLayers:
-            return stack.otherparams 
+            return self.stackLayers[stack].otherparams 
 
     # end GetOtherParams
 

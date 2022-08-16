@@ -35,8 +35,7 @@ class SuperVoxelImage(VoxelBase):
         for id in metadata.trainingSet:
             d = metadata.getImageInformation(metadata.GetImage(id))
             info = metadata.getTileInfo(d, metadata.theTileInfo)
-            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(metadata.GetImage(id), pixelCenters,
-                                                                   pixelBinCenterDifferences, info, metadata)
+            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(metadata.GetImage(id), pixelCenters, pixelBinCenterDifferences, info, metadata, )
             tmp = superVoxelProfile[fgSuperVoxel]
             if tmp.size != 0:
                 if len(tilesForTraining) == 0:
