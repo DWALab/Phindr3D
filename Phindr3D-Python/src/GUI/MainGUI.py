@@ -364,7 +364,7 @@ class MainGUI(QWidget, external_windows):
             elif self.ch_len<2 and len(self.color)>self.ch_len:
                 self.color=self.color[:-(len(self.color)-self.ch_len)]
             #initialize array as image size with # channels
-            rgb_img = im.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[slicescrollbar.value()]).size
+            rgb_img = im.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[id]).size
             rgb_img = np.empty((self.ch_len, rgb_img[1], rgb_img[0], 3))
             self.rgb_img=merge_channels(data, rgb_img, self.ch_len, id, self.color, 0, False)
             #plot combined channels

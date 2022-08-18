@@ -78,20 +78,8 @@ class errorWindow(object):
         alert.setText(text)
         alert.setIcon(QMessageBox.Critical)
         alert.exec_()
-    def getsomefiles():
+    def getsomefiles(self):
         pass
-
-    def getTrainingFields(self):
-        """Currently implemented in Metadata.py"""
-        pass
-
-    def rescaleIntensity(self, im, low=0, high=1):
-        im = im.astype(np.float64)
-        diffIM = high - low
-        im = (im - low)/diffIM
-        im[im>1] = 1
-        im[im<0] = 0
-        return im
 
 
 # end TrainingFunctions
