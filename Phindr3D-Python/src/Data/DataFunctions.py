@@ -167,8 +167,30 @@ class DataFunctions:
     # end mat_dot
 
     # regexpi
-    # imfinfo
-    # im2col
+
+    @staticmethod
+    def im2col(img, blkShape):
+        # this function is modified from https://github.com/Mullahz/Python-programs-for-MATLAB-in-built-functions/blob/main/im2col.py
+        # provides same functionality as matlab's im2col builtin function in distinct mode
+        # actuall tested and compared to matlab version this time. produces nice results.
+        imgw = img.shape[0]
+        imgh = img.shape[1]
+        blk_sizew = blkShape[0]
+        blk_sizeh = blkShape[1]
+
+        mtx = img
+        m1c = (imgw * imgh) // (blk_sizew * blk_sizeh)
+        m1 = ((blk_sizew * blk_sizeh), m1c)
+        blk_mtx = np.zeros(m1)
+
+        itr = 0
+        for i in range(1, imgw, blk_sizew):
+            for j in range(1, imgh, blk_sizeh):
+                blk = mtx[i - 1:i + blk_sizew - 1, j - 1:j + blk_sizeh - 1].ravel()
+                itr = itr + 1
+                blk_mtx[:, itr - 1] = blk
+        return blk_mtx
+    # end im2col
 
     @staticmethod
     def imfinfo(filename):

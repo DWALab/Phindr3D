@@ -63,6 +63,33 @@ class Image:
             return treatmentValList
     # end GetTreatment
 
+    def GetOtherParams(self):
+        """
+        Get otherparams attribute from first stack instance in stacklayers
+        """
+        for stack in self.stackLayers:
+            return self.stackLayers[stack].otherparams 
+
+    # end GetOtherParams
+
+    def GetNumChannels(self):
+        """Get the number of channels associated with the stacks in this image,
+            only if all stacks have the same number of channels. If they have different
+            numbers of channels, return None."""
+        tmpList = []
+        try:
+            for stkID in self.stackLayers:
+                tmpList.append(self.stackLayers[stkID].GetNumChannels())
+        except AttributeError:
+            return None
+        # Use set to find unique values in a list, then change type back to list
+        channelValList = list(set(tmpList))
+        if len(channelValList) == 0 or len(channelValList) > 1:
+            return None
+        else:
+            return channelValList[0]
+    # end GetNumChannels
+
 # end class Image
 
 

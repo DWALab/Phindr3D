@@ -44,7 +44,6 @@ class Stack:
             else:
                 self.otherparams[col] = row[rowi]
             rowi += 1
-
     # end addChannels
 
     def GetTreatment(self):
@@ -57,7 +56,10 @@ class Stack:
             return None
     # end GetTreatment
 
-
+    def GetNumChannels(self):
+        """Get the number of channels in each stack layer"""
+        return len(self.channels)
+    # end GetNumChannels
 
 # end class Stack
 

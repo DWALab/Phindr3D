@@ -19,6 +19,8 @@ import numpy as np
 import pandas as pd
 from ..GUI.windows.helperclasses import *
 
+import numpy as np
+
 class TrainingFunctions:
     """Static methods for training. Referenced from
     https://github.com/DWALab/Phindr3D/tree/9b95aebbd2a62c41d3c87a36f1122a78a21019c8/Lib
@@ -76,8 +78,20 @@ class errorWindow(object):
         alert.setText(text)
         alert.setIcon(QMessageBox.Critical)
         alert.exec_()
-def getsomefiles():
+    def getsomefiles():
         pass
+
+    def getTrainingFields(self):
+        """Currently implemented in Metadata.py"""
+        pass
+
+    def rescaleIntensity(self, im, low=0, high=1):
+        im = im.astype(np.float64)
+        diffIM = high - low
+        im = (im - low)/diffIM
+        im[im>1] = 1
+        im[im<0] = 0
+        return im
 
 
 # end TrainingFunctions
