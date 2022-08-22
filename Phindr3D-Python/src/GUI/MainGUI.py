@@ -40,6 +40,8 @@ except ImportError:
     from src.Clustering.Clustering import *
     from src.Training.Training import *
 
+Generator = Generator()
+
 class MainGUI(QWidget, external_windows):
     """Defines the main GUI window of Phindr3D"""
 
@@ -48,7 +50,7 @@ class MainGUI(QWidget, external_windows):
         QMainWindow.__init__(self)
         super(MainGUI, self).__init__()
         self.training = Training()
-        self.metadata = Metadata()
+        self.metadata = Metadata(Generator)
         self.voxelGroups = VoxelGroups(self.metadata)
         # self.clustering = Clustering() #dont need this, clustering occurs in the view results parts and the clustering object isnt relevant.
         self.setWindowTitle("Phindr3D")

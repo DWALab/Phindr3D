@@ -174,9 +174,13 @@ class VoxelGroups(VoxelBase):
 if __name__ == '__main__':
     """Unit testing"""
     from src.Data.Metadata import *
-    metadatafile = r"R:\\Phindr3D-Dataset\\neurondata\\Phindr3D_neuron-sample-data\\builder_test.txt"
-
-    test = Metadata()
+    from src.Training.Training import *
+    import numpy as np
+    import pandas as pd
+    import os
+    deterministic = Generator(1234)
+    metadatafile = r'testdata\metadata_tests\metadatatest_metadata.txt'
+    test = Metadata(deterministic)
     if test.loadMetadataFile(metadatafile):
         print("So, did the metadata load? " + "Yes!" if test.metadataLoadSuccess else "No.")
         print("===")
@@ -184,8 +188,28 @@ if __name__ == '__main__':
         print("===")
 
         print("Phind voxel action")
+        training = Training()
+        training.randFieldID = test.trainingSet
         vox = VoxelGroups(test)
-        vox.action()
+
+        tmpsave = 'testdata\\metadata_tests\\check_results.txt'
+        vox.action(tmpsave, training)
+
+        testpix = np.loadtxt('testdata\\metadata_tests\\pix.txt')
+        print('Voxel categories match expected result:', np.allclose(testpix, vox.pixelImage.pixelBinCenters))
+        testsv = np.loadtxt('testdata\\metadata_tests\\sv.txt')
+        print('Supervoxel categories match expected results:', np.allclose(testsv, vox.superVoxelImage.superVoxelBinCenters))
+        testmv = np.loadtxt('testdata\\metadata_tests\\mv.txt')
+        print('Megavoxel categories match expected results:', np.allclose(testmv, vox.megaVoxelImage.megaVoxelBinCenters))
+        expected_output = pd.read_csv('testdata\\metadata_tests\\expected_output.txt', sep='\t')
+        test_output = pd.read_csv('testdata\\metadata_tests\\check_results.txt', sep='\t')
+        expected_portion = expected_output.iloc[:, -41:]
+        test_portion = test_output.iloc[:, -41:]
+        print('Phindr3D output matches expected results:', (test_portion.equals(expected_portion)))
+        os.remove('testdata\\metadata_tests\\check_results.txt')
+
+
+
 
     #load metadata, compute parameters
     #phind bincenters in a deterministic manner + compare to expected result

@@ -40,9 +40,9 @@ class VoxelBase:
         self.numMegaVoxelBins = PhindConfig.numMegaVoxelBins
         self.textureFeatures = PhindConfig.textureFeatures
 
-    def getPixelBins(self, x, metadata, numBins):
+    def getPixelBins(self, x, metadata, numBins, random_state=None):
         """Base class redirect to the static method in the VoxelFunctions class"""
-        return VoxelFunctions.getPixelBins(x, metadata, numBins)
+        return VoxelFunctions.getPixelBins(x, metadata, numBins, random_state=random_state)
     # end getPixelBins (base class)
 
     def getTileProfiles(self, metadata, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo):
@@ -78,7 +78,7 @@ class VoxelBase:
         superVoxelThresholdTuningFactor = PhindConfig.superVoxelThresholdTuningFactor
         numChannels = imageObject.GetNumChannels()
         numVoxelBins = self.numVoxelBins
-        #
+        ##assume all the things above are correct for now.
         numTilesXY = int((theTileInfo.croppedX * theTileInfo.croppedY) / (theTileInfo.tileX * theTileInfo.tileY))
         zEnd = -theTileInfo.zOffsetEnd
         if zEnd == -0:
@@ -115,8 +115,7 @@ class VoxelBase:
             croppedIM = np.zeros((theTileInfo.origX, theTileInfo.origY, numChannels))
             for jChan in range(numChannels):
                 try:
-                    stackIndex = list(imageObject.stackLayers.keys())[iImages]
-                    theStack = imageObject.stackLayers[stackIndex]
+                    theStack = imageObject.stackLayers[zslice]
                     channelIndex = list(theStack.channels.keys())[jChan]
                     theChannel = theStack.channels[channelIndex]
                     imFileName = theChannel.channelpath

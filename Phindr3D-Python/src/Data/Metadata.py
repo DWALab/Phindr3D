@@ -33,18 +33,24 @@ try:
 except ImportError:
     from src.PhindConfig.PhindConfig import *
 
+class Generator():
+    def __init__(self, seed=None):
+        self.seed = seed
+        if seed == None:
+            self.Generator = np.random.default_rng()
+        else:
+            self.Generator = np.random.default_rng(seed)
 
 class Metadata:
     """This class handles groups of image files and the associated metadata.
        Static methods that draw closely from transliterations of the MATLAB functions
        can be found in the DataFunctions class."""
 
-
-    def __init__(self):
+    def __init__(self, rng):
         """Metadata class constructor"""
         # Initialize a random number generator
         # NOTE: 12345 is set as seed for testing purposes
-        self.Generator = np.random.default_rng(12345)
+        self.Generator = rng
 
         # Define user-controlled parameters and set default values
         self.intensityNormPerTreatment = False
@@ -306,7 +312,7 @@ class Metadata:
 
         if not self.intensityNormPerTreatment:
             randFieldID = np.array([uniqueImageID[i] for i in
-                self.Generator.choice(uniqueImageID.size, size=randTrainingFields,
+                self.Generator.Generator.choice(uniqueImageID.size, size=randTrainingFields,
                     replace=False, shuffle=False)])
         else:
             # have different treatments, want to choose training images from each treatment.
@@ -323,7 +329,7 @@ class Metadata:
                     treatmentIDs = allTrKeys[allTrValues == treat]
                     if len(treatmentIDs) > 0:
                         tempList = [treatmentIDs[j] for j in
-                            self.Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
+                            self.Generator.Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
                                 replace=False, shuffle=False)]
                 except (ValueError,KeyError):
                     tempList = []
@@ -365,7 +371,7 @@ class Metadata:
             zStackKeys = list(zStack.keys())
             randHalf = int(depth // 2)
             # choose half of the stack, randomly
-            generatedArray = self.Generator.choice(depth, size=randHalf, replace=False, shuffle=False)
+            generatedArray = self.Generator.Generator.choice(depth, size=randHalf, replace=False, shuffle=False)
             # TO DO Add try-catch here for KeyError
             randZ = [zStackKeys[int(j)] for j in generatedArray]
             minVal = np.zeros((randHalf, numChannels))
@@ -655,11 +661,11 @@ if __name__ == '__main__':
     # Running will prompt user for a text file, image id, stack id, and channel number
     # Since this is only for testing purposes, assume inputted values are all correct types
 
-    Generator = np.random.default_rng(1234)
+    deterministic = Generator(1234)
 
     metadatafile = r'testdata\metadata_tests\metadatatest_metadata.txt'
 
-    test = Metadata()
+    test = Metadata(deterministic)
     if test.loadMetadataFile(metadatafile):
 
         with open('testdata\\metadata_tests\\expected.json', 'r') as js:

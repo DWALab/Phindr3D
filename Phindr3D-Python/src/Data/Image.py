@@ -57,10 +57,10 @@ class Image:
             return None
         # Use set to find unique values in a list, then change type back to list
         treatmentValList = list(set(tmpList))
-        if len(treatmentValList) == 0:
+        if len(treatmentValList) != 1: #len will be 0 if no treatment, len can only be more than 1 if multiple different treatments within 1 image which is impossible
             return None
         else:
-            return treatmentValList
+            return treatmentValList[0]
     # end GetTreatment
 
     def GetOtherParams(self):

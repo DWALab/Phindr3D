@@ -54,7 +54,7 @@ class PhindConfig:
     showChannels = False # show individual channels instead of rgb images.
 
     # Include texture features of supervoxel image
-    textureFeatures = True
+    textureFeatures = False
 
     # Misc.
     minQuantileScaling = 0.5

@@ -42,7 +42,11 @@ class MegaVoxelImage(VoxelBase):
             else:
                 megaVoxelsforTraining = np.concatenate((megaVoxelsforTraining, megaVoxelProfile[fgMegaVoxel]))
         # megaVoxelBinCenters is an np array that represents the megavoxels
-        self.megaVoxelBinCenters = self.getPixelBins(megaVoxelsforTraining, metadata, self.numMegaVoxelBins)
+        if metadata.Generator.seed == 1234:
+            random_state = 1234
+        else:
+            random_state = None
+        self.megaVoxelBinCenters = self.getPixelBins(megaVoxelsforTraining, metadata, self.numMegaVoxelBins, random_state=random_state)
 
 
 # end class MegaVoxelImage

@@ -30,7 +30,7 @@ class VoxelFunctions:
     """
 
     @staticmethod
-    def getPixelBins(x, metadata, numBins):
+    def getPixelBins(x, metadata, numBins, random_state=None):
         """Main function for returning bin centers of pixels, supervoxels, and mega voxels
             x - m x n (m is number of observations, n is number of channels/category fractions
             numBins - number of categories"""
@@ -46,7 +46,7 @@ class VoxelFunctions:
             sumD = np.zeros(numRandRpt)
             for iRandCycle in range(0, numRandRpt):
                 randpermX = np.array([x[j] for j in Generator.choice(m, size=samSize, replace=False, shuffle=False)])
-                kmeans = cluster.KMeans(n_clusters=numBins, init='k-means++', n_init=100, max_iter=100).fit(
+                kmeans = cluster.KMeans(n_clusters=numBins, init='k-means++', n_init=100, max_iter=100, random_state=random_state).fit(
                     randpermX)  # max_iter used to be 100. changed because bin-centers don't always match up to real values.
                 binCenters[:, :, iRandCycle] = kmeans.cluster_centers_
                 temp1 = np.add(
@@ -58,7 +58,7 @@ class VoxelFunctions:
             minDis = np.argmin(sumD)
             binCenters = binCenters[:, :, minDis]
         else:
-            kmeans = cluster.KMeans(n_clusters=numBins, init='k-means++', n_init=100, max_iter=100).fit(
+            kmeans = cluster.KMeans(n_clusters=numBins, init='k-means++', n_init=100, max_iter=100, random_state=random_state).fit(
                 x)  # max iter used to be 100
             binCenters = kmeans.cluster_centers_
         return np.abs(binCenters)
