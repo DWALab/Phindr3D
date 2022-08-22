@@ -29,6 +29,8 @@ so metadata gets loaded, and then?
 
 
 from .TrainingFunctions import *
+from ..PhindConfig.PhindConfig import *
+
 
 class Training:
     """This class ...
@@ -37,7 +39,23 @@ class Training:
 
     def __init__(self):
         """Training class constructor"""
+        # params defined in Phind Config
+        self.intensityThresholdTuningFactor = PhindConfig.intensityThresholdTuningFactor
+        self.minQuantileScaling = PhindConfig.minQuantileScaling
+        self.maxQuantileScaling = PhindConfig.maxQuantileScaling
+        self.randTrainingSuperVoxel = PhindConfig.randTrainingSuperVoxel
+        self.superVoxelThresholdTuningFactor = PhindConfig.superVoxelThresholdTuningFactor
+        self.megaVoxelThresholdTuningFactor = PhindConfig.megaVoxelThresholdTuningFactor
+        self.randTrainingFields = PhindConfig.randTrainingFields
+        self.pixelsPerImage = PhindConfig.pixelsPerImage
+        self.trainingPerColumn = PhindConfig.trainingPerColumn
+        self.superVoxelPerField = PhindConfig.superVoxelPerField
 
+        # params to be defined later (in training functions)
+        # self.intensityThresholdValues = None  #gets computed at metadata loading stage
+        # self.randZForTraining = None          #gets computed on a per-image basis during category making
+        # self.randFieldID = None               #gets determined at metadata loading stage for scaling and thresholding
+        # self.randTrainingPerTreatment = None  #not sure about this one (intensity threshold values and scaling factors should already reflect training per treatment if chosen)
 
     # end constructor
 

@@ -39,7 +39,7 @@ class PhindConfig:
     # Number of categories for binning
     numVoxelBins = 20
     numSuperVoxelBins = 15
-    numMegaVoxelBins = 30
+    numMegaVoxelBins = 40
     # Foreground thresholds
     intensityThresholdTuningFactor = 0.5
     superVoxelThresholdTuningFactor = 0.5
@@ -53,7 +53,7 @@ class PhindConfig:
     showImage = False
     showChannels = False # show individual channels instead of rgb images.
 
-    # Include texture features of Mega Voxel image
+    # Include texture features of supervoxel image
     textureFeatures = True
 
     # Misc.
@@ -64,7 +64,7 @@ class PhindConfig:
     endZPlane = 500
     numRemoveZStart = 1
     numRemoveZEnd = 1
-    computeTAS = 0
+    computeTAS = False
     trainingPerColumn = False
     # treatmentColNameForNormalization = ''
     # imageTreatments = []
@@ -122,7 +122,9 @@ class TileInfo:
         self.superVoxelZAddStart = None
         self.superVoxelZAddEnd = None
         # Num super and mega voxels
+        # One of these is redundant
         self.numSuperVoxels = None
+        self.numSuperVoxelZ = None
         self.numSuperVoxelsXY = None
         self.numMegaVoxels = None
         self.numMegaVoxelsXY = None
