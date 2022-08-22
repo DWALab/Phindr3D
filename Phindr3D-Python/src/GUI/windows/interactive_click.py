@@ -1,5 +1,9 @@
-
+from PyQt5.QtWidgets import *
+from PyQt5.QtGui import *
+from PyQt5.QtCore import *
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backend_bases import MouseButton
+from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import proj3d
 import matplotlib
 matplotlib.use('Qt5Agg')
@@ -7,12 +11,12 @@ import numpy as np
 import pandas as pd
 import time
 from more_itertools import locate
-from .helperclasses import MplCanvas
 from .plot_functions import *
 from .colorchannelWindow import *
+import PIL.Image
+import json
 
-#Callback will open image associated with data point. Note: in 3D plot pan is hold left-click swipe, zoom is hold right-click swipe (disabled zoom)
-
+#Callback will open image associated with data point. Note: in 3D plot pan is hold left-click swipe, zoom is hold right-click swipe (zoom disabled)
 class interactive_points():
     def __init__(self, main_plot, projection, data, labels, feature_file, color, imageID):
         self.main_plot=main_plot
@@ -22,12 +26,11 @@ class interactive_points():
         self.feature_file=feature_file
         self.color=color[:]
         self.imageID=imageID
-
     def buildImageViewer(self, label, cur_label, index, color, feature_file, imageID):
 
-                win = QDialog()
-                win.resize(1200, 1000)
-                win.setWindowTitle("ImageViewer")
+                self.win = QDialog()
+                self.win.resize(1200, 1000)
+                self.win.setWindowTitle("ImageViewer")
                 grid = QGridLayout()
 
                 #info layout
@@ -89,7 +92,7 @@ class interactive_points():
                 grid.addWidget(ch_colour, 1, 0)
                 grid.addWidget(pjt_box, 1, 1, Qt.AlignCenter)
                 grid.addWidget(adjustbar, 0, 2)
-                win.setLayout(grid)
+                self.win.setLayout(grid)
 
                 #callbacks
                 self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box)
@@ -98,15 +101,29 @@ class interactive_points():
                 mit_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[1].isChecked() else None)
                 montage_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[2].isChecked() else None)
                 ch_colour.clicked.connect(lambda: self.color_change((ch_info.text()).count("Channel_"), self.color, "Custom Colour Picker", "Channels", ["Channel_" +str(i+1) for i in range((ch_info.text()).count("Channel_"))], adjustbar, main_plot, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box))
-                win.show()
-                win.exec()
+                self.win.show()
+                self.win.exec()
     def read_featurefile(self, slicescrollbar, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
         if feature_file:
             # extract image details from feature file
             data = pd.read_csv(feature_file[0], sep="\t", na_values='NaN')
-            ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
-            data = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], sep="\t", na_values='NaN')
 
+            try:
+                metadata=Metadata()
+                metadata.loadMetadataFile(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0])
+            except MissingChannelStackError:
+                errortext = "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid."
+                errorWindow("Metadata Error", errortext)
+            except FileNotFoundError:
+                errortext = "Metadata Extraction Failed: Metadata file does not exist."
+                errorWindow("Metadata Error", errortext)
+            except Exception:
+                errortext = "Metadata Extraction Failed: Invalid Image type (must be grayscale)."
+                errorWindow("Metadata Error", errortext)
+
+            #getting metadatafile
+            data = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], sep="\t", na_values='NaN')
+            ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
             # update channel labels
             ch_names = ['<font color= "#' + str('%02x%02x%02x' % (
             int(color[i - 1][0] * 255), int(color[i - 1][1] * 255), int(color[i - 1][2] * 255)))
@@ -129,22 +146,28 @@ class interactive_points():
                     pjt_label=radio.text()
                     break
             file_info.setText("Filename: " + data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()] + '\n\n Projection Type: ' + pjt_label)
+            # lower/upperbounds, threshold for images
+            bounds = json.loads(data['bounds'].iloc[0])
+            threshold = json.loads(data['intensity_thresholds'].iloc[0])
+            if len(np.shape(bounds))>2:
+                bounds = treatment_bounds(self, data, bounds, meta_loc)
+                if not bounds:
+                    self.win.close()
             #only slice projection can use slider
             if pjt.findChildren(QRadioButton)[0].isChecked():
                 slicescrollbar.setMaximum(stacks - 1)
             else:
                 slicescrollbar.setMaximum(0)
             # initialize array as image size with rgb and # channels
-            empty_img = Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]).size
-            empty_img = np.empty((ch_len, empty_img[1], empty_img[0], 3))
-            return(data, empty_img, meta_loc, stacks, ch_len)
+            empty_img = PIL.Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]).size
+            empty_img = np.zeros((ch_len, empty_img[1], empty_img[0], 3))
+            return(data, empty_img, meta_loc, stacks, ch_len, bounds, threshold)
     def plot_img(self, slicescrollbar, img_plot, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
-        start=time.time()
         #reset subplots
         allaxes = img_plot.fig.get_axes()
         for ax in allaxes:
             img_plot.fig.delaxes(ax)
-        data, empty_img, metaloc, stacks,ch_len=self.read_featurefile(slicescrollbar, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt)
+        data, empty_img, metaloc, stacks,ch_len, bounds, threshold=self.read_featurefile(slicescrollbar, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt)
 
         #slice projection only calculate for current slice
         if pjt.findChildren(QRadioButton)[0].isChecked():
@@ -154,7 +177,7 @@ class interactive_points():
             max_img = np.full((empty_img.shape[1], empty_img.shape[2], 3), np.NINF)
 
         for x in range(1, stacks+1):
-            img=merge_channels(data, empty_img, ch_len, slicescrollbar.value(), color, metaloc+x-1, pjt.findChildren(QRadioButton)[2].isChecked())
+            img=merge_channels(data, empty_img, ch_len, slicescrollbar.value(), color, metaloc+x-1, pjt.findChildren(QRadioButton)[2].isChecked(), bounds, threshold)
             #MIP Projection (max intensity projection - take largest element-wise from image stack)
             if pjt.findChildren(QRadioButton)[1].isChecked():
                 max_img=np.maximum(max_img, img)
@@ -171,10 +194,7 @@ class interactive_points():
                 axes.axis('off')
         img_plot.fig.subplots_adjust(wspace=0.0075, hspace=0.0075)
         img_plot.draw()
-        end=time.time()
-        print(end-start)
     def color_change(self, ch, color, win_title, col_title, labels, slicescrollbar, img_plot, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
-        print(ch, color, labels)
         colors=colorchannelWindow(ch, color, win_title, col_title, labels)
         self.color=colors.color
         self.plot_img(slicescrollbar, img_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt)

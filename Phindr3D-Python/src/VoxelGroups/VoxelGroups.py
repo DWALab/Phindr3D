@@ -146,7 +146,10 @@ class VoxelGroups(VoxelBase):
             dictResults['Treatment'] = Treatments
         else:
             dictResults['Treatment'] = np.full((len(uniqueImageID),), 'RR', dtype='object')
+        dictResults['MetadataFile']=  np.full((len(uniqueImageID),), self.metadata.GetMetadataFilename(), dtype='object')
+        dictResults['ImageID'] = np.full((len(uniqueImageID),), np.arange(1, len(uniqueImageID)+1), dtype='object')
         dictResults['NumMV'] = numRawMV
+
         for i in range(resultIM.shape[1]):
             mvlabel = f'MV{i + 1}'
             dictResults[mvlabel] = resultIM[:, i]  # e.g. mv cat 1: for each image, put here frequency of mvs of type 1.

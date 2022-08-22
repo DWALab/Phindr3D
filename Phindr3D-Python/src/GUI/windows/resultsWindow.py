@@ -7,7 +7,6 @@ from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationTool
 from .interactive_click import interactive_points
 import pandas as pd
 from .plot_functions import *
-from sklearn.datasets import make_blobs
 from ...Training import *
 
 class resultsWindow(QDialog):
@@ -19,6 +18,9 @@ class resultsWindow(QDialog):
         self.plots=[]
         self.filtered_data=0
         self.numcluster=None
+        self.metadata=Metadata()
+        self.bounds=0
+        self.color=color
         #menu tabs
         menubar = QMenuBar()
         file = menubar.addMenu("File")
@@ -40,8 +42,8 @@ class resultsWindow(QDialog):
         box = QGroupBox()
         boxlayout = QGridLayout()
         selectfile = QPushButton("Select Feature File")
-        prevdata = QPushButton("Import Previous Plot Data")
-        exportdata = QPushButton("Export Plot Data")
+        prevdata = QPushButton("Import Previous Plot Data + Select Feature File")
+        exportdata = QPushButton("Export Current Plot Data")
         cmap=QPushButton("Legend Colours")
         map_type = QComboBox()
         map_type.addItems(["PCA","t-SNE","Sammon"])
@@ -55,8 +57,8 @@ class resultsWindow(QDialog):
         colordropdown = QComboBox()
         boxlayout.addWidget(QLabel("File Options"), 0, 0, 1, 1)
         boxlayout.addWidget(selectfile, 1, 0, 1, 1)
-        boxlayout.addWidget(prevdata, 2, 0, 1, 1)
-        boxlayout.addWidget(exportdata, 3, 0, 1, 1)
+        boxlayout.addWidget(exportdata, 2, 0, 1, 1)
+        boxlayout.addWidget(prevdata, 3, 0, 1, 1)
         boxlayout.addWidget(QLabel("Plot Type"), 0, 1, 1, 1)
         boxlayout.addWidget(map_type, 1, 1, 1, 1)
         boxlayout.addWidget(dimensionbox, 2, 1, 1, 1)
@@ -70,6 +72,7 @@ class resultsWindow(QDialog):
         estimate.triggered.connect(lambda: Clustering.Clustering().cluster_est(self.filtered_data) if len(self.plot_data) > 0 else None)
         setnumber.triggered.connect(lambda: self.setnumcluster(colordropdown.currentText()) if len(self.plot_data) > 0 else None)
         piemaps.triggered.connect(lambda: Clustering.piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
+        export.triggered.connect(lambda: Clustering.export_cluster(self.plot_data, self.filtered_data, self.numcluster, self.feature_file[0]) if len(self.plot_data) >0 else None)
         rotation_enable.triggered.connect(lambda: self.main_plot.axes.mouse_init())
         rotation_disable.triggered.connect(lambda: self.main_plot.axes.disable_mouse_rotation())
         resetview.triggered.connect(lambda: reset_view(self))
@@ -81,7 +84,7 @@ class resultsWindow(QDialog):
         self.labels = []
         self.main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection="3d")
         sc_plot = self.main_plot.axes.scatter3D([], [], [], s=10, alpha=1, depthshade=False)  # , picker=True)
-        self.main_plot.axes.set_position([-0.25, -0.05, 1, 1])
+        self.main_plot.axes.set_position([-0.2, -0.05, 1, 1])
         self.original_xlim = sc_plot.axes.get_xlim3d()
         self.original_ylim = sc_plot.axes.get_ylim3d()
         self.original_zlim = sc_plot.axes.get_zlim3d()
@@ -115,7 +118,7 @@ class resultsWindow(QDialog):
         twod.toggled.connect(lambda: toggle_2d_3d(twod, threed, "2d", map_type.currentText()))
         threed.toggled.connect(lambda: toggle_2d_3d(threed, twod, "3d", map_type.currentText()))
         twod.setChecked(True)
-        picked_pt=interactive_points(self.main_plot, self.projection, self.plot_data, self.labels, self.feature_file, color, self.imageIDs)
+        picked_pt = interactive_points(self.main_plot, self.projection, self.plot_data, self.labels,self.feature_file, self.color, self.imageIDs)
         self.main_plot.fig.canvas.mpl_connect('pick_event', picked_pt)
         colordropdown.currentIndexChanged.connect(lambda: self.data_filt(colordropdown, self.projection, map_type.currentText(),False) if self.feature_file and colordropdown.count() > 0 else None)
         map_type.currentIndexChanged.connect(lambda: self.data_filt(colordropdown, self.projection, map_type.currentText(),True) if self.feature_file and colordropdown.count() > 0 else None)
@@ -135,15 +138,18 @@ class resultsWindow(QDialog):
     def loadFeaturefile(self, grouping, plot, new_plot):
         filename, dump = QFileDialog.getOpenFileName(self, 'Open Feature File', '', 'Text files (*.txt)')
         if filename != '':
-            self.feature_file.clear()
-            self.feature_file.append(filename)
-            print(self.feature_file)
-            grouping, cancel=self.color_groupings(grouping)
-            if not cancel:
-                self.data_filt(grouping, self.projection, plot, new_plot)
-        else:
-            load_featurefile_win = self.buildErrorWindow("Select Valid Feature File (.txt)", QMessageBox.Critical)
-            load_featurefile_win.exec()
+            try:
+                self.feature_file.clear()
+                self.feature_file.append(filename)
+                print(self.feature_file)
+                grouping, cancel=self.color_groupings(grouping)
+                if not cancel:
+                    self.data_filt(grouping, self.projection, plot, new_plot)
+            except:
+                if len(self.plot_data)==0:
+                    grouping.clear()
+                errorWindow("Feature File Error", "Check Validity of Feature File (.txt)", )
+
 
     def color_groupings(self, grouping):
         #read feature file
@@ -151,13 +157,19 @@ class resultsWindow(QDialog):
         grouping.blockSignals(True)
         grps=[]
         #Get Channels
-        col_lbl=np.array([lbl if lbl.find("Channel_")>-1 else np.nan for lbl in feature_data.columns])
+        meta_col=pd.read_csv(feature_data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], nrows=1,  sep="\t", na_values='NaN').columns.tolist()
+        col_lbl=np.array([lbl if lbl.find("Channel_")>-1 else np.nan for lbl in meta_col])
         col_lbl=col_lbl[col_lbl!='nan']
-        #get features
-        chk_lbl=np.array([lbl if lbl.find("MV")==-1 else np.nan for lbl in feature_data.columns.drop(labels=col_lbl)])
+        #Get MV and Texturefeatures labels
+        self.filt=[]
+        filt_lbl=np.array(["MV"])
+        if max(feature_data.columns.str.contains("text_", case=False)):
+            filt_lbl=np.concatenate((filt_lbl, ["Texture_Features"]))
+        #get labels
+        chk_lbl=np.array([lbl if lbl[:2].find("MV")==-1 and lbl!='bounds' and lbl!='intensity_thresholds' and lbl[:5]!='text_' else np.nan for lbl in feature_data.columns])
         chk_lbl=chk_lbl[chk_lbl!='nan']
         #select features window
-        win=selectWindow(chk_lbl, col_lbl, "Filter Feature File Groups and Channels", "Grouping", "Channels", grps)
+        win=selectWindow(chk_lbl, col_lbl, "Filter Feature File Groups and Channels", "Grouping", "Channels", grps, filt_lbl, self.filt)
         if not win.x_press:
             #change colorby window
             grouping.clear()
@@ -168,14 +180,13 @@ class resultsWindow(QDialog):
         return(grouping, win.x_press)
     def data_filt(self, grouping, projection, plot, new_plot):
         filter_data= grouping.currentText()
-        print(filter_data)
 
-        # choose dataset to use for clustering: EDIT HERE
+        # choose dataset to use for clustering
         # Choices:
         # 'MV' -> megavoxel frequencies,
-        # 'text' -> 4 haralick texture features,
-        # 'combined' -> both together
-        datachoice = 'MV'
+        # 'Texture_Features' -> 4 haralick texture features,
+        # 'Combined' -> both together
+
         image_feature_data = pd.read_csv(self.feature_file[0], sep='\t', na_values='        NaN')
 
         # Identify columns
@@ -198,20 +209,23 @@ class resultsWindow(QDialog):
         maxd = np.max(image_feature_data[featurecols], axis=0)
         featuredf = (image_feature_data[featurecols] - mind) / (maxd - mind)
         mdatadf = image_feature_data[mdatacols]
-        featuredf.dropna(axis=0, inplace=True) # thresh=int(0.2 * featuredf.shape[0]) )
+        featuredf.dropna(axis=0, inplace=True)  # thresh=int(0.2 * featuredf.shape[0]) )
 
         # select data
-        if datachoice.lower() == 'mv':
-            X = featuredf[mv_cols].to_numpy().astype(np.float64)
-        elif datachoice.lower() == 'text':
-            X = featuredf[texture_cols].to_numpy().astype(np.float64)
-        elif datachoice.lower() == 'combined':
+        if len(self.filt)==1:
+            if self.filt[0] == 'MV':
+                X = featuredf[mv_cols].to_numpy().astype(np.float64)
+                grouping.remove()
+            elif self.filt[0] == 'Texture_Features':
+                X = featuredf[texture_cols].to_numpy().astype(np.float64)
+        elif self.filt == ['MV','Texture_Features']:
             X = featuredf.to_numpy().astype(np.float64)
         else:
             X = featuredf[mv_cols].to_numpy().astype(np.float64)
             print('Invalid data set choice. Using Megavoxel frequencies.')
         print('Dataset shape:', X.shape)
         self.filtered_data=X
+
         #reset imageIDs
         self.imageIDs.clear()
         self.imageIDs.extend(np.array(mdatadf['ImageID'], dtype='object').astype(int))
@@ -222,15 +236,10 @@ class resultsWindow(QDialog):
         self.labels.clear()
         self.labels.extend(list(map(str, z)))
         # misc info
+        numMVperImg = np.array(image_feature_data['NumMV']).astype(np.float64)
         num_images_kept = X.shape[0]
         print(f'\nNumber of images: {num_images_kept}\n')
         result_plot(self, X, projection, plot, new_plot)
-    def buildErrorWindow(self, errormessage, icon):
-        alert = QMessageBox()
-        alert.setWindowTitle("Error Dialog")
-        alert.setText(errormessage)
-        alert.setIcon(icon)
-        return alert
     def setnumcluster(self, group):
         clustnum=Clustering.setcluster(self.numcluster, self.filtered_data, self.plot_data, np.array(self.labels), group)
         self.numcluster=clustnum.clust

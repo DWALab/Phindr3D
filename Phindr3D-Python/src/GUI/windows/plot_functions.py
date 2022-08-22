@@ -16,35 +16,52 @@
 
 import numpy as np
 from cv2 import medianBlur
-from PIL import Image
+import PIL.Image
 from .colorchannelWindow import *
 import matplotlib
 import matplotlib.pyplot as plt
 from math import ceil, floor
 from textwrap import wrap, fill
+from .helperclasses import *
+import json
 try:
     from ...Clustering import Clustering
     from ...Data.DataFunctions import *
+    from ...Data.Metadata import *
+    from ...PhindConfig.PhindConfig import PhindConfig
+
 except ImportError:
     from src.Clustering import Clustering
     from src.Data.DataFunctions import *
-def merge_channels(data, rgb_img, ch_len, scroller_value, color, meta_loc, box):
+
+def treatment_bounds(self, data, bounds, id):
+
+    try:
+        trt = data['Treatment'].iloc[id]
+        trt_loc =int(np.where(data['Treatment'].unique() == trt)[0])
+        bound = [bounds[0][trt_loc], bounds[1][trt_loc]]
+        return(bound)
+    except:
+        win = errorWindow("Error TreatmentNorm","intensityNormPerTreatment was set but no Treatment Column was found in Metadata")
+        return(False)
+
+
+def merge_channels(data, rgb_img, ch_len, scroller_value, color, meta_loc, box, bounds, IntensityThreshold):
     # threshold/colour each image channel
     for ind, rgb_color in zip(range(scroller_value, scroller_value + ch_len), color):
         ch_num = str(ind - scroller_value + 1)
         data['Channel_' + ch_num] = data['Channel_' + ch_num].str.replace(r'\\', '/', regex=True)
-        cur_img = np.array(Image.open(data['Channel_' + ch_num].iloc[meta_loc + scroller_value]))
+        cur_img = np.array(PIL.Image.open(data['Channel_' + ch_num].iloc[meta_loc + scroller_value]))
         # medianfilter for slice or MIP projection
         if box == False:
             cur_img = medianBlur(cur_img, 3)
-        threshold = DataFunctions.getImageThreshold(cur_img)
-        cur_img[cur_img <= threshold] = 0
+        cur_img= (cur_img - bounds[0][int(ch_num)-1])/(bounds[1][int(ch_num)-1]-bounds[0][int(ch_num)-1]) #bounds from metadata functions compute
+        cur_img[cur_img < IntensityThreshold[0][int(ch_num)-1]] = 0
+        cur_img[cur_img > 1] = 1
         cur_img = np.dstack((cur_img, cur_img, cur_img))
         rgb_img[int(ch_num) - 1, :, :, :] = np.multiply(cur_img, rgb_color)
     # compute average and norm to mix colours
-    divisor = np.sum(rgb_img != 0, axis=0)
-    tot = np.sum(rgb_img, axis=0)
-    rgb_img = np.divide(tot, divisor, out=np.zeros_like(tot), where=divisor != 0)
+    rgb_img = np.sum(rgb_img, axis=0)
     max_rng = [np.max(rgb_img[:, :, i]) if np.max(rgb_img[:, :, i]) > 0 else 1 for i in range(3)]
     rgb_img = np.divide(rgb_img, max_rng)
     return (rgb_img)
@@ -136,42 +153,36 @@ def legend_colors(self):
 def save_file(self, map):
     name = QFileDialog.getSaveFileName(self, 'Save File')[0]
     if name:
-        #add map type to filename
-        for x in ['PCA','t-SNE','Sammon']:
-            if (x in name) and x!=map:
-                name=name.replace(x, '')
-        if name.find("txt")==-1:
-            name=name+".txt"
-        if name.find(map)==-1:
-            name=name.replace(".txt", map+".txt")
-        #export plot data and x, y, z limits
-        np.savetxt(name, np.concatenate((self.plot_data, self.original_xlim, self.original_ylim, self.original_zlim), axis=None), newline='', fmt='%10.5f')
+        info = {
+                'plot_projection': map,
+                'plot_coordinates': [data.tolist() for data in self.plot_data],
+                'x_limit': self.original_xlim,
+                'y_limit': self.original_ylim,
+                'z_limit': self.original_zlim,
+        }
+        with open(name, 'w') as f:
+            json.dump(info, f)
 
 #import plot data
 def import_file(self, map_dropdown, colordropdown, twod, threed):
-    filename= QFileDialog.getOpenFileName(self, 'Open Plot Data File', '', 'Text files (*.txt)')[0]
+    filename= QFileDialog.getOpenFileName(self, 'Open Plot Data File', '')[0]
     if filename != '':
-        print(filename)
-        new_data = np.loadtxt(filename)
-        #get x, y, z limits
-        self.original_xlim =[new_data[-6],new_data[-5]]
-        self.original_ylim = [new_data[-4], new_data[-3]]
-        self.original_zlim = [new_data[-2], new_data[-1]]
-        self.reset_view()
-        #2d/3d set
-        if np.all(new_data[int((len(new_data)-6)/3):-6])!=0:
-            threed.setChecked(True)
-        else:
-            twod.setChecked(True)
-        #imported data and set map type
-        self.plot_data.clear()
-        self.plot_data.extend(np.array(new_data[:-6].reshape(3, int((len(new_data)-6)/3))))
-        for map in ["PCA", "Sammon", "t-SNE"]:
-            if map in filename:
-                map_dropdown.setCurrentIndex(map_dropdown.findText(map))
-                #load feature file
-                self.loadFeaturefile(colordropdown, map, False)
-                break
-    else:
-        load_datafile_win = self.buildErrorWindow("Select Valid Plot Data File (.txt)", QMessageBox.Critical)
-        load_datafile_win.exec()
+        with open(filename, "r") as f:
+            try:
+                data=json.load(f)
+                if list(data.keys())==['plot_projection','plot_coordinates','x_limit','y_limit','z_limit']:
+                    self.plot_data.clear()
+                    self.plot_data.extend([np.array(plot_data) for plot_data in data.get('plot_coordinates')])
+                    self.original_xlim = data.get('x_limit')
+                    self.original_ylim = data.get('y_limit')
+                    self.original_zlim = data.get('z_limit')
+                    map_dropdown.setCurrentIndex(map_dropdown.findText(data.get('plot_projection')))
+                reset_view(self)
+                #2d/3d set
+                if np.all(self.plot_data[2]) != 0:
+                    threed.setChecked(True)
+                else:
+                    twod.setChecked(True)
+                self.loadFeaturefile(colordropdown, map_dropdown.currentText(), False)
+            except:
+                errorWindow("Import Plot Data Error", "Check if correct file. Requires Following Labels: plot_projection, plot_coordinates, x_limit , y_limit ,z_limit")

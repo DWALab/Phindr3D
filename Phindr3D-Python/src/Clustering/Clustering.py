@@ -22,13 +22,13 @@ from sklearn.cluster import AffinityPropagation
 from scipy.spatial.distance import cdist
 import sklearn.metrics as met
 import numpy as np
-from src.GUI.windows.helperclasses import *
+from ..GUI.windows.helperclasses import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-
+import pandas as pd
 
 #manually enter cluster number
 class setcluster(object):
@@ -52,7 +52,7 @@ class setcluster(object):
             clusterset.lineEdit().setCursorPosition(1)
         #Add widgets and callbacks
         win.layout().addRow(label, clusterset)
-        if group=="Treatment":
+        if group=="Treatment" and len(np.unique(labels))>1:
             labelc1=QLabel('Mutual information: N\A')
             labelc2=QLabel('Normalized mutual information: N\A')
             labelc3=QLabel('Adjusted mutual information: N\A')
@@ -60,7 +60,7 @@ class setcluster(object):
             win.layout().addRow(labelc2)
             win.layout().addRow(labelc3)
         win.layout().addRow(btn_ok, btn_close)
-        btn_ok.clicked.connect(lambda: self.confirmed_cluster(clusterset, datafilt, clusterset.value(), plot_data, labels, labelc1, labelc2, labelc3, group) if group=="Treatment" else self.confirmed_cluster(clusterset, datafilt, clusterset.value(), plot_data, labels, None, None, None, group))
+        btn_ok.clicked.connect(lambda: self.confirmed_cluster(clusterset, datafilt, clusterset.value(), plot_data, labels, labelc1, labelc2, labelc3, group) if group=="Treatment" and len(np.unique(labels))>1 else self.confirmed_cluster(clusterset, datafilt, clusterset.value(), plot_data, labels, None, None, None, group))
         btn_close.clicked.connect(lambda: win.close())
         win.show()
         win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
@@ -69,7 +69,7 @@ class setcluster(object):
     def confirmed_cluster(self, num, datafilt, numclusters, plot_data, labels, labelc1, labelc2, labelc3, group):
         if num.value()>0:
             self.clust=num.value()
-            if group=="Treatment":
+            if group=="Treatment" and len(np.unique(labels))>1:
                 clusters, counts, idx =Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
                 treatlabels = np.zeros(labels.shape)
                 for i, t in enumerate(labels):
@@ -79,7 +79,28 @@ class setcluster(object):
                 labelc3.setText('Adjusted mutual information: ' + str(met.normalized_mutual_info_score(treatlabels, idx)))
         else:
             errorWindow("Cluster Error", "Number of Clusters must be a positive value")
-
+#export clusters
+class export_cluster(object):
+    def __init__(self, plot_data, datafilt, numclusters, featurefile):
+        if numclusters!=None:
+            name = QFileDialog.getSaveFileName(None, 'Save File')[0]
+            if name:
+                clusters, count, idx = Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
+                cols = list(pd.read_csv(featurefile, nrows=1, sep='\t'))
+                cols=list(filter(lambda col: (col.find("Channel")==-1 and col[:2]!='MV'), cols))
+                data=pd.read_csv(featurefile, usecols = cols[:], sep='\t')
+                if 'Stack' in cols:
+                    stack=[]
+                    metadata = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], usecols= ['Stack', 'ImageID'], sep="\t",na_values='NaN')
+                    for ind in np.unique(metadata['ImageID'].to_numpy()):
+                        idstack=metadata['Stack'].loc[metadata['ImageID'] == ind]
+                        stack.append("".join((str(idstack.min()),'-', str(idstack.max()))))
+                    data.rename(columns={'Stack': 'Stacks'}, inplace = True)
+                    data['Stacks']=stack
+                data['Cluster Assignment'] = idx
+                data.to_csv(name, sep='\t', mode='w', index=False)
+        else:
+            errorWindow("Export Error", "Please 'Set Number of Clusters' before using Export Cluster Results")
 #show clusters and piechart percentage of labels
 class piechart(object):
     def __init__(self, plot_data, datafilt, numclusters, labels, colors):
@@ -171,14 +192,6 @@ class clusterdisplay(object):
         win.layout().addWidget(self.main_plot)
         win.show()
         win.exec()
-
-class errorWindow(object):
-    def __init__(self,win_title, text):
-        alert = QMessageBox()
-        alert.setWindowTitle(win_title)
-        alert.setText(text)
-        alert.setIcon(QMessageBox.Critical)
-        alert.exec_()
 
 class Clustering:
     def __init__(self):

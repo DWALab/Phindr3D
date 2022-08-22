@@ -23,9 +23,10 @@ import matplotlib
 import matplotlib.colors as mcolors
 import pandas as pd
 import numpy as np
-from PIL import Image as im
+import PIL.Image
 import sys
 import random
+from scipy.stats.mstats import mquantiles
 from .windows.plot_functions import *
 from .windows.helperclasses import *
 from ..PhindConfig.PhindConfig import TileInfo
@@ -59,8 +60,8 @@ class MainGUI(QWidget, external_windows):
         self.img_ind=1
         #Default color values for image plot
         keys, values = zip(*mcolors.CSS4_COLORS.items())
-        self.color = [mcolors.to_rgb(values[keys.index('red')]), mcolors.to_rgb(values[keys.index('lime')]),
-                 mcolors.to_rgb(values[keys.index('blue')])]
+        values=[values[x] for x, y in enumerate(keys) if 'white' not in y]
+        self.color = [(0, 0.45, 0.74),(0.85, 0.33, 0.1), (0.93, 0.69, 0.13)]
         self.ch_len=1
         layout = QGridLayout()
         layout.setAlignment(Qt.AlignBottom)
@@ -69,8 +70,9 @@ class MainGUI(QWidget, external_windows):
         setvoxel = QPushButton("Set Voxel Parameters")
         sv = QCheckBox("SV")
         mv = QCheckBox("MV")
-        adjust = QLabel("Adjust Image Threshold")
-        adjustbar = QSlider(Qt.Horizontal)
+        adjust_thresh = QLabel("Adjust Image Threshold")
+        threshbar = QSlider(Qt.Horizontal)
+        threshbar.setMaximum(100)
         setcolors = QPushButton("Set Channel Colors")
         slicescroll = QLabel("Slice Scroller")
         slicescrollbar = QSlider(Qt.Horizontal)
@@ -104,25 +106,31 @@ class MainGUI(QWidget, external_windows):
                 alert = self.buildErrorWindow("No variables to export!!", QMessageBox.Critical)
                 alert.exec()
 
-        def loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, color, values, imagenav):
+        def loadMetadata(self, sv, mv, threshbar, slicescrollbar, img_plot, color, values, imagenav):
             filename, dump = QFileDialog.getOpenFileName(self, 'Open File', '', 'Text files (*.txt)')
             if os.path.exists(filename):
                 # When meta data is loaded, using the loaded data, change the data for image viewing
                 # Consider adding another class to store all of the data (GUIDATA in MATLab?)
                 try:
                     self.metadata.loadMetadataFile(filename)
-                    #print(self.metadata.GetMetadataFilename())
-
-                    adjustbar.setValue(0)
-                    slicescrollbar.setValue(0)
-                    imagenav.setText("1")
-                    self.img_display(slicescrollbar, img_plot, sv, mv, color, values, self.img_ind)
                     # If the file loaded correctly, proceed to calculating thresholds, scale factors, etc.
+                    threshbar.blockSignals(True)
+                    slicescrollbar.blockSignals(True)
+                    threshbar.setValue(0)
+                    slicescrollbar.setValue(0)
+                    self.img_ind=1
+                    imagenav.setText("1")
                     self.metadata.computeImageParameters()
+                    self.thresh=self.metadata.intensityThresholdValues
+                    self.bounds=[self.metadata.lowerbound, self.metadata.upperbound]
+                    threshbar.setValue(int(PhindConfig().intensityThresholdTuningFactor*100))
+                    threshbar.blockSignals(False)
+                    slicescrollbar.blockSignals(False)
+                    issue=self.img_display(slicescrollbar, img_plot, sv, mv, color, values, self.img_ind) #calculate quantile in img display?
                     # Update values of GUI widgets
-
-                    alert = self.buildErrorWindow("Metadata Extraction Completed.", QMessageBox.Information, "Notice")
-                    alert.exec()
+                    if not issue:
+                        alert = self.buildErrorWindow("Metadata Extraction Completed.", QMessageBox.Information, "Notice")
+                        alert.exec()
                 except MissingChannelStackError:
                     errortext = "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid."
                     alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
@@ -229,7 +237,7 @@ class MainGUI(QWidget, external_windows):
         expparameters.triggered.connect(exportError)
         about.triggered.connect(self.aboutAlert)
         segmentation.triggered.connect(organoidSegmentation)
-        loadmetadata.triggered.connect(lambda: loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, self.color, values))
+        loadmetadata.triggered.connect(lambda: loadMetadata(self, sv, mv, threshbar, slicescrollbar, img_plot, self.color, values))
         menuexit.triggered.connect(self.close)
 
         switchmeta.triggered.connect(testMetadata)
@@ -244,8 +252,8 @@ class MainGUI(QWidget, external_windows):
         grid.addWidget(setvoxel, 1, 0, 1, 2)
         grid.addWidget(sv, 2, 0)
         grid.addWidget(mv, 2, 1)
-        grid.addWidget(adjust, 3, 0, 1, 2)
-        grid.addWidget(adjustbar, 4, 0, 1, 2)
+        grid.addWidget(adjust_thresh, 3, 0, 1, 2)
+        grid.addWidget(threshbar, 4, 0, 1, 2)
         analysisparam.setLayout(grid)
         layout.addWidget(analysisparam, 1, 0)
 
@@ -264,7 +272,7 @@ class MainGUI(QWidget, external_windows):
         imagenav.setValidator(QIntValidator())
         imagego = QPushButton("Image Go")
 
-        imagego.clicked.connect(lambda: self.img_scroll(int(imagenav.text())-self.img_ind, slicescrollbar, img_plot, sv, mv, self.color, values, imagenav) if self.metadata.GetMetadataFilename() else metadataError("Image Go"))
+        imagego.clicked.connect(lambda: self.img_scroll(int(imagenav.text())-self.img_ind, slicescrollbar, threshbar.value(), img_plot, sv, mv, self.color, values, imagenav) if self.metadata.GetMetadataFilename() else metadataError("Image Go"))
         imageselect = QHBoxLayout()
         imageselect.addWidget(imagenav)
         imageselect.addWidget(imagego)
@@ -297,23 +305,22 @@ class MainGUI(QWidget, external_windows):
         img_plot.axes.set_position([0, 0, 1, 1])
         self.setLayout(layout)
 
-
         #mainGUI buttons clicked
         setvoxel.clicked.connect(lambda: metadataError("Set Voxel Parameters"))
-        adjustbar.valueChanged.connect(lambda: metadataError("Adjust Image Threshold"))
-        loadmeta.clicked.connect(lambda: loadMetadata(self, sv, mv, adjustbar, slicescrollbar, img_plot, self.color, values, imagenav))
-        nextimage.clicked.connect(lambda:  self.img_scroll(1, slicescrollbar, img_plot, sv, mv, self.color, values, imagenav) if self.metadata.GetMetadataFilename() else metadataError("Next Image"))
-        previmage.clicked.connect(lambda:  self.img_scroll(-1, slicescrollbar, img_plot, sv, mv, self.color, values, imagenav) if self.img_ind>1 else None)
+        loadmeta.clicked.connect(lambda: loadMetadata(self, sv, mv, threshbar, slicescrollbar, img_plot, self.color, values, imagenav))
+        nextimage.clicked.connect(lambda:  self.img_scroll(1, slicescrollbar, threshbar.value()/100, img_plot, sv, mv, self.color, values, imagenav) if self.metadata.GetMetadataFilename() else metadataError("Next Image"))
+        previmage.clicked.connect(lambda:  self.img_scroll(-1, slicescrollbar, threshbar.value()/100, img_plot, sv, mv, self.color, values, imagenav) if self.img_ind>1 else None)
         setcolors.clicked.connect(lambda: colorpicker() if self.metadata.GetMetadataFilename() else metadataError("Color Channel"))
-        slicescrollbar.valueChanged.connect(lambda: self.img_display(slicescrollbar, img_plot, sv, mv, self.color, values, self.img_ind) if self.metadata.GetMetadataFilename() else metadataError("Slice Scroll"))
+        slicescrollbar.valueChanged.connect(lambda: self.img_display(slicescrollbar, img_plot, sv, mv, self.color, values, self.img_ind, threshbar.value()/100) if self.metadata.GetMetadataFilename() else metadataError("Slice Scroll"))
         sv.stateChanged.connect(lambda : self.overlay_display(img_plot, self.image_grid, TileInfo(), sv, mv, 'SV') if self.metadata.GetMetadataFilename() else metadataError("SV"))
         mv.stateChanged.connect(lambda : self.overlay_display(img_plot, self.image_grid, TileInfo(), mv, sv, 'MV') if self.metadata.GetMetadataFilename() else metadataError("MV"))
         phind.clicked.connect(lambda: metadataError("Phind"))
-    def img_scroll(self, val, slicescrollbar, img_plot, sv, mv, color, values, imagenav):
+        threshbar.valueChanged.connect(lambda: self.img_display(slicescrollbar, img_plot, sv, mv, self.color, values, self.img_ind, threshbar.value()/100) if self.metadata.GetMetadataFilename() else metadataError("Adjust Image Threshold"))
+    def img_scroll(self, val, slicescrollbar, thresh, img_plot, sv, mv, color, values, imagenav):
         #next image/prev image
         img_id=self.img_ind+val
         slicescrollbar.setValue(0)
-        issue=self.img_display(slicescrollbar, img_plot, sv, mv, color, values, img_id)
+        issue=self.img_display(slicescrollbar, img_plot, sv, mv, color, values, img_id, thresh)
         if not issue:
             self.img_ind=self.img_ind+val
         imagenav.setText(str(self.img_ind))
@@ -334,12 +341,13 @@ class MainGUI(QWidget, external_windows):
                 self.image_grid = np.full((self.rgb_img.shape[0], self.rgb_img.shape[1], 4), (0.0, 0.0, 0.0, 0.0))
             img_plot.draw()
     #draw superimposed image channels
-    def img_display(self, slicescrollbar, img_plot, sv, mv, color, values, img_id):
+    def img_display(self, slicescrollbar, img_plot, sv, mv, color, values, img_id, prob=PhindConfig().intensityThresholdTuningFactor):
 
         if self.metadata.GetMetadataFilename():
             #extract image details from metadata
             data = pd.read_csv(self.metadata.GetMetadataFilename(), sep="\t")
             self.ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
+
             #get image index of previous stack
             prev=data[data["ImageID"] == img_id-1]["Channel_1"]
             if prev.size>1:
@@ -365,15 +373,32 @@ class MainGUI(QWidget, external_windows):
                         count=count - 1
             elif self.ch_len<2 and len(self.color)>self.ch_len:
                 self.color=self.color[:-(len(self.color)-self.ch_len)]
+            #check if treatment column and treatmentnormspecified
+            treat=""
+            bound=self.bounds[:]
+            if len(np.shape(bound))>2:#if self.metadata.intensityNormPerTreatment: #TEMPORARY replace with setvoxelparameter intensityNormPerTreatment after completed!!!
+                bound=treatment_bounds(self, data, self.bounds, id)
+                if not bound:
+                    return(True)
             #initialize array as image size with # channels
-            rgb_img = im.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[id]).size
-            rgb_img = np.empty((self.ch_len, rgb_img[1], rgb_img[0], 3))
-            self.rgb_img=merge_channels(data, rgb_img, self.ch_len, id, self.color, 0, False)
+            rgb_img = PIL.Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[id]).size
+            rgb_img = np.zeros((self.ch_len, rgb_img[1], rgb_img[0], 3))
+            threshold=mquantiles(self.thresh, prob, alphap=0.5, betap=0.5, axis=0)
+            self.rgb_img=merge_channels(data, rgb_img, self.ch_len, id, self.color, 0, False, bound, threshold)
             #plot combined channels
             img_plot.axes.clear()
             img_plot.axes.imshow(self.rgb_img)
             img_plot.draw()
             self.image_grid=np.full((self.rgb_img.shape[0], self.rgb_img.shape[1], 4), (0.0,0.0,0.0,0.0))
+            #add thresholds/bounds to metadatafile
+            data.drop(data.filter(regex="Unname"),axis=1, inplace=True)
+            if 'image_bounds' not in data.columns and 'intensity_thresholds' not in data.columns:
+                data.insert(loc=int(np.where(data.columns == 'ImageID')[0]), column='bounds', value=np.repeat([self.bounds], data.shape[0], axis=0).tolist())
+                data.insert(loc=int(np.where(data.columns == 'ImageID')[0]), column='intensity_thresholds', value=np.repeat([mquantiles(self.thresh, 0, alphap=0.5, betap=0.5, axis=0)], data.shape[0], axis=0).tolist())
+            else:
+                data['bounds']= np.repeat([self.bounds], data.shape[0], axis=0).tolist()
+                data['intensity_thresholds']= np.repeat([mquantiles(self.thresh, 0, alphap=0.5, betap=0.5, axis=0)], data.shape[0], axis=0).tolist()
+            data.to_csv(data['MetadataFile'].str.replace(r'\\', '/', regex=True).iloc[0], sep='\t', index=False)
             #sv/mv overlay removed when new image
             sv.setChecked(False)
             mv.setChecked(False)
@@ -384,8 +409,10 @@ class MainGUI(QWidget, external_windows):
         """Actions performed when the Phind button is pressed and metadata has been loaded"""
         if self.metadata.GetMetadataFilename():
             #get output dir:
-            self.training.randFieldID = self.metadata.trainingSet
             savefile, dump = QFileDialog.getSaveFileName(self, 'Phindr3D Results', '', 'Text file (*.txt)')
+            self.metadata.computeImageParameters()
+            self.training.randFieldID = self.metadata.trainingSet
+
             if len(savefile) > 0:
                 if self.voxelGroups.action(savefile, self.training):
                     message = f'All Done!\n\nResults saved at:\n{savefile}'

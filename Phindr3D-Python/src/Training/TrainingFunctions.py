@@ -19,8 +19,6 @@ import numpy as np
 import pandas as pd
 from ..GUI.windows.helperclasses import *
 
-import numpy as np
-
 class TrainingFunctions:
     """Static methods for training. Referenced from
     https://github.com/DWALab/Phindr3D/tree/9b95aebbd2a62c41d3c87a36f1122a78a21019c8/Lib
@@ -71,15 +69,6 @@ class TrainingFunctions:
         else:
             errorWindow("Select Classes", "Must have at least two classes. Only has one class {}".format(np.unique(lbls)))
 
-class errorWindow(object):
-    def __init__(self, win_title, text):
-        alert = QMessageBox()
-        alert.setWindowTitle(win_title)
-        alert.setText(text)
-        alert.setIcon(QMessageBox.Critical)
-        alert.exec_()
-    def getsomefiles(self):
-        pass
 
 
 # end TrainingFunctions
