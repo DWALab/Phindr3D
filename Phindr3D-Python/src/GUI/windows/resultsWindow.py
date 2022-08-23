@@ -9,8 +9,6 @@ import pandas as pd
 from .plot_functions import *
 from ...Training import *
 
-Generator = Generator()
-
 class resultsWindow(QDialog):
     def __init__(self, color):
         super(resultsWindow, self).__init__()
@@ -20,7 +18,6 @@ class resultsWindow(QDialog):
         self.plots=[]
         self.filtered_data=0
         self.numcluster=None
-        self.metadata=Metadata(Generator)
         self.bounds=0
         self.color=color
         #menu tabs
@@ -100,7 +97,7 @@ class resultsWindow(QDialog):
             if dim == "2d":
                 self.projection = dim
                 self.main_plot.axes.mouse_init()
-                self.main_plot.axes.view_init(azim=-90, elev=-90)
+                self.main_plot.axes.view_init(azim=-90, elev=90)
                 self.main_plot.axes.get_zaxis().line.set_linewidth(0)
                 self.main_plot.axes.tick_params(axis='z', labelsize=0)
                 self.main_plot.draw()
@@ -180,8 +177,9 @@ class resultsWindow(QDialog):
                 grouping.addItem(col)
             grouping.blockSignals(False)
         return(grouping, win.x_press)
+
     def data_filt(self, grouping, projection, plot, new_plot):
-        filter_data= grouping.currentText()
+        filter_data = grouping.currentText()
 
         # choose dataset to use for clustering
         # Choices:
@@ -198,7 +196,6 @@ class resultsWindow(QDialog):
         texture_cols = columns[columns.map(lambda col: col.startswith('text_'))]
         featurecols = columns[columns.map(lambda col: col.startswith('MV') or col.startswith('text_'))]
         mdatacols = columns.drop(featurecols)
-
         # drop duplicate data rows:
         image_feature_data.drop_duplicates(subset=featurecols, inplace=True)
 
@@ -209,39 +206,42 @@ class resultsWindow(QDialog):
         # min-max scale all data and split to feature and metadata
         mind = np.min(image_feature_data[featurecols], axis=0)
         maxd = np.max(image_feature_data[featurecols], axis=0)
-        featuredf = (image_feature_data[featurecols] - mind) / (maxd - mind)
-        mdatadf = image_feature_data[mdatacols]
-        featuredf.dropna(axis=0, inplace=True)  # thresh=int(0.2 * featuredf.shape[0]) )
 
-        # select data
-        if len(self.filt)==1:
-            if self.filt[0] == 'MV':
+        if np.array_equal(mind, maxd) == False:
+            featuredf = (image_feature_data[featurecols] - mind) / (maxd - mind)
+            mdatadf = image_feature_data[mdatacols]
+            featuredf.dropna(axis=0, inplace=True)  # thresh=int(0.2 * featuredf.shape[0]) )
+
+            # select data
+            if len(self.filt) == 1:
+                if self.filt[0] == 'MV':
+                    X = featuredf[mv_cols].to_numpy().astype(np.float64)
+                elif self.filt[0] == 'Texture_Features':
+                    X = featuredf[texture_cols].to_numpy().astype(np.float64)
+            elif self.filt == ['MV', 'Texture_Features']:
+                X = featuredf.to_numpy().astype(np.float64)
+            else:
                 X = featuredf[mv_cols].to_numpy().astype(np.float64)
-                grouping.remove()
-            elif self.filt[0] == 'Texture_Features':
-                X = featuredf[texture_cols].to_numpy().astype(np.float64)
-        elif self.filt == ['MV','Texture_Features']:
-            X = featuredf.to_numpy().astype(np.float64)
-        else:
-            X = featuredf[mv_cols].to_numpy().astype(np.float64)
-            print('Invalid data set choice. Using Megavoxel frequencies.')
-        print('Dataset shape:', X.shape)
-        self.filtered_data=X
+                print('Invalid data set choice. Using Megavoxel frequencies.')
+            print('Dataset shape:', X.shape)
+            self.filtered_data = X
 
-        #reset imageIDs
-        self.imageIDs.clear()
-        self.imageIDs.extend(np.array(mdatadf['ImageID'], dtype='object').astype(int))
-        #reset labels
-        z=np.ones(X.shape[0]).astype(int)
-        if filter_data!="No Grouping":
-            z=np.array(mdatadf[filter_data], dtype='object')
-        self.labels.clear()
-        self.labels.extend(list(map(str, z)))
-        # misc info
-        numMVperImg = np.array(image_feature_data['NumMV']).astype(np.float64)
-        num_images_kept = X.shape[0]
-        print(f'\nNumber of images: {num_images_kept}\n')
-        result_plot(self, X, projection, plot, new_plot)
+            # reset imageIDs
+            self.imageIDs.clear()
+            self.imageIDs.extend(np.array(mdatadf['ImageID'], dtype='object').astype(int))
+            # reset labels
+            z = np.ones(X.shape[0]).astype(int)
+            if filter_data != "No Grouping":
+                z = np.array(mdatadf[filter_data], dtype='object')
+            self.labels.clear()
+            self.labels.extend(list(map(str, z)))
+            # misc info
+            numMVperImg = np.array(image_feature_data['NumMV']).astype(np.float64)
+            num_images_kept = X.shape[0]
+            print(f'\nNumber of images: {num_images_kept}\n')
+            result_plot(self, X, projection, plot, new_plot)
+        else:
+            errorWindow('Feature File Data Error', 'Check if have more than 1 row of data and that min and max values are not the same')
     def setnumcluster(self, group):
         clustnum=Clustering.setcluster(self.numcluster, self.filtered_data, self.plot_data, np.array(self.labels), group)
         self.numcluster=clustnum.clust

@@ -36,7 +36,7 @@ class setcluster(object):
         self.clust=clusternum
         #main layout
         win = QDialog()
-        win.setWindowTitle("Set Cluster")
+        win.setWindowTitle("Set Number of Clusters")
         win.setLayout(QFormLayout())
 
         label=QLabel("Enter number of clusters")
@@ -87,11 +87,15 @@ class export_cluster(object):
             if name:
                 clusters, count, idx = Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
                 cols = list(pd.read_csv(featurefile, nrows=1, sep='\t'))
-                cols=list(filter(lambda col: (col.find("Channel")==-1 and col[:2]!='MV'), cols))
+                cols=list(filter(lambda col: (col.find("Channel")==-1 and col[:2]!='MV' and col!='bounds' and col!='intensity_thresholds'), cols))
                 data=pd.read_csv(featurefile, usecols = cols[:], sep='\t')
+                if data['Treatment'].isnull().all():
+                    data.drop(columns=['Treatment'], axis=1, inplace=True)
+                cols = list(pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], nrows=1, sep='\t'))
                 if 'Stack' in cols:
                     stack=[]
                     metadata = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], usecols= ['Stack', 'ImageID'], sep="\t",na_values='NaN')
+
                     for ind in np.unique(metadata['ImageID'].to_numpy()):
                         idstack=metadata['Stack'].loc[metadata['ImageID'] == ind]
                         stack.append("".join((str(idstack.min()),'-', str(idstack.max()))))
@@ -141,9 +145,8 @@ class piechart(object):
                 for x in range(len(parts)):
                     s1, mark=pie_slice(sum(parts[:x]), sum(parts[:x+1]))
                     self.main_plot.axes.scatter(plot_data[0][cluster], plot_data[1][cluster], marker=mark, s=s1 ** 2 *4000*rsize[size_ind], facecolor=colors[parts_ind[0][x]])
-                self.main_plot.axes.text(plot_data[0][cluster], plot_data[1][cluster], s=size_ind, horizontalalignment='center', verticalalignment='center', bbox=dict(facecolor='white', alpha=0.7))
+                self.main_plot.axes.text(plot_data[0][cluster], plot_data[1][cluster], s=size_ind+1, horizontalalignment='center', verticalalignment='center', bbox=dict(facecolor='white', alpha=0.7))
             self.main_plot.axes.set_aspect('equal')
-            self.main_plot.axes.invert_yaxis()
             self.main_plot.fig.tight_layout()
             self.main_plot.axes.axis('off')
             self.main_plot.draw()

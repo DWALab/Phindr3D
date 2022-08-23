@@ -287,14 +287,16 @@ class DataFunctions:
         if type == 'SV':
             IM[range(0,IM.shape[0],int(spX/param.megaVoxelTileX)), :,:] = (0.7, 0.7, 0.7, 1.0)
             IM[:, range(0,IM.shape[1], int(spY/param.megaVoxelTileY)),:] = (0.7, 0.7, 0.7, 1.0)
-            IM[range(1,IM.shape[0],int(spX/param.megaVoxelTileX)), :,:] = (0.7, 0.7, 0.7, 1.0)
-            IM[:, range(1,IM.shape[1], int(spY/param.megaVoxelTileY)),:] = (0.7, 0.7, 0.7, 1.0)
+            if IM.shape[0]>500 or IM.shape[1]>500:
+                IM[range(1,IM.shape[0],int(spX/param.megaVoxelTileX)), :,:] = (0.7, 0.7, 0.7, 1.0)
+                IM[:, range(1,IM.shape[1], int(spY/param.megaVoxelTileY)),:] = (0.7, 0.7, 0.7, 1.0)
 
         else:
             IM[range(0,IM.shape[0],tmpX), :,:] = (1.0, 1.0, 1.0, 1.0)
             IM[:, range(0,IM.shape[1],tmpY),:] = (1.0, 1.0, 1.0, 1.0)
-            IM[range(1,IM.shape[0],tmpX), :,:] = (1.0, 1.0, 1.0, 1.0)
-            IM[:, range(1,IM.shape[1],tmpY),:] = (1.0, 1.0, 1.0, 1.0)
+            if IM.shape[0] > 500 or IM.shape[1] > 500:
+                IM[range(1,IM.shape[0],tmpX), :,:] = (1.0, 1.0, 1.0, 1.0)
+                IM[:, range(1,IM.shape[1],tmpY),:] = (1.0, 1.0, 1.0, 1.0)
 
         return IM
     # end getImageWithSVMVOverlay

@@ -16,6 +16,7 @@ from .colorchannelWindow import *
 import PIL.Image
 import json
 
+Generator = Generator()
 #Callback will open image associated with data point. Note: in 3D plot pan is hold left-click swipe, zoom is hold right-click swipe (zoom disabled)
 class interactive_points():
     def __init__(self, main_plot, projection, data, labels, feature_file, color, imageID):
@@ -109,7 +110,7 @@ class interactive_points():
             data = pd.read_csv(feature_file[0], sep="\t", na_values='NaN')
 
             try:
-                metadata=Metadata()
+                metadata=Metadata(Generator)
                 metadata.loadMetadataFile(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0])
             except MissingChannelStackError:
                 errortext = "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid."
