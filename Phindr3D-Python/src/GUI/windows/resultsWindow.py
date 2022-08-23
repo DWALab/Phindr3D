@@ -9,6 +9,8 @@ import pandas as pd
 from .plot_functions import *
 from ...Training import *
 
+Generator = Generator()
+
 class resultsWindow(QDialog):
     def __init__(self, color):
         super(resultsWindow, self).__init__()
@@ -18,7 +20,7 @@ class resultsWindow(QDialog):
         self.plots=[]
         self.filtered_data=0
         self.numcluster=None
-        self.metadata=Metadata()
+        self.metadata=Metadata(Generator)
         self.bounds=0
         self.color=color
         #menu tabs

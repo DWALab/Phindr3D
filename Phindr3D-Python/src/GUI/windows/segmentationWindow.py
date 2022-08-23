@@ -21,12 +21,14 @@ from Data import *
 from Segmentation import *
 from .helperclasses import *
 
+Generator = Generator()
+
 class segmentationWindow(QDialog):
     def __init__(self):
         super(segmentationWindow, self).__init__()
         self.setWindowTitle("Organoid Segmentation")
         self.setLayout(QGridLayout())
-        self.metadata = Metadata()
+        self.metadata = Metadata(Generator)
         self.outdir = None
         self.segmentation = Segmentation()
         self.labelIM = None #numpy array or None
