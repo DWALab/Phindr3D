@@ -35,10 +35,15 @@ class VoxelBase:
 
     def __init__(self):
         """Constructor"""
-        self.numVoxelBins = PhindConfig.numVoxelBins
-        self.numSuperVoxelBins = PhindConfig.numSuperVoxelBins
-        self.numMegaVoxelBins = PhindConfig.numMegaVoxelBins
+        self.numVoxelBins = None
+        self.numSuperVoxelBins = None
+        self.numMegaVoxelBins = None
         self.textureFeatures = PhindConfig.textureFeatures
+
+    def setVoxelBins(self, numVoxelBins, numSuperVoxelBins, numMegaVoxelBins):
+        self.numVoxelBins = numVoxelBins
+        self.numSuperVoxelBins = numSuperVoxelBins
+        self.numMegaVoxelBins = numMegaVoxelBins
 
     def getPixelBins(self, x, metadata, numBins, random_state=None):
         """Base class redirect to the static method in the VoxelFunctions class"""

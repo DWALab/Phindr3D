@@ -3,9 +3,10 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 class paramWindow(QDialog):
-    def __init__(self):
+    def __init__(self, supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain):
         super(paramWindow, self).__init__()
         self.setWindowTitle("Set Parameters")
+        self.done = False
         winlayout = QGridLayout()
 
         # super voxel box
@@ -19,6 +20,9 @@ class paramWindow(QDialog):
         superxin.setFixedWidth(30)
         superyin.setFixedWidth(30)
         superzin.setFixedWidth(30)
+        superxin.setText(str(supercoords[0]))
+        superyin.setText(str(supercoords[1]))
+        superzin.setText(str(supercoords[2]))
         supersizebox.layout().addWidget(superxin, 0, 1, 1, 1)
         supersizebox.layout().addWidget(superyin, 1, 1, 1, 1)
         supersizebox.layout().addWidget(superzin, 2, 1, 1, 1)
@@ -30,6 +34,7 @@ class paramWindow(QDialog):
         superbox.setTitle("Super Voxel")
         svnum = QLineEdit()
         svnum.setFixedWidth(30)
+        svnum.setText(str(svcategories))
         superbox.layout().addWidget(svnum, 1, 1, 1, 1)
         superbox.layout().addWidget(QLabel("#SV\n Categories"), 1, 0, 1, 1)
         superbox.layout().addWidget(supersizebox, 0, 0, 1, 2)
@@ -47,6 +52,9 @@ class paramWindow(QDialog):
         megaxin.setFixedWidth(30)
         megayin.setFixedWidth(30)
         megazin.setFixedWidth(30)
+        megaxin.setText(str(megacoords[0]))
+        megayin.setText(str(megacoords[1]))
+        megazin.setText(str(megacoords[2]))
         megasizebox.layout().addWidget(megaxin, 0, 1, 1, 1)
         megasizebox.layout().addWidget(megayin, 1, 1, 1, 1)
         megasizebox.layout().addWidget(megazin, 2, 1, 1, 1)
@@ -58,6 +66,7 @@ class paramWindow(QDialog):
         megabox.setTitle("Mega Voxel")
         mvnum = QLineEdit()
         mvnum.setFixedWidth(30)
+        mvnum.setText(str(mvcategories))
         megabox.layout().addWidget(mvnum, 1, 1, 1, 1)
         megabox.layout().addWidget(QLabel("#MV\n Categories"), 1, 0, 1, 1)
         megabox.layout().addWidget(megasizebox, 0, 0, 1, 2)
@@ -68,11 +77,16 @@ class paramWindow(QDialog):
         mainbox.setLayout(QGridLayout())
         voxelcategories = QLineEdit()
         voxelcategories.setFixedWidth(30)
+        voxelcategories.setText(str(voxelnum))
         trainingimages = QLineEdit()
         trainingimages.setFixedWidth(30)
+        trainingimages.setText(str(trainingnum))
         usebackground = QCheckBox("Use Background Voxels for comparing") # text is cutoff, don't know actual line?
+        usebackground.setChecked(bg)
         normalise = QCheckBox("Normalise Intensity\n Per Condition")
+        normalise.setChecked(norm)
         trainbycondition = QCheckBox("Train by condition")
+        trainbycondition.setChecked(conditiontrain)
         leftdropdown = QComboBox()
         leftdropdown.setEnabled(False)
         rightdropdown = QComboBox()
@@ -101,34 +115,47 @@ class paramWindow(QDialog):
             # When done is pressed, all the inputted values are returned, stored in their place
             # and the window closes
             # Theoretically stored where overall parameters are stored (externally)
-            superx = superxin.text()
-            supery = superyin.text()
-            superz = superzin.text()
-            svcategories = svnum.text()
-            megax = megaxin.text()
-            megay = megayin.text()
-            megaz = megazin.text()
-            mvcategories = mvnum.text()
-            voxelnum = voxelcategories.text()
-            trainingnum = trainingimages.text()
-            bg = usebackground.isChecked() # For checkboxes, return boolean for if checked or not
-            norm = normalise.isChecked()
-            conditiontrain = trainbycondition.isChecked()
-            # dropdown behaviour goes here <--
+            try:
+                self.superx = int(superxin.text())
+                self.supery = int(superyin.text())
+                self.superz = int(superzin.text())
+                self.svcategories = int(svnum.text())
+                self.megax = int(megaxin.text())
+                self.megay = int(megayin.text())
+                self.megaz = int(megazin.text())
+                self.mvcategories = int(mvnum.text())
+                self.voxelnum = int(voxelcategories.text())
+                self.trainingnum = int(trainingimages.text())
+                self.bg = usebackground.isChecked() # For checkboxes, return boolean for if checked or not
+                self.norm = normalise.isChecked()
+                self.conditiontrain = trainbycondition.isChecked()
+                self.done = True
+                # dropdown behaviour goes here <--
+                self.close()
 
-            # print statements for testing purposes
-            print(superx, supery, superz, svcategories, megax, megay, megaz,
-                  mvcategories, voxelnum, trainingnum)
-            if bg:
-                print("bg")
-            if norm:
-                print("norm")
-            if conditiontrain:
-                print("conditiontrain")
+            except ValueError:
+                alert = QMessageBox()
+                alert.setWindowTitle("Error")
+                alert.setText("Invalid input")
+                alert.exec()
 
-            self.close()
+        def resetPressed(): # reset parameters
+            superxin.setText(str(supercoords[0]))
+            superyin.setText(str(supercoords[1]))
+            superzin.setText(str(supercoords[2]))
+            svnum.setText(str(svcategories))
+            megaxin.setText(str(megacoords[0]))
+            megayin.setText(str(megacoords[1]))
+            megazin.setText(str(megacoords[2]))
+            mvnum.setText(str(mvcategories))
+            voxelcategories.setText(str(voxelnum))
+            trainingimages.setText(str(trainingnum))
+            usebackground.setChecked(bg)
+            normalise.setChecked(norm)
+            trainbycondition.setChecked(conditiontrain)
 
         done.clicked.connect(donePressed)
+        reset.clicked.connect(resetPressed)
         winlayout.addWidget(superbox, 0, 0, 1, 1)
         winlayout.addWidget(megabox, 0, 1, 1, 1)
         winlayout.addWidget(mainbox, 1, 0, 1, 2)

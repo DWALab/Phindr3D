@@ -53,6 +53,7 @@ class MainGUI(QWidget, external_windows):
         self.training = Training()
         self.metadata = Metadata(Generator)
         self.voxelGroups = VoxelGroups(self.metadata)
+        self.trainbycondition = False # modifiable in paramWindow, but not sure where this is used?
         # self.clustering = Clustering() #dont need this, clustering occurs in the view results parts and the clustering object isnt relevant.
         self.setWindowTitle("Phindr3D")
         self.image_grid=0
@@ -88,9 +89,36 @@ class MainGUI(QWidget, external_windows):
                 alert = self.buildErrorWindow("Metadata not found!!", QMessageBox.Critical)
                 alert.exec()
             elif buttonPressed == "Set Voxel Parameters":
-                winp = self.buildParamWindow()
-                winp.show()
-                winp.exec()
+                try:
+                    tileInfo = self.metadata.theTileInfo
+                    supercoords = (tileInfo.tileX, tileInfo.tileY, tileInfo.tileZ)
+                    megacoords = (tileInfo.megaVoxelTileX, tileInfo.megaVoxelTileY, tileInfo.megaVoxelTileZ)
+                    winp = self.buildParamWindow(supercoords, self.voxelGroups.numSuperVoxelBins, megacoords,
+                                                 self.voxelGroups.numMegaVoxelBins, self.voxelGroups.numVoxelBins,
+                                                 self.metadata.randTrainingFields, self.metadata.countBackground,
+                                                 self.metadata.intensityNormPerTreatment, self.trainbycondition)
+                    winp.show()
+                    winp.exec()
+                    if winp.done: # when done is pressed (and successful), update all params
+                        self.metadata.theTileInfo.tileX = winp.superx
+                        self.metadata.theTileInfo.tileY = winp.supery
+                        self.metadata.theTileInfo.tileZ = winp.superz
+                        self.voxelGroups.numSuperVoxelBins = winp.svcategories
+                        self.metadata.theTileInfo.megaVoxelTileX = winp.megax
+                        self.metadata.theTileInfo.megaVoxelTileY = winp.megay
+                        self.metadata.theTileInfo.megaVoxelTileZ = winp.megaz
+                        self.voxelGroups.numMegaVoxelBins = winp.mvcategories
+                        self.voxelGroups.numVoxelBins = winp.voxelnum
+                        self.metadata.randTrainingFields = winp.trainingnum
+                        self.metadata.countBackground = winp.bg
+                        self.metadata.intensityNormPerTreatment = winp.norm
+                        self.trainbycondition = winp.conditiontrain
+                        # after updating parameters, what needs to be done?
+                        self.voxelGroups.updateImages()
+                        self.metadata.computeImageParameters()
+                except Exception as e:
+                    print(e)
+
             elif buttonPressed == "Set Channel Colors":
                 color = QColorDialog.getColor()
                 return color
@@ -99,7 +127,10 @@ class MainGUI(QWidget, external_windows):
                 alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
                 alert.exec()
             elif buttonPressed == "Phind":
-                self.phindButtonAction()
+                try:
+                    self.phindButtonAction()
+                except Exception as e:
+                    print(e)
 
         def exportError():
             if not self.metadata.GetMetadataFilename():
@@ -237,7 +268,7 @@ class MainGUI(QWidget, external_windows):
         expparameters.triggered.connect(exportError)
         about.triggered.connect(self.aboutAlert)
         segmentation.triggered.connect(organoidSegmentation)
-        loadmetadata.triggered.connect(lambda: loadMetadata(self, sv, mv, threshbar, slicescrollbar, img_plot, self.color, values))
+        loadmetadata.triggered.connect(lambda: loadMetadata(self, sv, mv, threshbar, slicescrollbar, img_plot, self.color, values, imagenav))
         menuexit.triggered.connect(self.close)
 
         switchmeta.triggered.connect(testMetadata)

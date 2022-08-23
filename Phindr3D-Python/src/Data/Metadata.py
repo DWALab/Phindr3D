@@ -58,6 +58,8 @@ class Metadata:
         # Define user-controlled parameters and set default values
         self.intensityNormPerTreatment = False
         self.randTrainingPerTreatment = 1
+        self.countBackground = PhindConfig.countBackground
+        self.randTrainingFields = PhindConfig.randTrainingFields
 
         # Set default values for internally-accessed member variables
         self.metadataLoadSuccess = False
@@ -643,7 +645,7 @@ class Metadata:
             return False
         # else
         # TO DO: catch errors, return False if caught
-        self.trainingSet = self.getTrainingFields(PhindConfig.randTrainingFields)
+        self.trainingSet = self.getTrainingFields(self.randTrainingFields)
         (self.lowerbound, self.upperbound) = self.getScalingFactorforImages(self.trainingSet)
         self.intensityThresholdValues = self.getImageThresholdValues(self.trainingSet)
         intensityThreshold = mquantiles(self.intensityThresholdValues, PhindConfig.intensityThresholdTuningFactor, alphap=0.5, betap=0.5, axis=0)

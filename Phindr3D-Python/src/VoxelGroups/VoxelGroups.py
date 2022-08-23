@@ -38,21 +38,28 @@ except ImportError:
     from src.Data.Metadata import *
 
 
-class VoxelGroups(VoxelBase):
+class VoxelGroups():
     """From pixels to supervoxels to megavoxels"""
 
     def __init__(self, metaref):
         """Constructor"""
         self.metadata = metaref
-        self.numVoxelBins = 20
-        self.numSuperVoxelBins = 15
-        self.numMegaVoxelBins = 40
+        self.numVoxelBins = PhindConfig.numVoxelBins
+        self.numSuperVoxelBins = PhindConfig.numSuperVoxelBins
+        self.numMegaVoxelBins = PhindConfig.numMegaVoxelBins
         self.pixelImage = PixelImage()
+        self.pixelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
         self.superVoxelImage = SuperVoxelImage()
+        self.superVoxelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
         self.megaVoxelImage = MegaVoxelImage()
+        self.megaVoxelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
 
+    #end constructor
 
-    # end constructor
+    def updateImages(self):
+        self.pixelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
+        self.superVoxelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
+        self.megaVoxelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
 
     def action(self, outputFileName, training):
         """Action performed by this class when user requests the Phind operation.
@@ -85,7 +92,7 @@ class VoxelGroups(VoxelBase):
     def extractImageLevelTextureFeatures(self, outputFileName='imagefeatures.csv', training=None):
         """Given pixel/super/megavoxel bin centers, creates a feature file"""
         #collect parameters from phindconfig
-        countBackground = PhindConfig.countBackground
+        countBackground = self.metadata.countBackground
         textureFeatures = PhindConfig.textureFeatures
         treatmentCol = self.metadata.GetAllTreatments()
         numMegaVoxelBins = self.numMegaVoxelBins
@@ -127,9 +134,9 @@ class VoxelGroups(VoxelBase):
             # Pass in a new TileInfo object to provide default values
             theTileInfo = self.metadata.getTileInfo(d, TileInfo())
             pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(self.pixelImage.pixelBinCenters, self.pixelImage.pixelBinCenters, axis=1)]).T
-            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(self.metadata, currentImage, self.pixelImage.pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
-            megaVoxelProfile, fgMegaVoxel, texture_features = self.getMegaVoxelProfile(self.superVoxelImage.superVoxelBinCenters, superVoxelProfile, theTileInfo, fgSuperVoxel, training, analysis=textureFeatures)
-            imgProfile, rawProfile = self.getImageProfile(self.megaVoxelImage.megaVoxelBinCenters, megaVoxelProfile, theTileInfo, fgMegaVoxel)
+            superVoxelProfile, fgSuperVoxel = self.superVoxelImage.getTileProfiles(self.metadata, currentImage, self.pixelImage.pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
+            megaVoxelProfile, fgMegaVoxel, texture_features = self.megaVoxelImage.getMegaVoxelProfile(self.superVoxelImage.superVoxelBinCenters, superVoxelProfile, theTileInfo, fgSuperVoxel, training, analysis=textureFeatures)
+            imgProfile, rawProfile = self.megaVoxelImage.getImageProfile(self.megaVoxelImage.megaVoxelBinCenters, megaVoxelProfile, theTileInfo, fgMegaVoxel)
             resultIM[iImages, :] = imgProfile
             resultRaw[iImages, :] = rawProfile
             if textureFeatures:
