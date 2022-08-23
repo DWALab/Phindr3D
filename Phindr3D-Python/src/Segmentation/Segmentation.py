@@ -36,7 +36,8 @@ class Segmentation:
             'scale_spheroid':1.0,
             'entropy_threshold':1.0,
             'max_img_fraction':0.25,
-            'seg_Channel':'allChannels'
+            'seg_Channel':'allChannels',
+            'remove_border_objects':True
             }
         self.settings = self.defaultSettings
         self.metadata = None

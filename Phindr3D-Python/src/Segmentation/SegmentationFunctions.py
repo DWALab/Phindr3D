@@ -345,7 +345,8 @@ def getSegmentedOverlayImage(final_im, pdict):
     IM10 = imimposemin(imcomplement(IM4*IM7),bw)
     L = watershed(IM10)
     L = np.maximum(L-1, 0) #background label is 1, so replace with 0.
-    L = removeBorderObjects(L, 30) #used to be 10.
+    if pdict['remove_border_objects'] == True:
+        L = removeBorderObjects(L, 30) #used to be 10.
     IM11 = (final_im - np.min(final_im)) / (np.max(final_im) - np.min(final_im))
     labels, areas, final_im_means, entropies = regionprops(L, final_im, IM11)
     # return L, labels, areas, final_im_means, entropies
