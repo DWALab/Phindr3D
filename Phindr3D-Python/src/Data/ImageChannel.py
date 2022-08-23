@@ -27,10 +27,6 @@ class ImageChannel:
     def setPath(self, channelpath):
         self.channelpath = channelpath
 
-
-
-
-
 # end class ImageChannel
 
 

@@ -63,8 +63,6 @@ class Stack:
 
 # end class Stack
 
-
-
 if __name__ == '__main__':
     """Tests of the Stack class that can be run directly."""
 

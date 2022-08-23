@@ -41,6 +41,8 @@ class Generator():
             self.Generator = np.random.default_rng()
         else:
             self.Generator = np.random.default_rng(seed)
+    # end constructor
+# end Generator
 
 class Metadata:
     """This class handles groups of image files and the associated metadata.
@@ -72,9 +74,7 @@ class Metadata:
 
         # Tile configuration and info from getTileInfo
         self.theTileInfo = TileInfo()
-
     # end constructor
-
 
     def SetMetadataFilename(self, omf):
         """Set method to check the type of the filename string
@@ -206,10 +206,10 @@ class Metadata:
             returns a list of the treatment values found in that Image.
             This method chooses the first from the list.
             This method creates a dictionary of imageIDs and the Treatment values,
-            if they exist, or None if not. On error, returns an empty dictionary."""
-        """
-        dictionary: { key=imageID : value=treatment, ... }
-        """
+            if they exist, or None if not. On error, returns an empty dictionary.
+
+            dictionary: { key=imageID : value=treatment, ... }
+            """
         allTreatments = {}
         try:
             if len(self.images) > 0:
@@ -238,10 +238,10 @@ class Metadata:
             This method collects the treatment types, including multiple treatments
             in the same image, if this condition exists.
             This method returns a list of strings of all treatment types if they
-            exist, or an empty list if not. Returns an empty list on error. """
-        """
-        list: [treatments found in the metadata]
-        """
+            exist, or an empty list if not. Returns an empty list on error.
+
+            list: [treatments found in the metadata]
+            """
         treatmentList = []
         try:
             if len(self.images) > 0:
@@ -649,7 +649,6 @@ class Metadata:
         intensityThreshold = mquantiles(self.intensityThresholdValues, PhindConfig.intensityThresholdTuningFactor, alphap=0.5, betap=0.5, axis=0)
         self.intensityThreshold = np.reshape(intensityThreshold, (1, self.GetNumChannels()))
         return True
-
     # end computeImageParameters
 
 # end class Metadata
@@ -691,9 +690,6 @@ if __name__ == '__main__':
         treatintequal = (test.intensityThreshold == np.array(expected['treatment_intensity_threshold'])).all()
         print(f'Scaling factors by treatment expected result: {treatlowerequal and treatupperequal}')
         print(f'Intensity threshold expected result: {treatintequal}')
-
     else:
         print("loadMetadataFile was unsuccessful")
-
-
 # end main
