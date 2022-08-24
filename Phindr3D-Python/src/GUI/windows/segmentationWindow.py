@@ -17,9 +17,15 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from Data import *
-from Segmentation import *
-from .helperclasses import *
+
+try:
+    from ...Data import *
+    from ...Segmentation import *
+    from .helperclasses import *
+except ImportError:
+    from src.Data import *
+    from src.Segmentation import *
+    from src.GUI.windows.helperclasses import *
 
 Generator = Generator()
 

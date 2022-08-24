@@ -29,7 +29,6 @@ try:
     from ...Data.DataFunctions import *
     from ...Data.Metadata import *
     from ...PhindConfig.PhindConfig import PhindConfig
-
 except ImportError:
     from src.Clustering import Clustering
     from src.Data.DataFunctions import *

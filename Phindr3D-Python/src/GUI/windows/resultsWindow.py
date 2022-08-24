@@ -1,13 +1,34 @@
+# Copyright (C) 2022 Sunnybrook Research Institute
+# This file is part of src <https://github.com/DWALab/Phindr3D>.
+#
+# src is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# src is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with src.  If not, see <http://www.gnu.org/licenses/>.
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 import numpy as np
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
-from .interactive_click import interactive_points
 import pandas as pd
-from .plot_functions import *
-from ...Training import *
+try:
+    from .interactive_click import interactive_points
+    from .plot_functions import *
+    from ...Training import *
+except ImportError:
+    from src.GUI.windows.interactive_click import interactive_points
+    from src.GUI.windows.plot_functions import *
+    from src.Training import *
 
 class resultsWindow(QDialog):
     def __init__(self, color):
