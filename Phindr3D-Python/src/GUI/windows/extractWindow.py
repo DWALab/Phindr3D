@@ -29,20 +29,24 @@ class extractWindow(QDialog):
     def __init__(self):
         super(extractWindow, self).__init__()
         largetext = QFont("Arial", 12, 1)
-        self.setWindowTitle("Extract Metadata")
-        directory = "Image Root Directory"
+        self.setWindowTitle("Create Metafile")
+        directory = "Image Directory"
         self.samplefilename = "Sample File Name"
         layout = QGridLayout()
-        imagerootbox = QTextEdit()
-        imagerootbox.setReadOnly(True)
-        imagerootbox.setPlaceholderText(directory)
-        imagerootbox.setFixedSize(300, 60)
-        imagerootbox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
-        imagerootbox.setFont(largetext)
 
         selectimage = QPushButton("Select Image Directory")
         selectimage.setFixedSize(selectimage.minimumSizeHint())
         selectimage.setFixedHeight(40)
+
+        imagerootbox = QTextEdit()
+        imagerootbox.setReadOnly(True)
+        imagerootbox.setPlaceholderText(directory)
+        imagerootbox.setFixedSize(450, 50)
+        imagerootbox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
+        imagerootbox.setFont(largetext)
+
+        samplelabel = QLabel()
+        samplelabel.setText("File in the Selected Directory")
 
         samplefilebox = QTextEdit()
         samplefilebox.setReadOnly(True)
@@ -51,33 +55,44 @@ class extractWindow(QDialog):
         samplefilebox.setFont(largetext)
         samplefilebox.setFixedSize(450, 30)
 
+        instructionslabel = QLabel()
+        instructionslabel.setFixedHeight(40)
+        instructionslabel.setWordWrap(True)
+        instructionslabel.setText("Identify key values in the file name, "
+            "either by clicking Build Regular Expression or by "
+            "manually entering a regular expression. Check your work by clicking "
+            "Evaluate Regular Expression.")
+
         expressionbox = QLineEdit()
         expressionbox.setAlignment(Qt.AlignHCenter | Qt.AlignTop)
         expressionbox.setFont(largetext)
         expressionbox.setFixedSize(450, 30)
-        expressionbox.setPlaceholderText("Type Regular Expression Here")
+        expressionbox.setPlaceholderText("Enter Regular Expression Here")
 
         evaluateexpression = QPushButton("Evaluate Regular Expression")
         evaluateexpression.setFixedSize(evaluateexpression.minimumSizeHint())
         evaluateexpression.setFixedHeight(30)
 
-        createregex = QPushButton("OR Create regex")
+        createregex = QPushButton("Build Regular Expression")
         createregex.setFixedSize(evaluateexpression.minimumSizeHint())
         createregex.setFixedHeight(30)
+
+        outlabel = QLabel()
+        outlabel.setText("Enter output file name")
 
         outputfilebox = QLineEdit()
         outputfilebox.setAlignment(Qt.AlignCenter)
         outputfilebox.setFont(largetext)
         outputfilebox.setPlaceholderText("Output Metadata File Name")
-        outputfilebox.setFixedSize(200, 30)
+        outputfilebox.setFixedSize(450, 30)
 
-        createfile = QPushButton("Create File")
+        createfile = QPushButton("Create Metafile")
         createfile.setFixedSize(createfile.minimumSizeHint())
-        createfile.setFixedHeight(30)
+        createfile.setFixedHeight(40)
 
         cancel = QPushButton("Cancel")
         cancel.setFixedSize(cancel.minimumSizeHint())
-        cancel.setFixedHeight(30)
+        cancel.setFixedHeight(40)
 
         # button functions
         def selectImageDir():
@@ -108,7 +123,7 @@ class extractWindow(QDialog):
                     else:
                         created = DataFunctions.createMetadata(imagedir, regex)
                     if created:
-                        alert.setText("Metadata creation success.")
+                        alert.setText("Metafile creation success.")
                         alert.setIcon(QMessageBox.Information)
                         alert.setWindowTitle("Notice")
                         self.close()
@@ -200,17 +215,28 @@ class extractWindow(QDialog):
         createregex.clicked.connect(regexCreation)
         evaluateexpression.clicked.connect(evalRegex)
 
-        layout.addWidget(imagerootbox, 0, 0, 1, 2)
-        layout.addWidget(selectimage, 0, 2, 1, 1)
-        layout.addWidget(samplefilebox, 1, 0, 1, 3)
-        layout.addWidget(expressionbox, 2, 0, 1, 3)
-        layout.addWidget(evaluateexpression, 3, 0, 1, 1)
-        layout.addWidget(createregex, 3, 1, 1, 1)
-        layout.addWidget(outputfilebox, 4, 0, 1, 1)
-        layout.addWidget(createfile, 4, 1, 1, 1)
-        layout.addWidget(cancel, 4, 2, 1, 1)
+        layout.addWidget(selectimage, 0, 0, 1, 1)
+        layout.addWidget(imagerootbox, 0, 1, 1, 3)
+        layout.addWidget(samplelabel, 1, 0, 1, 1)
+        layout.addWidget(samplefilebox, 1, 1, 1, 3)
+        layout.addWidget(instructionslabel, 2, 0, 1, 4)
+        layout.addWidget(createregex, 3, 0, 1, 1)
+        layout.addWidget(expressionbox, 3, 1, 1, 3)
+        layout.addWidget(evaluateexpression, 4, 0, 1, 1)
+        layout.addWidget(outlabel, 5, 0, 1, 1)
+        layout.addWidget(outputfilebox, 5, 1, 1, 3)
+        layout.addWidget(createfile, 6, 0, 1, 1)
+        layout.addWidget(cancel, 6, 1, 1, 1)
+
         layout.setSpacing(10)
         self.setLayout(layout)
         self.setFixedSize(self.minimumSizeHint())
     # end __init__
 # end extractWindow
+
+if __name__ == '__main__':
+    app = QApplication(sys.argv)
+    window = extractWindow()
+    window.show()
+    app.exec()
+# end main
