@@ -40,7 +40,7 @@ class TrainingFunctions:
             train_ind.extend(ind_train)
         #test data & indices
         test_mv = np.delete(mv_data[:], train_ind, axis= 0)
-        test_ind= np.delete(np.linspace(0,79, num=80, dtype=int), train_ind, axis=0)
+        test_ind= np.delete(np.linspace(0,np.shape(mv_data)[0]-1, num=np.shape(mv_data)[0], dtype=int), train_ind, axis=0)
         return(train_mv, train_lbl, test_mv, test_ind)
     #get classifier predictions of selected classes
     @staticmethod
@@ -58,12 +58,18 @@ class TrainingFunctions:
             if win.x_press:
                 print("Cancelled")
             elif len(select_grps)>1:
-                X_train, y_train, X_test, y_test= self.partition_data(mv, lbls, select_grps)
-                class_tbl=self.random_forest_model(X_train, y_train, X_test, lbls[y_test])
-                #export classification table
-                name = QFileDialog.getSaveFileName(None, 'Save File')[0]
-                if name:
-                    class_tbl.to_csv(name, sep='\t', mode='w')
+                pts=[len(np.array(np.where(lbls==grp)[0], dtype=int)) for grp in select_grps]
+                if min(pts)>1:
+                    X_train, y_train, X_test, y_test= self.partition_data(mv, lbls, select_grps)
+                    class_tbl=self.random_forest_model(X_train, y_train, X_test, lbls[y_test])
+                    #export classification table
+                    name = QFileDialog.getSaveFileName(None, 'Save File')[0]
+                    if name:
+                        class_tbl.to_csv(name, sep='\t', mode='w')
+                else:
+                    grp_check=np.array(select_grps)
+                    grp_check=grp_check[np.where(np.array(pts) < 2)[0]]
+                    errorWindow("Select Classes", "There are classes with less than 2 data points. Classes with less than 2 data points '{}'".format(grp_check))
             else:
                 errorWindow("Select Classes", "Must select at least two classes. Selected Class '{}'".format(select_grps))
         else:

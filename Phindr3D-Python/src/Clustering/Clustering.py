@@ -85,12 +85,15 @@ class export_cluster(object):
         if numclusters!=None:
             name = QFileDialog.getSaveFileName(None, 'Save File')[0]
             if name:
+                #get clusters/locations
                 clusters, count, idx = Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
+                #get info from feature/metadatafile
                 cols = list(pd.read_csv(featurefile, nrows=1, sep='\t'))
                 cols=list(filter(lambda col: (col.find("Channel")==-1 and col[:2]!='MV' and col!='bounds' and col!='intensity_thresholds'), cols))
                 data=pd.read_csv(featurefile, usecols = cols[:], sep='\t')
-                if data['Treatment'].isnull().all():
-                    data.drop(columns=['Treatment'], axis=1, inplace=True)
+                if 'Treatment' in cols:
+                    if data['Treatment'].isnull().all():
+                        data.drop(columns=['Treatment'], axis=1, inplace=True)
                 cols = list(pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], nrows=1, sep='\t'))
                 if 'Stack' in cols:
                     stack=[]
@@ -102,6 +105,7 @@ class export_cluster(object):
                     data.rename(columns={'Stack': 'Stacks'}, inplace = True)
                     data['Stacks']=stack
                 data['Cluster Assignment'] = idx
+                #export cluster info + feature/metadatafile info
                 data.to_csv(name, sep='\t', mode='w', index=False)
         else:
             errorWindow("Export Error", "Please 'Set Number of Clusters' before using Export Cluster Results")

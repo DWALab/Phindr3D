@@ -47,7 +47,7 @@ class NavigationToolbar(NavigationToolbar):
         (None, None, None, None),
         (None, None, None, None),
         ('Subplots', 'Configure subplots', 'subplots', 'configure_subplots'),
-        ('Customize', 'Edit axis, curve and image parameters', 'qt4_editor_options', 'edit_parameters'),
+        (None, None, None, None),
         (None, None, None, None),
         ('Save', 'Save the figure', 'filesave', 'save_figure')
     )

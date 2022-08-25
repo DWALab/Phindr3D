@@ -21,7 +21,7 @@ from .colorchannelWindow import *
 import matplotlib
 import matplotlib.pyplot as plt
 from math import ceil, floor
-from textwrap import wrap, fill
+from textwrap import fill
 from .helperclasses import *
 import json
 try:
