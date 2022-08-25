@@ -45,7 +45,7 @@ class VoxelFunctions:
             binCenters = np.zeros((numBins, x.shape[1], numRandRpt))
             sumD = np.zeros(numRandRpt)
             for iRandCycle in range(0, numRandRpt):
-                randpermX = np.array([x[j] for j in Generator.choice(m, size=samSize, replace=False, shuffle=False)])
+                randpermX = np.array([x[j] for j in Generator.Generator.choice(m, size=samSize, replace=False, shuffle=False)])
                 kmeans = cluster.KMeans(n_clusters=numBins, init='k-means++', n_init=100, max_iter=100, random_state=random_state).fit(
                     randpermX)  # max_iter used to be 100. changed because bin-centers don't always match up to real values.
                 binCenters[:, :, iRandCycle] = kmeans.cluster_centers_

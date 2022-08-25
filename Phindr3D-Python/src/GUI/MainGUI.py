@@ -241,14 +241,17 @@ class MainGUI(QWidget, external_windows):
             winz.exec()
 
         def viewResults():
-            winc = self.buildResultsWindow(self.color)
+            winc = self.buildResultsWindow(self.color, metadata)
             winc.show()
             winc.exec()
 
         def organoidSegmentation():
-            wino = self.buildSegmentationWindow()
-            wino.show()
-            wino.exec()
+            try:
+                wino = self.buildSegmentationWindow(self.metadata)
+                wino.show()
+                wino.exec()
+            except Exception as e:
+                print(e)
 
         # Function purely for testing purposes, this function will switch 'foundMetadata' to true or false
         def testMetadata():

@@ -30,7 +30,7 @@ except ImportError:
 Generator = Generator()
 
 class segmentationWindow(QDialog):
-    def __init__(self):
+    def __init__(self, metadata):
         super(segmentationWindow, self).__init__()
         self.setWindowTitle("Organoid Segmentation")
         self.setLayout(QGridLayout())

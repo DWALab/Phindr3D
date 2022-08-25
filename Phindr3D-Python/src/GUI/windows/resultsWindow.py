@@ -31,7 +31,7 @@ except ImportError:
     from src.Training import *
 
 class resultsWindow(QDialog):
-    def __init__(self, color):
+    def __init__(self, color, metadata):
         super(resultsWindow, self).__init__()
         self.setWindowTitle("Results")
         self.feature_file=[]
@@ -39,6 +39,7 @@ class resultsWindow(QDialog):
         self.plots=[]
         self.filtered_data=0
         self.numcluster=None
+        self.metadata=metadata
         self.bounds=0
         self.color=color
         #menu tabs
@@ -89,10 +90,10 @@ class resultsWindow(QDialog):
         #menu actions activated
         inputfile.triggered.connect(lambda: self.loadFeaturefile(colordropdown, map_type.currentText(), True))
         selectclasses.triggered.connect(lambda: TrainingFunctions().selectclasses(np.array(self.filtered_data), np.array(self.labels)) if len(self.plot_data)>0 else None)
-        estimate.triggered.connect(lambda: Clustering.Clustering().cluster_est(self.filtered_data) if len(self.plot_data) > 0 else None)
+        estimate.triggered.connect(lambda: Clustering().cluster_est(self.filtered_data) if len(self.plot_data) > 0 else None)
         setnumber.triggered.connect(lambda: self.setnumcluster(colordropdown.currentText()) if len(self.plot_data) > 0 else None)
-        piemaps.triggered.connect(lambda: Clustering.piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
-        export.triggered.connect(lambda: Clustering.export_cluster(self.plot_data, self.filtered_data, self.numcluster, self.feature_file[0]) if len(self.plot_data) >0 else None)
+        piemaps.triggered.connect(lambda: piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
+        export.triggered.connect(lambda: export_cluster(self.plot_data, self.filtered_data, self.numcluster, self.feature_file[0]) if len(self.plot_data) >0 else None)
         rotation_enable.triggered.connect(lambda: self.main_plot.axes.mouse_init())
         rotation_disable.triggered.connect(lambda: self.main_plot.axes.disable_mouse_rotation())
         resetview.triggered.connect(lambda: reset_view(self))
