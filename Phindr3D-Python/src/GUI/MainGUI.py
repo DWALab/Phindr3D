@@ -46,6 +46,14 @@ Generator = Generator()
 class MainGUI(QWidget, external_windows):
     """Defines the main GUI window of Phindr3D"""
 
+    # Defines the text that will appear when the "About" menubar item is clicked
+    theAboutText = "Copyright (C) 2022 Sunnybrook Research Institute.\n" \
+        "Phindr3D is free software: you can redistribute it and/or modify it " \
+        "under the terms of the GNU General Public License as published by the " \
+        "Free Software Foundation, either version 3 of the License, " \
+        "or (at your option) any later version.\n" \
+        "The software and licensing details can be found at\nhttps://github.com/SRI-RSST/Phindr3D"
+
     def __init__(self):
         """MainGUI constructor"""
         QMainWindow.__init__(self)
@@ -225,14 +233,9 @@ class MainGUI(QWidget, external_windows):
 
         viewresults = menubar.addAction("View Results")
 
-        about = menubar.addAction("About")
-
         segmentation = menubar.addAction("Organoid Segmentation App")
 
-        # Testing purposes
-        test = menubar.addMenu("Test")
-        switchmeta = test.addAction("Switch Metadata")
-        switchmeta.setCheckable(True)
+        about = menubar.addAction("About")
 
         # Menu actions defined here
         def extractMetadata():
@@ -253,21 +256,6 @@ class MainGUI(QWidget, external_windows):
             except Exception as e:
                 print(e)
 
-        # Function purely for testing purposes, this function will switch 'foundMetadata' to true or false
-        def testMetadata():
-            pixels = PixelImage()
-            superVoxels = SuperVoxelImage()
-            megaVoxels = MegaVoxelImage()
-            try:
-                pixels.getPixelBinCenters(self.metadata, self.training)
-                print(pixels.pixelBinCenters)
-                superVoxels.getSuperVoxelBinCenters(self.metadata, self.training, pixels)
-                print(superVoxels.superVoxelBinCenters)
-                megaVoxels.getMegaVoxelBinCenters(self.metadata, self.training, pixels, superVoxels)
-                print(megaVoxels.megaVoxelBinCenters)
-            except Exception as e:
-                print(e)
-
         createmetadata.triggered.connect(extractMetadata)
         viewresults.triggered.connect(viewResults)
         imagetabnext.triggered.connect(metadataError)
@@ -281,7 +269,6 @@ class MainGUI(QWidget, external_windows):
         imagetabnext.triggered.connect(lambda:  self.img_scroll(1, slicescrollbar, threshbar.value()/100, img_plot, sv, mv, values, imagenav, imgwindow) if self.metadata.GetMetadataFilename() else metadataError("Next Image"))
         imagetabcolors.triggered.connect(lambda: colorpicker() if self.metadata.GetMetadataFilename() else metadataError("Color Channel"))
 
-        switchmeta.triggered.connect(testMetadata)
         # Creating and formatting menubar
         layout.setMenuBar(menubar)
 
@@ -482,7 +469,8 @@ class MainGUI(QWidget, external_windows):
 
     def aboutAlert(self):
         alert = QMessageBox()
-        alert.setText("talk about the program")
+        alert.setText(MainGUI.theAboutText)
+
         alert.setWindowTitle("About")
         alert.exec()
 
