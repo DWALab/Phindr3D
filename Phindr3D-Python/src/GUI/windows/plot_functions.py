@@ -150,7 +150,7 @@ def legend_colors(self):
 
 #export current plot data and x, y, z limits
 def save_file(self, map):
-    name = QFileDialog.getSaveFileName(self, 'Save File')[0]
+    name = QFileDialog.getSaveFileName(self, 'Save File', 'JSON file (*.json)')[0]
     if name:
         info = {
                 'plot_projection': map,
@@ -160,7 +160,7 @@ def save_file(self, map):
                 'z_limit': self.original_zlim,
                 'feature_filename': self.feature_file[0]
         }
-        with open(name+'.json', 'w') as f:
+        with open(name, 'w') as f:
             json.dump(info, f)
 
 #import plot data

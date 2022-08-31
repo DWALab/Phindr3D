@@ -115,7 +115,7 @@ class segmentationWindow(QDialog):
             def cancelClicked():
                 newdialog.close()
             def loadClicked(self, loadbutton):
-                settingfile, dump = QFileDialog.getOpenFileName(newdialog, 'Open File', '', 'Text files (*.json)')
+                settingfile, dump = QFileDialog.getOpenFileName(newdialog, 'Open File', '', 'JSON file (*.json)')
                 if os.path.exists(settingfile):
                     try:
                         self.segmentation.loadSettings(settingfile)

@@ -15,7 +15,6 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 from .external_windows import *
-from .analysis_scripts import *
 from PyQt5.QtWidgets import *
 from PyQt5.QtCore import *
 from PyQt5.QtGui import *
