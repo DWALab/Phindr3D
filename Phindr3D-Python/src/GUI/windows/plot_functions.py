@@ -25,7 +25,7 @@ from textwrap import fill
 from .helperclasses import *
 import json
 try:
-    from ...Clustering import *
+    from ...Clustering import Clustering
     from ...Data.DataFunctions import *
     from ...Data.Metadata import *
     from ...PhindConfig.PhindConfig import PhindConfig

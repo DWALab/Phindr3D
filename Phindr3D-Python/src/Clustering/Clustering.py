@@ -38,8 +38,7 @@ class setcluster(object):
         win = QDialog()
         win.setWindowTitle("Set Number of Clusters")
         win.setLayout(QFormLayout())
-
-        label=QLabel("Enter number of clusters")
+        label=QLabel("Enter number of clusters to try. \nNote: Final cluster total after analysis may be different")
         clusterset=QSpinBox()
         btn_ok=QPushButton("OK")
         btn_close=QPushButton("Close")
@@ -90,23 +89,32 @@ class export_cluster(object):
                 #get info from feature/metadatafile
                 cols = list(pd.read_csv(featurefile, nrows=1, sep='\t'))
                 cols=list(filter(lambda col: (col.find("Channel")==-1 and col[:2]!='MV' and col!='bounds' and col!='intensity_thresholds'), cols))
-                data=pd.read_csv(featurefile, usecols = cols[:], sep='\t')
+                data=pd.read_csv(featurefile, sep='\t', na_values='NaN')
+
                 if 'Treatment' in cols:
                     if data['Treatment'].isnull().all():
                         data.drop(columns=['Treatment'], axis=1, inplace=True)
+                        cols.remove('Treatment')
+                data.dropna(axis=0, inplace=True)
+                data=data[cols]
                 cols = list(pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], nrows=1, sep='\t'))
                 if 'Stack' in cols:
                     stack=[]
                     metadata = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], usecols= ['Stack', 'ImageID'], sep="\t",na_values='NaN')
-
-                    for ind in np.unique(metadata['ImageID'].to_numpy()):
+                    for ind in np.unique(data['ImageID'].to_numpy()):
                         idstack=metadata['Stack'].loc[metadata['ImageID'] == ind]
-                        stack.append("".join((str(idstack.min()),'-', str(idstack.max()))))
+                        if idstack.min()!=idstack.max():
+                            stack.append("".join((str(idstack.min()),'-', str(idstack.max()))))
+                        else:
+                            stack.append(str(idstack.min()))
                     data.rename(columns={'Stack': 'Stacks'}, inplace = True)
                     data['Stacks']=stack
-                data['Cluster Assignment'] = idx
-                #export cluster info + feature/metadatafile info
-                data.to_csv(name, sep='\t', mode='w', index=False)
+                try:
+                    data['Cluster Assignment'] = idx
+                    #export cluster info + feature/metadatafile info
+                    data.to_csv(name, sep='\t', mode='w', index=False)
+                except Exception as ex:
+                    errorWindow('Cluster Export', "Check Validity of Metadata and Feature File. \n Python Exception: {}".format(ex))
         else:
             errorWindow("Export Error", "Please 'Set Number of Clusters' before using Export Cluster Results")
 #show clusters and piechart percentage of labels
@@ -119,6 +127,7 @@ class piechart(object):
             #clusters and centers
             clusters, count, idx=Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
             groups=np.unique(labels)
+            self.max_piesize=3000 # maximum matplotlib piechart size.
             self.main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection="2d")
             #plot cluster centers and connect line to data points
             for i in np.unique(idx):
@@ -131,9 +140,11 @@ class piechart(object):
             maxRadius = .06 * axisRange
             minRadius = .03 * axisRange
             rsize=count
-            rsize = (np.array(rsize) - min(rsize))/ (max(rsize) - min(rsize));
-            rsize = (maxRadius - minRadius) * rsize + minRadius;
-
+            if min(rsize) != max(rsize):
+                rsize = (np.array(rsize) - min(rsize))/ (max(rsize) - min(rsize));
+                rsize = (maxRadius - minRadius) * rsize + minRadius;
+            else:
+                rsize=np.ones(len(count))
             cluster_percent=[np.array([np.count_nonzero(labels[np.where(idx == i)[0].astype(int)]==trt)/np.count_nonzero(idx==i) for trt in groups]) for i in clusters]
             #pie divisions (derived from https://matplotlib.org/stable/gallery/lines_bars_and_markers/scatter_piecharts.html)
             def pie_slice(prev_ratio, cur_ratio):
@@ -148,7 +159,7 @@ class piechart(object):
                 parts=np.array(pt[parts_ind[0].astype(int)])
                 for x in range(len(parts)):
                     s1, mark=pie_slice(sum(parts[:x]), sum(parts[:x+1]))
-                    self.main_plot.axes.scatter(plot_data[0][cluster], plot_data[1][cluster], marker=mark, s=s1 ** 2 *4000*rsize[size_ind], facecolor=colors[parts_ind[0][x]])
+                    self.main_plot.axes.scatter(plot_data[0][cluster], plot_data[1][cluster], marker=mark, s=s1 ** 2 *self.max_piesize*rsize[size_ind], facecolor=colors[parts_ind[0][x]])
                 self.main_plot.axes.text(plot_data[0][cluster], plot_data[1][cluster], s=size_ind+1, horizontalalignment='center', verticalalignment='center', bbox=dict(facecolor='white', alpha=0.7))
             self.main_plot.axes.set_aspect('equal')
             self.main_plot.fig.tight_layout()
@@ -552,9 +563,7 @@ class Clustering:
 
     # computeClustering.m
     def computeClustering(self, data, numberClusters, projection_data, type='AP', sparse=False, maxits=500, convits=15, dampfact=0.5,
-                          plot=False, details=False, nonoise=False): #add  percent_dev
-        #Nclusters = 4  # number of clusters to try to hit
-        #add to input function. temp
+                          plot=False, details=False, nonoise=False):
         percent_dev = 1  # percentage by which final number of clusters may deviate from Nclusters
         type = type.upper()
         C = self.clsIn(self,data)

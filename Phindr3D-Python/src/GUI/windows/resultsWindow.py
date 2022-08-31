@@ -90,10 +90,10 @@ class resultsWindow(QDialog):
         #menu actions activated
         inputfile.triggered.connect(lambda: self.loadFeaturefile(colordropdown, map_type.currentText(), True))
         selectclasses.triggered.connect(lambda: TrainingFunctions().selectclasses(np.array(self.filtered_data), np.array(self.labels)) if len(self.plot_data)>0 else None)
-        estimate.triggered.connect(lambda: Clustering().cluster_est(self.filtered_data) if len(self.plot_data) > 0 else None)
+        estimate.triggered.connect(lambda: Clustering.Clustering().cluster_est(self.filtered_data) if len(self.plot_data) > 0 else None)
         setnumber.triggered.connect(lambda: self.setnumcluster(colordropdown.currentText()) if len(self.plot_data) > 0 else None)
-        piemaps.triggered.connect(lambda: piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
-        export.triggered.connect(lambda: export_cluster(self.plot_data, self.filtered_data, self.numcluster, self.feature_file[0]) if len(self.plot_data) >0 else None)
+        piemaps.triggered.connect(lambda: Clustering.piechart(self.plot_data, self.filtered_data, self.numcluster, np.array(self.labels), [np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]) if len(self.plot_data) > 0 else None)
+        export.triggered.connect(lambda: Clustering.export_cluster(self.plot_data, self.filtered_data, self.numcluster, self.feature_file[0]) if len(self.plot_data) >0 else None)
         rotation_enable.triggered.connect(lambda: self.main_plot.axes.mouse_init())
         rotation_disable.triggered.connect(lambda: self.main_plot.axes.disable_mouse_rotation())
         resetview.triggered.connect(lambda: reset_view(self))
@@ -166,10 +166,10 @@ class resultsWindow(QDialog):
                 grouping, cancel=self.color_groupings(grouping)
                 if not cancel:
                     self.data_filt(grouping, self.projection, plot, new_plot)
-            except:
+            except Exception as ex:
                 if len(self.plot_data)==0:
                     grouping.clear()
-                errorWindow("Feature File Error", "Check Validity of Feature File (.txt)", )
+                errorWindow("Feature File Error", "Check Validity of Feature File (.txt). \nPython Exception Error: {}".format(ex))
 
 
     def color_groupings(self, grouping):
