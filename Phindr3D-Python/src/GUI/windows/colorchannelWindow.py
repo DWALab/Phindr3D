@@ -70,7 +70,6 @@ class colorchannelWindow(object):
         win.setFixedSize(minsize)
 
         win.show()
-        win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         win.exec()
 
     def colorpicker_window(self, button):
