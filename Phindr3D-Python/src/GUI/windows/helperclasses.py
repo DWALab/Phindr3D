@@ -147,4 +147,5 @@ class errorWindow(object):
         alert.setText(text)
         alert.setIcon(QMessageBox.Critical)
         alert.show()
+        alert.setWindowFlags(alert.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         alert.exec()

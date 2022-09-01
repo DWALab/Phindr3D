@@ -48,6 +48,7 @@ class interactive_points():
                 self.win = QDialog()
                 self.win.resize(1200, 1000)
                 self.win.setWindowTitle("ImageViewer")
+                self.error=False
                 grid = QGridLayout()
 
                 #info layout
@@ -118,29 +119,24 @@ class interactive_points():
                 mit_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[1].isChecked() else None)
                 montage_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[2].isChecked() else None)
                 ch_colour.clicked.connect(lambda: self.color_change((ch_info.text()).count("Channel_"), self.color, "Custom Colour Picker", "Channels", ["Channel_" +str(i+1) for i in range((ch_info.text()).count("Channel_"))], adjustbar, main_plot, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box))
-                self.win.show()
-                self.win.exec()
+                if not self.error:
+                    self.win.exec()
     def read_featurefile(self, slicescrollbar, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
         if feature_file:
             # extract image details from feature file
             data = pd.read_csv(feature_file[0], sep="\t", na_values='NaN')
-
-            try:
-                metadata=Metadata(Generator)
-                metadata.loadMetadataFile(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0])
-            except MissingChannelStackError:
-                errortext = "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid."
-                errorWindow("Metadata Error", errortext)
-            except FileNotFoundError:
-                errortext = "Metadata Extraction Failed: Metadata file does not exist."
-                errorWindow("Metadata Error", errortext)
-            except Exception:
-                errortext = "Metadata Extraction Failed: Invalid Image type (must be grayscale)."
-                errorWindow("Metadata Error", errortext)
+            if os.path.exists(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0])==False:
+                self.error = True
+                raise FileNotFoundError
+            data = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], sep="\t", na_values='NaN')
 
             #getting metadatafile
-            data = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], sep="\t", na_values='NaN')
+            cols=data.columns.to_list()
+            if any("Channel" in ch for ch in cols)==False or ('Stack' not in cols) or ('ImageID' not in cols):
+                self.error = True
+                raise MissingChannelStackError
             ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
+
             # update channel labels
             ch_names = ['<font color= "#' + str('%02x%02x%02x' % (
             int(color[i - 1][0] * 255), int(color[i - 1][1] * 255), int(color[i - 1][2] * 255)))
@@ -181,40 +177,55 @@ class interactive_points():
                 slicescrollbar.setMaximum(0)
             # initialize array as image size with rgb and # channels
             empty_img = PIL.Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]).size
+            if PIL.Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]).mode in ["CMYK","HSV", "LAB", "RGB", "RGBA", "RGBX", "YCbCr"]:
+                self.error = True
+                raise ColorIMG
             empty_img = np.zeros((ch_len, empty_img[1], empty_img[0], 3))
             return(data, empty_img, meta_loc, stacks, ch_len, bounds, threshold)
     def plot_img(self, slicescrollbar, img_plot, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
         #reset subplots
-        allaxes = img_plot.fig.get_axes()
-        for ax in allaxes:
-            img_plot.fig.delaxes(ax)
-        data, empty_img, metaloc, stacks,ch_len, bounds, threshold=self.read_featurefile(slicescrollbar, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt)
+        try:
+            allaxes = img_plot.fig.get_axes()
+            for ax in allaxes:
+                img_plot.fig.delaxes(ax)
+            data, empty_img, metaloc, stacks,ch_len, bounds, threshold=self.read_featurefile(slicescrollbar, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt)
 
-        #slice projection only calculate for current slice
-        if pjt.findChildren(QRadioButton)[0].isChecked():
-            stacks=1
-        #MIP projection case
-        elif pjt.findChildren(QRadioButton)[1].isChecked():
-            max_img = np.full((empty_img.shape[1], empty_img.shape[2], 3), np.NINF)
+            #slice projection only calculate for current slice
+            if pjt.findChildren(QRadioButton)[0].isChecked():
+                stacks=1
+            #MIP projection case
+            elif pjt.findChildren(QRadioButton)[1].isChecked():
+                max_img = np.full((empty_img.shape[1], empty_img.shape[2], 3), np.NINF)
 
-        for x in range(1, stacks+1):
-            img=merge_channels(data, empty_img, ch_len, slicescrollbar.value(), color, metaloc+x-1, pjt.findChildren(QRadioButton)[2].isChecked(), bounds, threshold)
-            #MIP Projection (max intensity projection - take largest element-wise from image stack)
-            if pjt.findChildren(QRadioButton)[1].isChecked():
-                max_img=np.maximum(max_img, img)
-                if x==stacks:
-                    img=max_img
-            #plotting
-            if pjt.findChildren(QRadioButton)[1].isChecked()==False or x==stacks:
-                if pjt.findChildren(QRadioButton)[1].isChecked() == False:
-                    axes=img_plot.fig.add_subplot(int(np.ceil(np.sqrt(stacks))),int(np.round_(np.sqrt(stacks), decimals=0)),x)
-                else:
-                    axes = img_plot.fig.add_subplot(1,1,1)
-                axes.imshow(img)
-                axes.set_aspect(aspect='auto')
-                axes.axis('off')
-        img_plot.fig.subplots_adjust(wspace=0.0075, hspace=0.0075)
-        img_plot.draw()
+            for x in range(1, stacks+1):
+                img=merge_channels(data, empty_img, ch_len, slicescrollbar.value(), color, metaloc+x-1, pjt.findChildren(QRadioButton)[2].isChecked(), bounds, threshold)
+                #MIP Projection (max intensity projection - take largest element-wise from image stack)
+                if pjt.findChildren(QRadioButton)[1].isChecked():
+                    max_img=np.maximum(max_img, img)
+                    if x==stacks:
+                        img=max_img
+                #plotting
+                if pjt.findChildren(QRadioButton)[1].isChecked()==False or x==stacks:
+                    if pjt.findChildren(QRadioButton)[1].isChecked() == False:
+                        axes=img_plot.fig.add_subplot(int(np.ceil(np.sqrt(stacks))),int(np.round_(np.sqrt(stacks), decimals=0)),x)
+                    else:
+                        axes = img_plot.fig.add_subplot(1,1,1)
+                    axes.imshow(img)
+                    axes.set_aspect(aspect='auto')
+                    axes.axis('off')
+            img_plot.fig.subplots_adjust(wspace=0.0075, hspace=0.0075)
+            img_plot.draw()
+            self.win.show()
+            #self.win.exec()
+        except ColorIMG:
+            errorWindow("Metadata Error", "Cannot use RGB/A or Colored Images")
+        except FileNotFoundError:
+            errorWindow("Metadata Error", "Cannot Find Metadatafile path. Check that Metadatafile path in Feature File is valid")
+        except MissingChannelStackError:
+            errorWindow("Metadata Error", "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid")
+        except Exception as ex:
+            errorWindow("Metadata Error", "Python Error Message: {}".format(ex))
+            self.error = True
     def color_change(self, ch, color, win_title, col_title, labels, slicescrollbar, img_plot, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
         colors=colorchannelWindow(ch, color, win_title, col_title, labels)
         self.color=colors.color
@@ -256,3 +267,6 @@ class interactive_points():
             self.main_plot.draw()
             self.main_plot.figure.canvas.draw_idle()
             self.buildImageViewer(self.labels,label, imin,self.color,self.feature_file, self.imageID)
+
+class ColorIMG(Exception):
+    pass

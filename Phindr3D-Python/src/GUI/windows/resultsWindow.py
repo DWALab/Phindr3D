@@ -190,7 +190,7 @@ class resultsWindow(QDialog):
         if max(feature_data.columns.str.contains("text_", case=False)):
             filt_lbl=np.concatenate((filt_lbl, ["Texture_Features"]))
         #get labels
-        chk_lbl=np.array([lbl if lbl[:2].find("MV")==-1 and lbl!='bounds' and lbl!='intensity_thresholds' and lbl[:5]!='text_' else np.nan for lbl in feature_data.columns])
+        chk_lbl=np.array([lbl if lbl[:2].find("MV")==-1 and lbl!='bounds' and lbl!='intensity_thresholds' and lbl[:5]!='text_' and lbl.find("Channel_")==-1 else np.nan for lbl in feature_data.columns])
         chk_lbl=chk_lbl[chk_lbl!='nan']
         #select features window
         win=selectWindow(chk_lbl, col_lbl, "Filter Feature File Groups and Channels", "Grouping", "Channels", grps, filt_lbl, self.filt)
