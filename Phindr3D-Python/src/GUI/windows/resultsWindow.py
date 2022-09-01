@@ -182,16 +182,14 @@ class resultsWindow(QDialog):
         grps=[]
         #Get Channels
         meta_col=pd.read_csv(feature_data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], nrows=1,  sep="\t", na_values='NaN').columns.tolist()
-        col_lbl=np.array([lbl if lbl.find("Channel_")>-1 else np.nan for lbl in meta_col])
-        col_lbl=col_lbl[col_lbl!='nan']
+        col_lbl=list(filter(lambda col: (col.find("Channel")>-1), meta_col))
         #Get MV and Texturefeatures labels
         self.filt=[]
         filt_lbl=np.array(["MV"])
         if max(feature_data.columns.str.contains("text_", case=False)):
             filt_lbl=np.concatenate((filt_lbl, ["Texture_Features"]))
         #get labels
-        chk_lbl=np.array([lbl if lbl[:2].find("MV")==-1 and lbl!='bounds' and lbl!='intensity_thresholds' and lbl[:5]!='text_' and lbl.find("Channel_")==-1 else np.nan for lbl in feature_data.columns])
-        chk_lbl=chk_lbl[chk_lbl!='nan']
+        chk_lbl=list(filter(lambda col: (col[:2].find("MV")==-1 and col!='bounds' and col!='intensity_thresholds' and col[:5]!='text_' and col.find("Channel_")==-1), meta_col))
         #select features window
         win=selectWindow(chk_lbl, col_lbl, "Filter Feature File Groups and Channels", "Grouping", "Channels", grps, filt_lbl, self.filt)
         if not win.x_press:

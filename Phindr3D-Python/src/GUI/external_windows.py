@@ -22,8 +22,8 @@ class external_windows():
     def buildResultsWindow(self, color, metadata):
         return resultsWindow(color, metadata)
 
-    def buildParamWindow(self, supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain):
-        return paramWindow(supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain)
+    def buildParamWindow(self, metaheader, supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain, trainingcol, treatcol):
+        return paramWindow(metaheader, supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain, trainingcol, treatcol)
 
     def buildSegmentationWindow(self, metadata):
         return segmentationWindow(metadata)

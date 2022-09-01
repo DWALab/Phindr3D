@@ -57,6 +57,8 @@ class Metadata:
 
         # Define user-controlled parameters and set default values
         self.intensityNormPerTreatment = False
+        self.treatmentColNameForNormalization= ''
+        self.trainingColforImageCategories=''
         self.randTrainingPerTreatment = 1
         self.countBackground = PhindConfig.countBackground
         self.randTrainingFields = PhindConfig.randTrainingFields

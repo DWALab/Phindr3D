@@ -96,13 +96,16 @@ class MainGUI(QWidget, external_windows):
                 alert.exec()
             elif buttonPressed == "Set Voxel Parameters":
                 try:
+                    metaheader = list(pd.read_csv(self.metadata.GetMetadataFilename(), nrows=1, sep='\t'))
+                    metaheader = list(filter(lambda col: (col.find("Channel")==-1 and col!='bounds' and col!='intensity_thresholds' and col!='Stack'), metaheader))
                     tileInfo = self.metadata.theTileInfo
                     supercoords = (tileInfo.tileX, tileInfo.tileY, tileInfo.tileZ)
                     megacoords = (tileInfo.megaVoxelTileX, tileInfo.megaVoxelTileY, tileInfo.megaVoxelTileZ)
-                    winp = self.buildParamWindow(supercoords, self.voxelGroups.numSuperVoxelBins, megacoords,
+                    winp = self.buildParamWindow(metaheader, supercoords, self.voxelGroups.numSuperVoxelBins, megacoords,
                                                  self.voxelGroups.numMegaVoxelBins, self.voxelGroups.numVoxelBins,
                                                  self.metadata.randTrainingFields, self.metadata.countBackground,
-                                                 self.metadata.intensityNormPerTreatment, self.trainbycondition)
+                                                 self.metadata.intensityNormPerTreatment, self.trainbycondition, self.metadata.trainingColforImageCategories,
+                                                 self.metadata.treatmentColNameForNormalization)
                     winp.show()
                     winp.exec()
                     if winp.done: # when done is pressed (and successful), update all params
@@ -118,8 +121,10 @@ class MainGUI(QWidget, external_windows):
                         self.metadata.randTrainingFields = winp.trainingnum
                         self.metadata.countBackground = winp.bg
                         self.metadata.intensityNormPerTreatment = winp.norm
-                        self.trainbycondition = winp.conditiontrain
+                        self.trainbycondition = winp.conditiontrain #should it be self.metadata.trainbycondition??? where is it used?
                         # after updating parameters, what needs to be done?
+                        self.metadata.trainingColforImageCategories= winp.trainingcol
+                        self.metadata.treatmentColNameForNormalization= winp.normintensitycol
                         self.voxelGroups.updateImages()
                         self.metadata.computeImageParameters()
                         self.thresh = self.metadata.intensityThresholdValues

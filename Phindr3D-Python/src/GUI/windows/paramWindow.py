@@ -19,7 +19,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 class paramWindow(QDialog):
-    def __init__(self, supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain):
+    def __init__(self, metacolumns, supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain, trainingcol, treatmentcol):
         super(paramWindow, self).__init__()
         self.setWindowTitle("Set Parameters")
         self.done = False
@@ -103,12 +103,14 @@ class paramWindow(QDialog):
         normalise.setChecked(norm)
         trainbycondition = QCheckBox("Train by condition")
         trainbycondition.setChecked(conditiontrain)
-        leftdropdown = QComboBox()
-        leftdropdown.setEnabled(False)
-        rightdropdown = QComboBox()
-        rightdropdown.setEnabled(False)
-        normalise.clicked.connect(lambda: leftdropdown.setEnabled(not leftdropdown.isEnabled()))
-        trainbycondition.clicked.connect(lambda: rightdropdown.setEnabled(not rightdropdown.isEnabled()))
+        normtreatfilter = QComboBox()
+        normtreatfilter.addItems(metacolumns)
+        normtreatfilter.setEnabled(False)
+        trainfilter = QComboBox()
+        trainfilter.addItems(metacolumns)
+        trainfilter.setEnabled(False)
+        normalise.clicked.connect(lambda: normtreatfilter.setEnabled(not normtreatfilter.isEnabled()))
+        trainbycondition.clicked.connect(lambda: trainfilter.setEnabled(not trainfilter.isEnabled()))
 
         mainbox.layout().addWidget(QLabel("#Voxel\nCategories"), 0, 0, 1, 1)
         mainbox.layout().addWidget(voxelcategories, 0, 1, 1, 1)
@@ -117,8 +119,8 @@ class paramWindow(QDialog):
         mainbox.layout().addWidget(usebackground, 1, 0, 1, 6)
         mainbox.layout().addWidget(normalise, 2, 0, 1, 3)
         mainbox.layout().addWidget(trainbycondition, 2, 3, 1, 3)
-        mainbox.layout().addWidget(leftdropdown, 3, 0, 1, 3)
-        mainbox.layout().addWidget(rightdropdown, 3, 3, 1, 3)
+        mainbox.layout().addWidget(normtreatfilter, 3, 0, 1, 3)
+        mainbox.layout().addWidget(trainfilter, 3, 3, 1, 3)
         mainbox.setFixedWidth(mainbox.minimumSizeHint().width() + 50)
         mainbox.setFixedHeight(mainbox.minimumSizeHint().height() + 20)
 
@@ -126,6 +128,12 @@ class paramWindow(QDialog):
         reset = QPushButton("Reset")
         done = QPushButton("Done")
 
+        if treatmentcol!='':
+            normtreatfilter.setEnabled(True)
+            normtreatfilter.setCurrentIndex(normtreatfilter.findText(treatmentcol))
+        if trainingcol!='':
+            trainfilter.setEnabled(True)
+            trainfilter.setCurrentIndex(trainfilter.findText(trainingcol))
         # button behaviours
         def donePressed():
             # When done is pressed, all the inputted values are returned, stored in their place
@@ -146,6 +154,14 @@ class paramWindow(QDialog):
                 self.norm = normalise.isChecked()
                 self.conditiontrain = trainbycondition.isChecked()
                 self.done = True
+                if trainbycondition.isChecked():
+                    self.trainingcol=trainfilter.currentText()
+                else:
+                    self.trainingcol=''
+                if normalise.isChecked():
+                    self.normintensitycol=normtreatfilter.currentText()
+                else:
+                    self.normintensitycol=''
                 # dropdown behaviour goes here <--
                 self.close()
 
@@ -168,7 +184,17 @@ class paramWindow(QDialog):
             trainingimages.setText(str(trainingnum))
             usebackground.setChecked(bg)
             normalise.setChecked(norm)
+            normtreatfilter.setEnabled(norm)
+            if normtreatfilter.findText(treatmentcol)>-1:
+                normtreatfilter.setCurrentIndex(normtreatfilter.findText(treatmentcol))
+            else:
+                normtreatfilter.setCurrentIndex(0)
             trainbycondition.setChecked(conditiontrain)
+            trainfilter.setEnabled(conditiontrain)
+            if trainfilter.findText(trainingcol)>-1:
+                trainfilter.setCurrentIndex(trainfilter.findText(trainingcol))
+            else:
+                trainfilter.setCurrentIndex(0)
 
         done.clicked.connect(donePressed)
         reset.clicked.connect(resetPressed)
