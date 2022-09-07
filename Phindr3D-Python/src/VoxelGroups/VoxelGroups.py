@@ -111,7 +111,7 @@ class VoxelGroups():
         if textureFeatures:
             textureResults = np.zeros((len(uniqueImageID), 4))
         useTreatment = False
-        if len(treatmentCol) > 0:
+        if len(treatmentCol) > 0 and list(treatmentCol.values())!= [None] * len(treatmentCol):
             useTreatment = True
             Treatments = []
         #timing things
@@ -136,7 +136,7 @@ class VoxelGroups():
             pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(self.pixelImage.pixelBinCenters, self.pixelImage.pixelBinCenters, axis=1)]).T
             superVoxelProfile, fgSuperVoxel = self.superVoxelImage.getTileProfiles(self.metadata, currentImage, self.pixelImage.pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
             megaVoxelProfile, fgMegaVoxel, texture_features = self.megaVoxelImage.getMegaVoxelProfile(self.superVoxelImage.superVoxelBinCenters, superVoxelProfile, theTileInfo, fgSuperVoxel, training, analysis=textureFeatures)
-            imgProfile, rawProfile = self.megaVoxelImage.getImageProfile(self.megaVoxelImage.megaVoxelBinCenters, megaVoxelProfile, theTileInfo, fgMegaVoxel)
+            imgProfile, rawProfile = self.megaVoxelImage.getImageProfile(self.metadata, self.megaVoxelImage.megaVoxelBinCenters, megaVoxelProfile, theTileInfo, fgMegaVoxel)
             resultIM[iImages, :] = imgProfile
             resultRaw[iImages, :] = rawProfile
             if textureFeatures:
@@ -151,8 +151,6 @@ class VoxelGroups():
             dictResults[col] = mdatavals[:, i]
         if useTreatment:
             dictResults['Treatment'] = Treatments
-        else:
-            dictResults['Treatment'] = np.full((len(uniqueImageID),), 'RR', dtype='object')
         dictResults['MetadataFile']=  np.full((len(uniqueImageID),), self.metadata.GetMetadataFilename(), dtype='object')
         dictResults['ImageID'] = np.full((len(uniqueImageID),), np.arange(1, len(uniqueImageID)+1), dtype='object')
         dictResults['NumMV'] = numRawMV

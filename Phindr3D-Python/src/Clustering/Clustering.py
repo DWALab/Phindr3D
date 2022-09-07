@@ -104,7 +104,7 @@ class export_cluster(object):
                     for ind in np.unique(data['ImageID'].to_numpy()):
                         idstack=metadata['Stack'].loc[metadata['ImageID'] == ind]
                         if idstack.min()!=idstack.max():
-                            stack.append("".join((str(idstack.min()),'-', str(idstack.max()))))
+                            stack.append("".join(('Stacks: ',str(idstack.min()),'-', str(idstack.max()))))
                         else:
                             stack.append(str(idstack.min()))
                     data.rename(columns={'Stack': 'Stacks'}, inplace = True)

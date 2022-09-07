@@ -232,8 +232,10 @@ class resultsWindow(QDialog):
         if np.array_equal(mind, maxd) == False:
             featuredf = (image_feature_data[featurecols] - mind) / (maxd - mind)
             mdatadf = image_feature_data[mdatacols]
-            featuredf.dropna(axis=0, inplace=True)  # thresh=int(0.2 * featuredf.shape[0]) )
-
+            #drop rows and cols with over 80% nan
+            featuredf.dropna(axis=0, inplace=True, thresh=int(0.2 * featuredf.shape[0]))
+            featuredf.dropna(axis=1, inplace=True, thresh=int(0.2 * featuredf.shape[0]))
+            mv_cols = featuredf.columns[featuredf.columns.map(lambda col: col.startswith('MV'))]
             # select data
             if len(self.filt) == 1:
                 if self.filt[0] == 'MV':

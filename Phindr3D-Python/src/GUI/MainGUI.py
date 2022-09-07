@@ -15,9 +15,6 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 from .external_windows import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
 import matplotlib
 import matplotlib.colors as mcolors
 import pandas as pd
@@ -28,9 +25,8 @@ import random
 from scipy.stats.mstats import mquantiles
 from .windows.plot_functions import *
 from .windows.helperclasses import *
-from ..PhindConfig.PhindConfig import TileInfo
+import pickle
 
-from scipy.spatial import distance as dist
 try:
     from ..VoxelGroups.VoxelGroups import *
     from ..Clustering.Clustering import *
@@ -61,7 +57,6 @@ class MainGUI(QWidget, external_windows):
         self.metadata = Metadata(Generator)
         self.voxelGroups = VoxelGroups(self.metadata)
         self.trainbycondition = False # modifiable in paramWindow, but not sure where this is used?
-        # self.clustering = Clustering() #dont need this, clustering occurs in the view results parts and the clustering object isnt relevant.
         self.setWindowTitle("Phindr3D")
         self.rgb_img=0
         self.img_ind=1
@@ -90,14 +85,69 @@ class MainGUI(QWidget, external_windows):
         nextimage = QPushButton("Next Image")
         phind = QPushButton("Phind")
         # Button behaviour defined here
+        def import_session(param=False):
+            filename = QFileDialog.getOpenFileName(self, 'Open Exported Pickle File', '', 'Pickle file (*.pickle)')[0]
+            if filename != '':
+                #retrieve and set imported data
+                curfile=self.metadata.GetMetadataFilename()
+                with open(filename, 'rb') as f:
+                    self.metadata = pickle.load(f)
+                    self.metapandas = pd.DataFrame.from_dict(pickle.load(f), orient='index').T #metadata file as pandas dataframe
+                    data= pickle.load(f)
+                    if not param:
+                        self.color = data.get('color')
+                        self.ch_len= data.get('ch_len')
+                    else:
+                        self.metadata.SetMetadataFilename(curfile)# retain current metadatafile name if only parameters
+                        del self.metapandas
+                    self.bounds = data.get('bounds')[0]
+                    self.thresh = data.get('threshold')[0]
+                    self.voxelGroups = VoxelGroups(self.metadata)
+                    self.voxelGroups.numVoxelBins = data.get('numVoxelBins')
+                    self.voxelGroups.numMegaVoxelBins = data.get('numMegaVoxelBins')
+                    self.voxelGroups.numSuperVoxelBins = data.get('numSuperVoxelBins')
+                    self.voxelGroups.updateImages()
+                    self.trainbycondition = bool(data.get('trainbycondition'))
+                #reset previous scrollers and show new image
+                threshbar.blockSignals(True)
+                slicescrollbar.blockSignals(True)
+                slicescrollbar.setValue(0)
+                threshbar.setValue(int(PhindConfig().intensityThresholdTuningFactor*100))
+                threshbar.blockSignals(False)
+                slicescrollbar.blockSignals(False)
+                self.img_ind = 1
+                imagenav.setText("1")
+                self.img_display(slicescrollbar, img_plot, sv, mv, values, self.img_ind, imgwindow)
+
+        def export_session():
+            name = QFileDialog.getSaveFileName(self, 'Save MetadataFile', '',  filter=self.tr('.pickle'))
+            if name[0] !='':
+                with open("".join(name), "wb") as f:
+                    #export metadata class
+                    pickle.dump(self.metadata, f)
+                    #export metadata file data
+                    metapd = pd.read_csv(self.metadata.GetMetadataFilename(), sep="\t")
+                    metadict = metapd.to_dict()
+                    pickle.dump(metadict, f)
+                    #export MainGUI & Voxelgroup members
+                    guigroup = {'ch_len': self.ch_len, 'color': self.color, 'bounds': [np.array(self.bounds).tolist()],
+                                'threshold': [np.array(self.thresh).tolist()], 'trainbycondition': int(self.trainbycondition),
+                                'numVoxelBins': self.voxelGroups.numVoxelBins,
+                                'numSuperVoxelBins': self.voxelGroups.numSuperVoxelBins,
+                                'numMegaVoxelBins': self.voxelGroups.numMegaVoxelBins}
+                    pickle.dump(guigroup, f)
+
         def metadataError(buttonPressed):
             if not self.metadata.GetMetadataFilename():
                 alert = self.buildErrorWindow("Metadata not found!!", QMessageBox.Critical)
                 alert.exec()
             elif buttonPressed == "Set Voxel Parameters":
                 try:
-                    metaheader = list(pd.read_csv(self.metadata.GetMetadataFilename(), nrows=1, sep='\t'))
-                    metaheader = list(filter(lambda col: (col.find("Channel")==-1 and col!='bounds' and col!='intensity_thresholds' and col!='Stack'), metaheader))
+                    if hasattr(self, 'metapandas'):
+                        metaheader= list(filter(lambda col: (col.find("Channel")==-1 and col!='bounds' and col!='intensity_thresholds' and col!='Stack'), self.metapandas.columns))
+                    else:
+                        metaheader = list(pd.read_csv(self.metadata.GetMetadataFilename(), nrows=1, sep='\t'))
+                        metaheader = list(filter(lambda col: (col.find("Channel")==-1 and col!='bounds' and col!='intensity_thresholds' and col!='Stack'), metaheader))
                     tileInfo = self.metadata.theTileInfo
                     supercoords = (tileInfo.tileX, tileInfo.tileY, tileInfo.tileZ)
                     megacoords = (tileInfo.megaVoxelTileX, tileInfo.megaVoxelTileY, tileInfo.megaVoxelTileZ)
@@ -174,6 +224,8 @@ class MainGUI(QWidget, external_windows):
                     threshbar.setValue(int(PhindConfig().intensityThresholdTuningFactor*100))
                     threshbar.blockSignals(False)
                     slicescrollbar.blockSignals(False)
+                    if hasattr(self, 'metapandas'):
+                        del self.metapandas
                     issue=self.img_display(slicescrollbar, img_plot, sv, mv, values, self.img_ind, imgwindow)
                     # Update values of GUI widgets
                     if not issue:
@@ -220,11 +272,10 @@ class MainGUI(QWidget, external_windows):
         menubar = QMenuBar()
         file = menubar.addMenu("File")
         imp = file.addMenu("Import")
-        impsession = imp.addAction("Session")
-        impparameters = imp.addAction("Parameters")
+        impsession = imp.addAction("Entire Session")
+        impparameters = imp.addAction("Parameters from Session")
         exp = file.addMenu("Export")
         expsessions = exp.addAction("Session")
-        expparameters = exp.addAction("Parameters")
         menuexit = file.addAction("Exit")
 
         metadata = menubar.addMenu("Metadata")
@@ -260,12 +311,13 @@ class MainGUI(QWidget, external_windows):
             except Exception as e:
                 print(e)
 
+        expsessions.triggered.connect(lambda: export_session() if self.metadata.GetMetadataFilename() else metadataError('Export Session'))
+        impsession.triggered.connect(import_session)
+        impparameters.triggered.connect(lambda: import_session(param=True) if self.metadata.GetMetadataFilename() else errorWindow("Import Parameters", "Load Metadata before importing parameters"))
         createmetadata.triggered.connect(extractMetadata)
         viewresults.triggered.connect(viewResults)
         imagetabnext.triggered.connect(metadataError)
         imagetabcolors.triggered.connect(metadataError)
-        expsessions.triggered.connect(exportError)
-        expparameters.triggered.connect(exportError)
         about.triggered.connect(self.aboutAlert)
         segmentation.triggered.connect(organoidSegmentation)
         loadmetadata.triggered.connect(lambda: loadMetadata(self, sv, mv, threshbar, slicescrollbar, img_plot, self.color, values, imagenav))
@@ -380,7 +432,11 @@ class MainGUI(QWidget, external_windows):
 
         if self.metadata.GetMetadataFilename():
             #extract image details from metadata
-            data = pd.read_csv(self.metadata.GetMetadataFilename(), sep="\t")
+            data=0
+            if hasattr(self, 'metapandas'):
+                data= self.metapandas
+            else:
+                data = pd.read_csv(self.metadata.GetMetadataFilename(), sep="\t")
             self.ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
             #get image index of previous stack
             prev=data[data["ImageID"] == img_id-1]["Channel_1"]
@@ -447,18 +503,18 @@ class MainGUI(QWidget, external_windows):
         if self.metadata.GetMetadataFilename():
             #get output dir:
             savefile, dump = QFileDialog.getSaveFileName(self, 'Phindr3D Results', '', 'Text file (*.txt)')
-            self.metadata.computeImageParameters()
             self.training.randFieldID = self.metadata.trainingSet
+            try:
+                if len(savefile) > 0:
+                    self.voxelGroups.metadata=self.metadata
+                    if self.voxelGroups.action(savefile, self.training):
+                        message = f'All Done!\n\nResults saved at:\n{savefile}'
+                        alert = self.buildErrorWindow(message, QMessageBox.Information, "Notice")
+                        alert.exec()
+            except Exception as ex:
+                alert = self.buildErrorWindow("Voxel Grouping Error. Phind Analysis Failed. \n\nPython Error: {} \n\nNote:If error is about quantity or size try reducing values in Set Voxel Parameters".format(ex), QMessageBox.Information, "Notice")
+                alert.exec()
 
-            if len(savefile) > 0:
-                if self.voxelGroups.action(savefile, self.training):
-                    message = f'All Done!\n\nResults saved at:\n{savefile}'
-                    alert = self.buildErrorWindow(message, QMessageBox.Information, "Notice")
-                    alert.exec()
-                else:
-                    # error
-                    print('something went wrong.')
-                    print("voxel grouping failed")
         else:
             # do nothing? display error window?
             pass

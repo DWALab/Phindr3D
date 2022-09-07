@@ -79,7 +79,7 @@ class VoxelBase:
         computeTAS = PhindConfig.computeTAS
         showImage = PhindConfig.showImage
         showChannels = PhindConfig.showChannels
-        countBackground = PhindConfig.countBackground
+        countBackground = metadata.countBackground
         superVoxelThresholdTuningFactor = PhindConfig.superVoxelThresholdTuningFactor
         numChannels = imageObject.GetNumChannels()
         numVoxelBins = self.numVoxelBins
@@ -345,12 +345,12 @@ class VoxelBase:
         return megaVoxelProfile, fgMegaVoxel, textureFeatures
     # end getMegaVoxelProfile
 
-    def getImageProfile(self, megaVoxelBinCenters, megaVoxelProfile, tileInfo, fgMegaVoxel):
+    def getImageProfile(self, metadata, megaVoxelBinCenters, megaVoxelProfile, tileInfo, fgMegaVoxel):
         """provides multi-parametric representation of image based on megavoxel categories.
             called in extractImageLevelTextureFeatures"""
         errorVal = (None, None)
         showImage = PhindConfig.showImage
-        countBackground = PhindConfig.countBackground
+        countBackground = metadata.countBackground
         mvcolormap = PhindConfig.mvcolormap
         tmp1 = np.array([dfunc.mat_dot(megaVoxelBinCenters, megaVoxelBinCenters, axis=1)]).T
         tmp2 = dfunc.mat_dot(megaVoxelProfile[fgMegaVoxel], megaVoxelProfile[fgMegaVoxel], axis=1)
