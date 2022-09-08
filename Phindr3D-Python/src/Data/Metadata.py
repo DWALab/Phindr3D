@@ -666,12 +666,12 @@ if __name__ == '__main__':
 
     deterministic = Generator(1234)
 
-    metadatafile = r'testdata\metadata_tests\metadatatest_metadata.txt'
+    metadatafile = 'testdata/metadata_tests/metadatatest_metadata.txt'
 
     test = Metadata(deterministic)
     if test.loadMetadataFile(metadatafile):
 
-        with open('testdata\\metadata_tests\\expected.json', 'r') as js:
+        with open('testdata/metadata_tests/expected.json', 'r') as js:
             expected = json.load(js)
             js.close()
 
@@ -680,6 +680,9 @@ if __name__ == '__main__':
         print("Running computeImageParameters: " + "Successful" if test.computeImageParameters() else "Unsuccessful")
         print("===")
         print('Calculated image parameter comparisons...')
+        print("Lower bound compare: " + str(test.lowerbound) + " and " + str(np.array(expected['lowerbound'])))
+        print("Upper bound compare: " + str(test.upperbound) + " and " + str(np.array(expected['upperbound'])))
+        print("intensityThreshold compare: " + str(test.intensityThreshold) + " and " + str(np.array(expected['intensity_threshold'])))
         lowerequal = (test.lowerbound == np.array(expected['lowerbound'])).all()
         upperequal = (test.upperbound == np.array(expected['upperbound'])).all()
         intequal = (test.intensityThreshold == np.array(expected['intensity_threshold'])).all()
