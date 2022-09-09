@@ -211,6 +211,32 @@ class clusterdisplay(object):
         win.show()
         win.exec()
 
+class perplexity_set(object):
+    def __init__(self, X):
+        win = QDialog()
+        win.setWindowTitle("Set Perplexity")
+        win.setLayout(QFormLayout())
+        label = QLabel("Enter Perplexity (Recommended 5 - 50): \nNote: For current dataset max perplexity is {}".format(len(X) - 1))
+        perplexityset = QSpinBox()
+        perplexityset.setMaximum(len(X) - 1)
+        perplexityset.setValue(0)
+        if len(X) > 30:
+            perplexityset.setValue(30)
+        btn_ok = QPushButton("Confirm")
+        win.layout().addRow(label, perplexityset)
+        win.layout().addRow(btn_ok)
+        btn_ok.clicked.connect(lambda: self.confirmed_perplexity(perplexityset.value(), win))
+        win.setWindowFlag(Qt.WindowCloseButtonHint, False)
+        win.show()
+        win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        win.exec()
+    def confirmed_perplexity(self, perplexity, win):
+        if perplexity>0:
+            self.perplexity=perplexity
+            win.close()
+        else:
+            errorWindow("Set Perplexity", "Perplexity must be greater than zero")
+
 class Clustering:
     def __init__(self):
         self.eps = np.finfo(np.float64).eps
@@ -228,7 +254,8 @@ class Clustering:
             P = pca.fit(X_show).transform(X_show)
             return (P)
         elif plot == "t-SNE":
-            T = TSNE(n_components=dim, init='pca', learning_rate='auto').fit_transform(X)
+            win_per=perplexity_set(X)
+            T = TSNE(n_components=dim, perplexity=win_per.perplexity, init='pca', learning_rate='auto').fit_transform(X)
             return (T)
         elif plot == "Sammon":
             S, E = self.sammon(self, X, dim)

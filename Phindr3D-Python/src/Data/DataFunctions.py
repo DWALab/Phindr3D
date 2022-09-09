@@ -102,7 +102,8 @@ class DataFunctions:
         """
 
         f = os.listdir(folder_path)
-        metadatafilename = f'{os.path.abspath(folder_path)}\\{mdatafilename}'
+        folder_path.replace(r'\\', r'/')
+        metadatafilename = f'{os.path.abspath(folder_path)}/{mdatafilename}'
         #read images in folder
         rows = []
         for i, file in enumerate(f):
@@ -153,7 +154,10 @@ class DataFunctions:
                     else:
                         fname += row[dkey]
                 fname += fileparts[i+1] #add the .tif(f)
-                df.iat[index, df.columns.get_loc(f'Channel_{chan}')] = os.path.abspath(f'{folder_path}\\{fname}') #place the name at the right spot
+                df.iat[index, df.columns.get_loc(f'Channel_{chan}')] = os.path.abspath(f'{folder_path}/{fname}') #place the name at the right spot
+        df['Stack']=df['Stack'].astype(int)
+        df.sort_values(by=['ImageID','Stack'], ascending=[1, 1], inplace=True)
+        df.replace(r'\\', r'/', regex=True, inplace=True)
         df.to_csv(metadatafilename, sep='\t', index=False)
         return True # return value to indicate success of function
     # end createMetadata

@@ -63,8 +63,8 @@ class resultsWindow(QDialog):
         box = QGroupBox()
         boxlayout = QGridLayout()
         selectfile = QPushButton("Select Feature File")
-        prevdata = QPushButton("Import Previous Plot Data + Select Feature File")
-        exportdata = QPushButton("Export Current Plot Data")
+        prevdata = QPushButton("Import Previous Plot Data (.JSON)")
+        exportdata = QPushButton("Export Current Plot Data (.JSON)")
         cmap=QPushButton("Legend Colours")
         map_type = QComboBox()
         map_type.addItems(["PCA","t-SNE","Sammon"])
@@ -113,7 +113,9 @@ class resultsWindow(QDialog):
         #2d vs 3d settings
         def toggle_2d_3d(checkbox_cur, checkbox_prev, dim, plot):
             if checkbox_cur.isChecked() and checkbox_prev.isChecked():
+                checkbox_prev.blockSignals(True)
                 checkbox_prev.setChecked(False)
+                checkbox_prev.blockSignals(False)
             check_projection(dim, plot)
         def check_projection(dim, plot):
             if dim == "2d":
@@ -157,22 +159,27 @@ class resultsWindow(QDialog):
         self.setFixedSize(minsize)
 
     def loadFeaturefile(self, grouping, plot, new_plot, prevfile=None):
-        filename, dump = QFileDialog.getOpenFileName(self, 'Open Feature File', '', 'Text files (*.txt)')
-        if isinstance(prevfile, str) and prevfile !=filename:
-            errorWindow("Feature File Error","Incorrect Feature File Path/Location (.txt). \n Selected Feature File Path: \n'{}' \n\n Expected Feature File Path: \n'{}'".format(filename, prevfile))
-        else:
-            if filename != '':
-                try:
-                    self.feature_file.clear()
+        filename=''
+        if new_plot:
+            filename, dump = QFileDialog.getOpenFileName(self, 'Open Feature File', '', 'Text files (*.txt)')
+        elif isinstance(prevfile, str) and os.path.exists(prevfile) == False:
+            errorWindow("Feature File Error","Feature File Path found in selected Plot Data file does not exist: \n'{}'".format(prevfile))
+        if filename != '' or (not isinstance(prevfile, type(None)) and os.path.exists(prevfile)):
+            try:
+                self.feature_file.clear()
+                if new_plot:
                     self.feature_file.append(filename)
-                    print(self.feature_file)
-                    grouping, cancel=self.color_groupings(grouping)
-                    if not cancel:
-                        self.data_filt(grouping, self.projection, plot, new_plot)
-                except Exception as ex:
-                    if len(self.plot_data)==0:
-                        grouping.clear()
-                    errorWindow("Feature File Error", "Check Validity of Feature File (.txt). \nPython Exception Error: {}".format(ex))
+                else:
+                    self.feature_file.append(prevfile)
+                print(self.feature_file)
+                grouping, cancel=self.color_groupings(grouping)
+                if not cancel:
+                    reset_view(self)
+                    self.data_filt(grouping, self.projection, plot, new_plot)
+            except Exception as ex:
+                if len(self.plot_data)==0:
+                    grouping.clear()
+                errorWindow("Feature File Error", "Check Validity of Feature File (.txt). \nPython Exception Error: {}".format(ex))
 
 
     def color_groupings(self, grouping):
@@ -180,6 +187,8 @@ class resultsWindow(QDialog):
         feature_data = pd.read_csv(self.feature_file[0], sep='\t', na_values='        NaN')
         grouping.blockSignals(True)
         grps=[]
+        #get labels
+        chk_lbl=list(filter(lambda col: (col[:2].find("MV")==-1 and col!='bounds' and col!='intensity_thresholds' and col[:5]!='text_' and col.find("Channel_")==-1), feature_data.columns))
         #Get Channels
         meta_col=pd.read_csv(feature_data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], nrows=1,  sep="\t", na_values='NaN').columns.tolist()
         col_lbl=list(filter(lambda col: (col.find("Channel")>-1), meta_col))
@@ -188,8 +197,7 @@ class resultsWindow(QDialog):
         filt_lbl=np.array(["MV"])
         if max(feature_data.columns.str.contains("text_", case=False)):
             filt_lbl=np.concatenate((filt_lbl, ["Texture_Features"]))
-        #get labels
-        chk_lbl=list(filter(lambda col: (col[:2].find("MV")==-1 and col!='bounds' and col!='intensity_thresholds' and col[:5]!='text_' and col.find("Channel_")==-1), meta_col))
+
         #select features window
         win=selectWindow(chk_lbl, col_lbl, "Filter Feature File Groups and Channels", "Grouping", "Channels", grps, filt_lbl, self.filt)
         if not win.x_press:
