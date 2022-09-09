@@ -46,12 +46,12 @@ class Stack:
             rowi += 1
     # end addChannels
 
-    def GetTreatment(self):
+    def GetTreatment(self, treatmentColumnName='Treatment'):
         """Treatment is an optional column in the metadata. If the column exists,
             this method returns the value from that column. If no Treatment value was
             found in the metadata, this method returns None."""
         try:
-            return self.otherparams['Treatment']
+            return self.otherparams[treatmentColumnName]
         except KeyError:
             return None
     # end GetTreatment

@@ -102,7 +102,7 @@ class VoxelBase:
             # index of the treatment for this image in the list of all treatments
             # if the treatment type is not found (or there are no treatments), return error
             try:
-                grpVal = allTreatmentTypes.index(imageObject.GetTreatment()[0])
+                grpVal = allTreatmentTypes.index(imageObject.GetTreatment())
             except (ValueError, IndexError):
                 return errorVal
         # end if
