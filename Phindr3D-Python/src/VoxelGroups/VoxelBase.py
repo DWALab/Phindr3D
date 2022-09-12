@@ -70,9 +70,10 @@ class VoxelBase:
             % TASScores: If TAS score is selected
             """
         errorVal = (None, None)
-        # Create local copies of external variables (easier to merge code)
         allTreatmentTypes = metadata.GetTreatmentTypes()
+        # Create local copies of external variables (easier to merge code)
         intensityNormPerTreatment = metadata.intensityNormPerTreatment
+        treatmentColumnName = metadata.GetTreatmentColumnName()
         intensityThreshold = metadata.intensityThreshold
         lowerbound = metadata.lowerbound
         upperbound = metadata.upperbound
@@ -102,8 +103,8 @@ class VoxelBase:
             # index of the treatment for this image in the list of all treatments
             # if the treatment type is not found (or there are no treatments), return error
             try:
-                grpVal = allTreatmentTypes.index(imageObject.GetTreatment())
-            except (ValueError, IndexError):
+                grpVal = allTreatmentTypes.index(imageObject.GetTreatment(treatmentColumnName))
+            except (ValueError, IndexError, AttributeError):
                 return errorVal
         # end if
         superVoxelProfile = np.zeros((theTileInfo.numSuperVoxels, numVoxelBins+1))

@@ -204,21 +204,39 @@ class Metadata:
         return 0
     # end GetNumChannels
 
+    def GetTreatmentColumnName(self):
+        """This method uses member variables to determine which column to use
+            as the source of Treatment names. If the member variables are undefined,
+            the default value is 'Treatment' """
+        try:
+            if self.intensityNormPerTreatment:
+                treatmentColumnName = self.treatmentColNameForNormalization
+            else:
+                treatmentColumnName = self.trainingColforImageCategories
+            # end if
+        except AttributeError:
+            treatmentColumnName = 'Treatment'
+        return treatmentColumnName
+    # end GetTreatmentColumnName
+
     def GetAllTreatments(self):
         """If there was a Treatment column in the metadata, Image instances
             in images will have Treatment data. The Image.GetTreatment method
-            returns a list of the treatment values found in that Image.
-            This method chooses the first from the list.
+            returns the treatment value for that image, or None on error.
+            This method uses member variables to determine which column to use
+            as the source of treatment names.
             This method creates a dictionary of imageIDs and the Treatment values,
             if they exist, or None if not. On error, returns an empty dictionary.
 
             dictionary: { key=imageID : value=treatment, ... }
             """
+        treatmentColumnName = self.GetTreatmentColumnName()
+
         allTreatments = {}
         try:
             if len(self.images) > 0:
                 for imgID in self.images:
-                    tmpTreat = self.images[imgID].GetTreatment()
+                    tmpTreat = self.images[imgID].GetTreatment(treatmentColumnName)
                     if tmpTreat is None:
                         treat = None
                     elif isinstance(tmpTreat, list):
@@ -237,23 +255,31 @@ class Metadata:
     def GetTreatmentTypes(self):
         """If there was a Treatment column in the metadata, Stack instances
             in stackLayers will have Treatment data. There should be a unique
-            Treatment value for all stackLayers in an image, but if not, the
-            Stack.GetTreatment method returns a list of the values found.
+            Treatment value for all stackLayers in an image. If there are different
+            treatments for stacks in the same image, this is considered an error,
+            and None is returned.
             This method collects the treatment types, including multiple treatments
             in the same image, if this condition exists.
+            The treatmentColumnName parameter has a default value of 'Treatment'.
             This method returns a list of strings of all treatment types if they
             exist, or an empty list if not. Returns an empty list on error.
-
             list: [treatments found in the metadata]
+            The treatment column name is determined based on the values of member variables.
             """
+        treatmentColumnName = self.GetTreatmentColumnName()
+
         treatmentList = []
         try:
             if len(self.images) > 0:
                 for imgID in self.images:
-                    tmpTreat = self.images[imgID].GetTreatment()
+                    tmpTreat = self.images[imgID].GetTreatment(treatmentColumnName)
                     if isinstance(tmpTreat, list):
+                        # The GetTreatment method returns a single value, but earlier
+                        # versions returned a list. This clause ensures that this
+                        # possibility is covered.
                         treatmentList.extend(tmpTreat)
                     else:
+                        # This includes the possibility that tmpTreat is None
                         treatmentList.append(tmpTreat)
                 # Use set to find unique values in a list, then change type back to list
                 treatmentList = list(set(treatmentList))
@@ -331,6 +357,7 @@ class Metadata:
                     -(-randTrainingFields//len(uTreat)) #ceiling division
             except ZeroDivisionError:
                 randTrainingPerTreatment = 1
+
             randFieldIDList = []
             for treat in uTreat:
                 tempList = []
@@ -354,6 +381,8 @@ class Metadata:
         """compute lower and higher scaling values for each image"""
         # randFieldIDforNormalization is the IDs of the images for training
         # On error, return the following value
+        treatmentColumnName = self.GetTreatmentColumnName()
+
         errorVal = ([0,0,0], [1,1,1])
         if randFieldIDforNormalization.size == 0:
             return errorVal
@@ -404,7 +433,11 @@ class Metadata:
                 # index of the treatment for this image in the list of all treatments
                 # if the treatment type is not found (or there are no treatments), return error
                 try:
-                    grpVal[i] = allTreatmentTypes.index(theImageObject.GetTreatment())
+                    tmpTreat = theImageObject.GetTreatment(treatmentColumnName)
+                    if tmpTreat is None:
+                        raise IndexError
+                    else:
+                        grpVal[i] = allTreatmentTypes.index(tmpTreat)
                 except (ValueError, IndexError):
                     return errorVal
         # end for images
@@ -563,26 +596,31 @@ class Metadata:
         return tileInfo
     # end getTileInfo
 
-    def getIndividualChannelThreshold(self, imageObject, theTileInfo):
+    def getIndividualChannelThreshold(self, theImageObject, theTileInfo):
         """individual channel threshold"""
         numChannels = self.GetNumChannels()
         allTreatmentTypes = self.GetTreatmentTypes()
-        errorVal = np.zeros((len(imageObject.stackLayers), numChannels))
-        thresh = np.zeros((len(imageObject.stackLayers), numChannels))
+        treatmentColumnName = self.GetTreatmentColumnName()
+        errorVal = np.zeros((len(theImageObject.stackLayers), numChannels))
+        thresh = np.zeros((len(theImageObject.stackLayers), numChannels))
 
         if self.intensityNormPerTreatment:
             # index of the treatment for this image in the list of all treatments
             # if the treatment type is not found (or there are no treatments), return error
             try:
-                grpVal = allTreatmentTypes.index(imageObject.GetTreatment())
+                tmpTreat = theImageObject.GetTreatment(treatmentColumnName)
+                if tmpTreat is None:
+                    raise IndexError
+                else:
+                    grpVal = allTreatmentTypes.index(tmpTreat)
             except (ValueError, IndexError):
                 return errorVal
         # end if
-        for iImages in range(len(imageObject.stackLayers)):
+        for iImages in range(len(theImageObject.stackLayers)):
             for iChannels in range(numChannels):
                 try:
-                    stackIndex = list(imageObject.stackLayers.keys())[iImages]
-                    theStack = imageObject.stackLayers[stackIndex]
+                    stackIndex = list(theImageObject.stackLayers.keys())[iImages]
+                    theStack = theImageObject.stackLayers[stackIndex]
                     channelIndex = list(theStack.channels.keys())[iChannels]
                     theChannel = theStack.channels[channelIndex]
                     imFileName = theChannel.channelpath
@@ -692,7 +730,7 @@ if __name__ == '__main__':
             print(f'Intensity threshold expected result: {intequal}')
             print("===")
             test.intensityNormPerTreatment = True
-            test.treatmentColNameForNormalization = 'Treatment'
+            test.treatmentColNameForNormalization = 'NotTreatment'
             test.trainingColforImageCategories = 'Treatment'
             # Run the test with the new Treatment settings
             treatmentTestRun = test.computeImageParameters()

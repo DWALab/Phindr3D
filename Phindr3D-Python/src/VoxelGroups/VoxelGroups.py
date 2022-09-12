@@ -95,6 +95,7 @@ class VoxelGroups():
         countBackground = self.metadata.countBackground
         textureFeatures = PhindConfig.textureFeatures
         treatmentCol = self.metadata.GetAllTreatments()
+        treatmentColumnName = self.metadata.GetTreatmentColumnName()
         numMegaVoxelBins = self.numMegaVoxelBins
         if countBackground:
             totalBins = numMegaVoxelBins + 1
@@ -142,7 +143,7 @@ class VoxelGroups():
             if textureFeatures:
                 textureResults[iImages, :] = texture_features
             if useTreatment:
-                Treatments.append(currentImage.GetTreatment())
+                Treatments.append(currentImage.GetTreatment(treatmentColumnName))
             b = time.time() - a
             times[iImages % 5] = b
         numRawMV = np.sum(resultRaw, axis=1)  # one value per image, gives number of megavoxels

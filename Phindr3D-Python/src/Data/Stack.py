@@ -49,10 +49,11 @@ class Stack:
     def GetTreatment(self, treatmentColumnName='Treatment'):
         """Treatment is an optional column in the metadata. If the column exists,
             this method returns the value from that column. If no Treatment value was
-            found in the metadata, this method returns None."""
+            found in the metadata, this method returns None.
+            The parameter treatmentColumnName has a default value of 'Treatment'."""
         try:
             return self.otherparams[treatmentColumnName]
-        except KeyError:
+        except (KeyError, AttributeError):
             return None
     # end GetTreatment
 
