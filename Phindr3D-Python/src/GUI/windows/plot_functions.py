@@ -36,12 +36,13 @@ except ImportError:
 def treatment_bounds(self, data, bounds, id):
 
     try:
-        trt = data['Treatment'].iloc[id]
-        trt_loc =int(np.where(data['Treatment'].unique() == trt)[0])
+        trt = data[self.metadata.treatmentColNameForNormalization].iloc[id]
+        trt_loc =int(np.where(data[self.metadata.treatmentColNameForNormalization].unique() == trt)[0])
+
         bound = [bounds[0][trt_loc], bounds[1][trt_loc]]
         return(bound)
-    except:
-        win = errorWindow("Error TreatmentNorm","intensityNormPerTreatment was set but no Treatment Column was found in Metadata")
+    except Exception as ex:
+        win = errorWindow("Error TreatmentNorm","intensityNormPerTreatment was set with error: {}".format(ex))
         return(False)
 
 

@@ -56,7 +56,6 @@ class MainGUI(QWidget, external_windows):
         self.training = Training()
         self.metadata = Metadata(Generator)
         self.voxelGroups = VoxelGroups(self.metadata)
-        self.trainbycondition = False # modifiable in paramWindow, but not sure where this is used?
         self.setWindowTitle("Phindr3D")
         self.rgb_img=0
         self.img_ind=1
@@ -107,7 +106,6 @@ class MainGUI(QWidget, external_windows):
                     self.voxelGroups.numMegaVoxelBins = data.get('numMegaVoxelBins')
                     self.voxelGroups.numSuperVoxelBins = data.get('numSuperVoxelBins')
                     self.voxelGroups.updateImages()
-                    self.trainbycondition = bool(data.get('trainbycondition'))
                 #reset previous scrollers and show new image
                 threshbar.blockSignals(True)
                 slicescrollbar.blockSignals(True)
@@ -131,7 +129,7 @@ class MainGUI(QWidget, external_windows):
                     pickle.dump(metadict, f)
                     #export MainGUI & Voxelgroup members
                     guigroup = {'ch_len': self.ch_len, 'color': self.color, 'bounds': [np.array(self.bounds).tolist()],
-                                'threshold': [np.array(self.thresh).tolist()], 'trainbycondition': int(self.trainbycondition),
+                                'threshold': [np.array(self.thresh).tolist()],
                                 'numVoxelBins': self.voxelGroups.numVoxelBins,
                                 'numSuperVoxelBins': self.voxelGroups.numSuperVoxelBins,
                                 'numMegaVoxelBins': self.voxelGroups.numMegaVoxelBins}
@@ -154,7 +152,7 @@ class MainGUI(QWidget, external_windows):
                     winp = self.buildParamWindow(metaheader, supercoords, self.voxelGroups.numSuperVoxelBins, megacoords,
                                                  self.voxelGroups.numMegaVoxelBins, self.voxelGroups.numVoxelBins,
                                                  self.metadata.randTrainingFields, self.metadata.countBackground,
-                                                 self.metadata.intensityNormPerTreatment, self.trainbycondition, self.metadata.trainingColforImageCategories,
+                                                 self.metadata.intensityNormPerTreatment, self.metadata.trainbycondition, self.metadata.trainingColforImageCategories,
                                                  self.metadata.treatmentColNameForNormalization)
                     winp.show()
                     winp.exec()
@@ -171,10 +169,10 @@ class MainGUI(QWidget, external_windows):
                         self.metadata.randTrainingFields = winp.trainingnum
                         self.metadata.countBackground = winp.bg
                         self.metadata.intensityNormPerTreatment = winp.norm
-                        self.trainbycondition = winp.conditiontrain #should it be self.metadata.trainbycondition??? where is it used?
-                        # after updating parameters, what needs to be done?
+                        self.metadata.trainbycondition = winp.conditiontrain
                         self.metadata.trainingColforImageCategories= winp.trainingcol
                         self.metadata.treatmentColNameForNormalization= winp.normintensitycol
+                        # after updating parameters
                         self.voxelGroups.updateImages()
                         self.metadata.computeImageParameters()
                         self.thresh = self.metadata.intensityThresholdValues
@@ -463,10 +461,9 @@ class MainGUI(QWidget, external_windows):
                         count=count - 1
             elif self.ch_len<2 and len(self.color)>self.ch_len:
                 self.color=self.color[:-(len(self.color)-self.ch_len)]
-            #check if treatment column and treatmentnormspecified
-            treat=""
+            #check if intensitynormpertreatment specified
             bound=self.bounds[:]
-            if len(np.shape(bound))>2:
+            if self.metadata.intensityNormPerTreatment:
                 bound=treatment_bounds(self, data, self.bounds, id)
                 if not bound:
                     return(True)

@@ -19,6 +19,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 # import re
 from array import *
+import os
 
 class regexWindow(QDialog):
     def __init__(self):
@@ -48,14 +49,19 @@ class regexWindow(QDialog):
 
         instructionlabel = QLabel()
         instructionlabel.setWordWrap(True)
-        instText = "Select to highlight the value to associate with a group in the file name. " \
-            "Enter the name of the group in the Group Name box, and click the Add Group button. " \
-            "This will add it to the regular expression. " \
-            "Repeat until all necessary information is included in the regular expression. " \
-            "\nRe-selecting a previous value will produce errors. Click the Reset button to start over." \
-            "\nDo not use the following reserved group names: " + ", ".join(self.reservedKeys)
+        instText = "To extract metadata info from the Sample File Name, highlight the metadata value in the Sample File Name. " \
+                   "Then enter the metadata name in the Group Name textbox and click the Add Group button. " \
+                   "The change should be reflected in regular expression textbox. " \
+                   "Repeat until all metadata info is accounted for in the regular expression." \
+                   "\nNote: Don't highlight the metadata prefix or filename separators." \
+                   "\nRe-selecting a previous value will produce errors. Click the Reset button to start over." \
+                   "\nDo not use the following reserved group names: " + ", ".join(self.reservedKeys)
         instructionlabel.setText(instText)
-        instructionlabel.setFixedSize(450, 80)
+        instructionlabel.setFixedSize(450, 175)
+
+        example_btn=QPushButton("Show Example")
+        example_btn.setFixedSize(example_btn.minimumSizeHint())
+        example_btn.setFixedHeight(30)
 
         addGroup = QPushButton("Add Group")
         addGroup.setFixedSize(addGroup.minimumSizeHint())
@@ -165,10 +171,12 @@ class regexWindow(QDialog):
         reset.clicked.connect(resetRegex)
         finish.clicked.connect(finishRegex)
         addGroup.clicked.connect(addRegexGroup)
+        example_btn.clicked.connect(lambda: example_regex())
 
         layout.addWidget(samplelabel, 0, 0, 1, 1)
         layout.addWidget(self.samplefilebox, 0, 1, 1, 3)
         layout.addWidget(instructionlabel, 1, 1, 1, 3)
+        layout.addWidget(example_btn, 2, 3, 1, 1)
         layout.addWidget(groupbox, 2, 1, 1, 2)
         layout.addWidget(addGroup, 2, 0, 1, 1)
         layout.addWidget(viewlabel, 3, 0, 1, 1)
@@ -195,6 +203,26 @@ class regexWindow(QDialog):
         alert.setText(errormessage)
         alert.setIcon(icon)
         return alert
+
+class example_regex(QDialog):
+    def __init__(self):
+        super(example_regex, self).__init__()
+        layout = QGridLayout()
+        self.setWindowTitle("Example Regex")
+
+        examplelabel = QLabel("Ex) If trying to extract ch3 which represents Channel 3, highlight 3 and put Channel in the Group Name textbox then click Add Group")
+        examplelabel.setWordWrap(True)
+        #example image
+        img = QLabel()
+        path = os.path.dirname(os.path.abspath(__file__))
+        img.setPixmap(QPixmap(os.path.join(path, 'regex_example.png')))
+        #add Widgets/layout
+        layout.addWidget(examplelabel, 0, 0)
+        layout.addWidget(img, 1, 0)
+        self.setLayout(layout)
+        self.show()
+        self.exec()
+
 
 import sys
 if __name__ == '__main__':
