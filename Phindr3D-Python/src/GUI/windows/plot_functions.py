@@ -33,11 +33,11 @@ except ImportError:
     from src.Clustering import Clustering
     from src.Data.DataFunctions import *
 
-def treatment_bounds(self, data, bounds, id):
+def treatment_bounds(data, bounds, id, treatmentcol):
 
     try:
-        trt = data[self.metadata.treatmentColNameForNormalization].iloc[id]
-        trt_loc =int(np.where(data[self.metadata.treatmentColNameForNormalization].unique() == trt)[0])
+        trt = data[treatmentcol].iloc[id]
+        trt_loc =int(np.where(data[treatmentcol].unique() == trt)[0])
 
         bound = [bounds[0][trt_loc], bounds[1][trt_loc]]
         return(bound)

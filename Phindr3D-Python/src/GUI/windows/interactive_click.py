@@ -166,8 +166,9 @@ class interactive_points():
             # lower/upperbounds, threshold for images
             bounds = json.loads(data['bounds'].iloc[0])
             threshold = json.loads(data['intensity_thresholds'].iloc[0])
-            if len(np.shape(bounds))>2:
-                bounds = treatment_bounds(self, data, bounds, meta_loc)
+            #if normpertreatment was set
+            if 'treatmentColNameForNormalization' in cols:
+                bounds = treatment_bounds(data, bounds, meta_loc, data['treatmentColNameForNormalization'].iloc[0])
                 if not bounds:
                     self.win.close()
             #only slice projection can use slider

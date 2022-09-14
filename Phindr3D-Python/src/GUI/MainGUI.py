@@ -142,10 +142,10 @@ class MainGUI(QWidget, external_windows):
             elif buttonPressed == "Set Voxel Parameters":
                 try:
                     if hasattr(self, 'metapandas'):
-                        metaheader= list(filter(lambda col: (col.find("Channel")==-1 and col!='bounds' and col!='intensity_thresholds' and col!='Stack'), self.metapandas.columns))
+                        metaheader= list(filter(lambda col: (col.find("Channel")==-1 and col not in ['bounds','intensity_thresholds','Stack','MetadataFile','treatmentColNameForNormalization' ]), self.metapandas.columns))
                     else:
                         metaheader = list(pd.read_csv(self.metadata.GetMetadataFilename(), nrows=1, sep='\t'))
-                        metaheader = list(filter(lambda col: (col.find("Channel")==-1 and col!='bounds' and col!='intensity_thresholds' and col!='Stack'), metaheader))
+                        metaheader = list(filter(lambda col: (col.find("Channel")==-1 and col not in ['bounds','intensity_thresholds','Stack','MetadataFile','treatmentColNameForNormalization' ]), metaheader))
                     tileInfo = self.metadata.theTileInfo
                     supercoords = (tileInfo.tileX, tileInfo.tileY, tileInfo.tileZ)
                     megacoords = (tileInfo.megaVoxelTileX, tileInfo.megaVoxelTileY, tileInfo.megaVoxelTileZ)
@@ -464,7 +464,7 @@ class MainGUI(QWidget, external_windows):
             #check if intensitynormpertreatment specified
             bound=self.bounds[:]
             if self.metadata.intensityNormPerTreatment:
-                bound=treatment_bounds(self, data, self.bounds, id)
+                bound=treatment_bounds(data, self.bounds, id, self.metadata.treatmentColNameForNormalization)
                 if not bound:
                     return(True)
             #initialize array as image size with # channels
@@ -488,6 +488,12 @@ class MainGUI(QWidget, external_windows):
             else:
                 data['bounds']= np.repeat([self.bounds], data.shape[0], axis=0).tolist()
                 data['intensity_thresholds']= np.repeat([mquantiles(self.thresh, 0, alphap=0.5, betap=0.5, axis=0)], data.shape[0], axis=0).tolist()
+
+            if 'treatmentColNameForNormalization' in data.columns:
+                del data['treatmentColNameForNormalization']
+            #add treatmentColNameForNormalization to metadatafile
+            if self.metadata.intensityNormPerTreatment:
+                data.insert(loc=int(np.where(data.columns == 'ImageID')[0]), column='treatmentColNameForNormalization', value=np.repeat(self.metadata.treatmentColNameForNormalization, data.shape[0], axis=0).tolist())
             data.to_csv(data['MetadataFile'].str.replace(r'\\', '/', regex=True).iloc[0], sep='\t', index=False)
             #sv/mv overlay removed when new image
             sv.setChecked(False)

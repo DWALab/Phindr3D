@@ -55,14 +55,14 @@ class PixelImage(VoxelBase):
         startVal = 0
         if metadata.intensityNormPerTreatment:
             treatmentColumnName = metadata.GetTreatmentColumnName()
-            grpVal = np.argwhere(metadata.GetTreatmentTypes() == image.GetTreatment(treatmentColumnName))
+            grpVal = np.argwhere(metadata.GetTreatmentTypes() == image.GetTreatment(treatmentColumnName))[0][0]
         slices = slices[0:(len(slices) // 2)]
         for zplane in slices:
             croppedIM = np.zeros((tileinfo.origX, tileinfo.origY, metadata.GetNumChannels()))
             for jChan in range(metadata.GetNumChannels()):
                 if metadata.intensityNormPerTreatment:
                     img = image.stackLayers[zplane].channels[jChan + 1].channelpath
-                    croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(io.imread(img, '.tif'), low=metadata.lowerbound[jChan], high=metadata.upperbound[jChan])  # add params later
+                    croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(io.imread(img, '.tif'), low=metadata.lowerbound[grpVal][jChan], high=metadata.upperbound[grpVal][jChan])  # add params later
                 else:
                     img = image.stackLayers[zplane].channels[jChan + 1].channelpath
                     croppedIM[:, :, jChan] = DataFunctions.rescaleIntensity(io.imread(img, '.tif'), low=metadata.lowerbound[jChan], high=metadata.upperbound[jChan])  # add params later
