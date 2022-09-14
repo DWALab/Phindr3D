@@ -37,7 +37,6 @@ class Image:
         # layerlist is a list of rows of metadata, each represented as a list of data elements
         for layer in layerlist:
             key = layer[layer.__len__() - 3] # index len - 3 will always be stack column
-            self.setImageID(key)
             newStackLayer = Stack()
             newStackLayer.addChannels(layer, columnlabels)
             self.stackLayers[key] = newStackLayer
@@ -51,7 +50,7 @@ class Image:
             treatmentColumnName has a default value of 'Treatment'. If the value of
             treatmentColumnName is 'ImageID', this method returns this Image ID."""
         if treatmentColumnName == 'ImageID':
-            return self.imageID
+            return str(self.imageID)
         # else
         tmpList = []
         try:

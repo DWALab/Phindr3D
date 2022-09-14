@@ -232,7 +232,6 @@ class Metadata:
             dictionary: { key=imageID : value=treatment, ... }
             """
         treatmentColumnName = self.GetTreatmentColumnName()
-
         allTreatments = {}
         try:
             if len(self.images) > 0:
@@ -731,7 +730,7 @@ if __name__ == '__main__':
             print(f'Intensity threshold expected result: {intequal}')
             print("===")
             test.intensityNormPerTreatment = True
-            test.treatmentColNameForNormalization = 'NotTreatment'
+            test.treatmentColNameForNormalization = 'Treatment'
             test.trainingColforImageCategories = 'Treatment'
             # Run the test with the new Treatment settings
             treatmentTestRun = test.computeImageParameters()
