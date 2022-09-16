@@ -63,9 +63,9 @@ class TrainingFunctions:
                     X_train, y_train, X_test, y_test= self.partition_data(mv, lbls, select_grps)
                     class_tbl=self.random_forest_model(X_train, y_train, X_test, lbls[y_test])
                     #export classification table
-                    name = QFileDialog.getSaveFileName(None, 'Save File')[0]
-                    if name:
-                        class_tbl.to_csv(name, sep='\t', mode='w')
+                    name = QFileDialog.getSaveFileName(None, 'Save File', filter=".txt")
+                    if name[0]!= '':
+                        class_tbl.to_csv("".join(name), sep='\t', mode='w')
                 else:
                     grp_check=np.array(select_grps)
                     grp_check=grp_check[np.where(np.array(pts) < 2)[0]]
@@ -73,7 +73,7 @@ class TrainingFunctions:
             else:
                 errorWindow("Select Classes", "Must select at least two classes. Selected Class '{}'".format(select_grps))
         else:
-            errorWindow("Select Classes", "Must have at least two classes. Only has one class {}".format(np.unique(lbls)))
+            errorWindow("Select Classes", "Must have at least two classes. Choose 'Color by' option that has more than 1 class label. Only has one class label {}".format(np.unique(lbls)))
 
 
 

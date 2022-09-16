@@ -68,8 +68,8 @@ class resultsWindow(QDialog):
         cmap=QPushButton("Legend Colours")
         map_type = QComboBox()
         map_type.addItems(["PCA","t-SNE","Sammon"])
-        twod = QCheckBox("2D")
-        threed = QCheckBox("3D")
+        twod = QRadioButton("2D")
+        threed = QRadioButton("3D")
         dimensionbox = QGroupBox()
         dimensionboxlayout = QHBoxLayout()
         dimensionboxlayout.addWidget(twod)
@@ -111,12 +111,6 @@ class resultsWindow(QDialog):
         self.original_zlim = sc_plot.axes.get_zlim3d()
         self.projection = "2d"  # update from radiobutton
         #2d vs 3d settings
-        def toggle_2d_3d(checkbox_cur, checkbox_prev, dim, plot):
-            if checkbox_cur.isChecked() and checkbox_prev.isChecked():
-                checkbox_prev.blockSignals(True)
-                checkbox_prev.setChecked(False)
-                checkbox_prev.blockSignals(False)
-            check_projection(dim, plot)
         def check_projection(dim, plot):
             if dim == "2d":
                 self.projection = dim
@@ -131,6 +125,7 @@ class resultsWindow(QDialog):
                 self.main_plot.axes.get_zaxis().line.set_linewidth(1)
                 self.main_plot.axes.tick_params(axis='z', labelsize=10)
                 self.main_plot.draw()
+                #rotate left click, disabled zoom right click
                 self.main_plot.axes.mouse_init(rotate_btn=1, zoom_btn=[])
             if self.feature_file and colordropdown.count() > 0:
                 self.data_filt(colordropdown, self.projection, plot, True)
@@ -138,8 +133,8 @@ class resultsWindow(QDialog):
         # button features and callbacks
         selectfile.clicked.connect(lambda: self.loadFeaturefile(colordropdown, map_type.currentText(), True))
         cmap.clicked.connect(lambda: legend_colors(self) if len(self.labels)>0 else errorWindow("Error Dialog","Please Select Feature File. No data is currently displayed"))
-        twod.toggled.connect(lambda: toggle_2d_3d(twod, threed, "2d", map_type.currentText()))
-        threed.toggled.connect(lambda: toggle_2d_3d(threed, twod, "3d", map_type.currentText()))
+        twod.toggled.connect(lambda: check_projection("2d", map_type.currentText()) if twod.isChecked() else None)
+        threed.toggled.connect(lambda: check_projection("3d", map_type.currentText()) if threed.isChecked() else None)
         twod.setChecked(True)
         picked_pt = interactive_points(self.main_plot, self.projection, self.plot_data, self.labels,self.feature_file, self.color, self.imageIDs)
         self.main_plot.fig.canvas.mpl_connect('pick_event', picked_pt)
@@ -176,6 +171,7 @@ class resultsWindow(QDialog):
                 if not cancel:
                     reset_view(self)
                     self.data_filt(grouping, self.projection, plot, new_plot)
+                    self.numcluster=None
             except Exception as ex:
                 if len(self.plot_data)==0:
                     grouping.clear()
@@ -206,7 +202,7 @@ class resultsWindow(QDialog):
             grouping.addItem("No Grouping")
             for col in grps:
                 grouping.addItem(col)
-            grouping.blockSignals(False)
+        grouping.blockSignals(False)
         return(grouping, win.x_press)
 
     def data_filt(self, grouping, projection, plot, new_plot):

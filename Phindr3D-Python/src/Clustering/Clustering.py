@@ -82,8 +82,8 @@ class setcluster(object):
 class export_cluster(object):
     def __init__(self, plot_data, datafilt, numclusters, featurefile):
         if numclusters!=None:
-            name = QFileDialog.getSaveFileName(None, 'Save File')[0]
-            if name:
+            name = QFileDialog.getSaveFileName(None, 'Save File', filter='.txt')
+            if name[0]!= '':
                 #get clusters/locations
                 clusters, count, idx = Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
                 #get info from feature/metadatafile
@@ -112,7 +112,7 @@ class export_cluster(object):
                 try:
                     data['Cluster Assignment'] = idx
                     #export cluster info + feature/metadatafile info
-                    data.to_csv(name, sep='\t', mode='w', index=False)
+                    data.to_csv("".join(name), sep='\t', mode='w', index=False)
                 except Exception as ex:
                     errorWindow('Cluster Export', "Check Validity of Metadata and Feature File. \n Python Exception: {}".format(ex))
         else:
