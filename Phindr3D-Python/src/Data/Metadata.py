@@ -329,15 +329,12 @@ class Metadata:
         On error, returns an empty numpy array
         """
         randFieldID = np.array([])
-
         # Check the type of numTrainingFields
         if not isinstance(numTrainingFields, int):
             return randFieldID
-
         # Get the list of all image IDs in the set
         uniqueImageID = np.array(self.GetAllImageIDs())
         numImageIDs = len(uniqueImageID)
-
         # randTrainingFields is numTrainingFields, unless numTrainingFields is larger than numImageIDs
         randTrainingFields = numImageIDs if numImageIDs < numTrainingFields else numTrainingFields
 
@@ -363,11 +360,13 @@ class Metadata:
                 tempList = []
                 try:
                     treatmentIDs = allTrKeys[allTrValues == treat]
-                    if len(treatmentIDs) > 0:
+                    if len(treatmentIDs) > randTrainingPerTreatment:
                         tempList = [treatmentIDs[j] for j in
                             self.Generator.Generator.choice(len(treatmentIDs), size=randTrainingPerTreatment,
                                 replace=False, shuffle=False)]
-                except (ValueError,KeyError):
+                    elif len(treatmentIDs) > 0 and len(treatmentIDs) <= randTrainingPerTreatment:
+                        tempList = list(treatmentIDs)
+                except (ValueError,KeyError) as e:
                     tempList = []
                 randFieldIDList = randFieldIDList + tempList
             randFieldIDList.sort()
@@ -391,7 +390,6 @@ class Metadata:
         numImages = randFieldIDforNormalization.size
         # Get the list of all treatment types
         allTreatmentTypes = self.GetTreatmentTypes()
-
         if self.intensityNormPerTreatment:
             grpVal = np.zeros(numImages)
         # blank array for min values of all selected images in all channels
@@ -704,6 +702,7 @@ if __name__ == '__main__':
     """Tests of the Metadata class that can be run directly."""
 
     deterministic = Generator(1234)
+    rng = Generator()
 
     metadatafile = 'testdata/metadata_tests/metadatatest_metadata.txt'
 

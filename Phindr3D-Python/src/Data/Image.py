@@ -44,13 +44,13 @@ class Image:
 
     def GetTreatment(self, treatmentColumnName='Treatment'):
         """Treatment is an optional column in the metadata. Treatment values are stored
-            on separate lines, though one image should have a unique treatment value.
+            on separate lines, though one ImageID should have a unique treatment value.
             This method gets the Treatment values from the member stackLayers, if they exist.
             If they are all None, or if more than one value is found, this method returns None.
             treatmentColumnName has a default value of 'Treatment'. If the value of
             treatmentColumnName is 'ImageID', this method returns this Image ID."""
         if treatmentColumnName == 'ImageID':
-            return str(self.imageID)
+            return (self.imageID)
         # else
         tmpList = []
         try:
