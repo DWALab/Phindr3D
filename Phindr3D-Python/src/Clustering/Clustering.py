@@ -18,17 +18,16 @@ from sklearn.manifold import TSNE
 from sklearn.decomposition import PCA, KernelPCA
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics.pairwise import pairwise_distances
-from sklearn.cluster import AffinityPropagation
 from scipy.spatial.distance import cdist
 import sklearn.metrics as met
 import numpy as np
-from ..GUI.windows.helperclasses import *
-from PyQt5.QtWidgets import *
-from PyQt5.QtCore import *
-from PyQt5.QtGui import *
 import matplotlib
 from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 import pandas as pd
+try:
+    from ..GUI.windows.helperclasses import *
+except ImportError:
+    from src.GUI.windows.helperclasses import *
 
 #manually enter cluster number
 class setcluster(object):
@@ -88,7 +87,7 @@ class export_cluster(object):
                 clusters, count, idx = Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
                 #get info from feature/metadatafile
                 cols = list(pd.read_csv(featurefile, nrows=1, sep='\t'))
-                cols=list(filter(lambda col: (col.find("Channel")==-1 and col[:2]!='MV' and col!='bounds' and col!='intensity_thresholds'), cols))
+                cols=list(filter(lambda col: (col[:2]!='MV' and col!='bounds' and col!='intensity_thresholds'), cols))
                 data=pd.read_csv(featurefile, sep='\t', na_values='NaN')
 
                 if 'Treatment' in cols:

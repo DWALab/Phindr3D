@@ -22,8 +22,10 @@ from scipy import ndimage
 from skimage import filters
 from skimage import morphology as morph
 from skimage import segmentation as seg
-from ..Data.DataFunctions import *
-
+try:
+    from ..Data.DataFunctions import *
+except ImportError:
+    from src.Data.DataFunctions import *
 """Functions for segmentation. Referenced from
 https://github.com/DWALab/Phindr3D/tree/9b95aebbd2a62c41d3c87a36f1122a78a21019c8/Lib
 and

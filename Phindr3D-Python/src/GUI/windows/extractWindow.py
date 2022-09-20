@@ -29,7 +29,7 @@ class extractWindow(QDialog):
     def __init__(self):
         super(extractWindow, self).__init__()
         largetext = QFont("Arial", 12, 1)
-        self.setWindowTitle("Create Metafile")
+        self.setWindowTitle("Create Metadatafile")
         directory = "Image Directory"
         self.samplefilename = "Sample File Name"
         layout = QGridLayout()
@@ -86,7 +86,7 @@ class extractWindow(QDialog):
         outputfilebox.setPlaceholderText("Output Metadata File Name")
         outputfilebox.setFixedSize(450, 30)
 
-        createfile = QPushButton("Create Metafile")
+        createfile = QPushButton("Create Metadatafile")
         createfile.setFixedSize(createfile.minimumSizeHint())
         createfile.setFixedHeight(40)
 
@@ -123,7 +123,7 @@ class extractWindow(QDialog):
                     else:
                         created = DataFunctions.createMetadata(imagedir, regex)
                     if created:
-                        alert.setText("Metafile creation success.")
+                        alert.setText("Metadatafile creation success.")
                         alert.setIcon(QMessageBox.Information)
                         alert.setWindowTitle("Notice")
                         self.close()

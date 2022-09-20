@@ -19,8 +19,10 @@ import json
 import numpy as np
 import tifffile as tf
 from scipy import ndimage
-from .SegmentationFunctions import *
-
+try:
+    from .SegmentationFunctions import *
+except ImportError:
+    from SegmentationFunctions import *
 class Segmentation:
     """This class ...
        Static methods that draw closely from transliterations of the MATLAB functions

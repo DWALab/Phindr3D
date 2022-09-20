@@ -105,7 +105,8 @@ class VoxelGroups():
         uniqueImageID = self.metadata.GetAllImageIDs()
         tmpim = self.metadata.GetImage(uniqueImageID[0])
         tmpotherparams = tmpim.GetOtherParams()
-        mdatavals = np.empty((len(uniqueImageID), len(tmpotherparams)), dtype='object')
+        #length of mdatavals is metadatafile stack class attributes + channels + stack
+        mdatavals = np.empty((len(uniqueImageID), len(tmpotherparams) + self.metadata.GetNumChannels() + 1), dtype='object')
         # for all images: put megavoxel frequencies
         resultIM = np.zeros((len(uniqueImageID), totalBins))
         resultRaw = np.zeros((len(uniqueImageID), totalBins))
@@ -129,8 +130,19 @@ class VoxelGroups():
             id = uniqueImageID[iImages]
             currentImage = self.metadata.GetImage(id)
             currentOtherParams = currentImage.GetOtherParams()
-            for i, key in enumerate(list(currentOtherParams.keys())):
-                mdatavals[iImages, i] = currentOtherParams[key]
+            #get first stack
+            zStack = currentImage.stackLayers
+            stacklist=list(zStack.keys())
+            firstStack=stacklist[0]
+            #get channel path
+            theChannels = zStack[firstStack].channels
+            starte=time.time()
+            metaparams=dict(zip(['Channel_'+str(ch) for ch in list(theChannels.keys())], [theChannels[ch].channelpath for ch in list(theChannels.keys())]))
+            #combine dictionaries
+            currentOtherParams.update({'Stacks': "".join(('Stacks: ',str(firstStack),'-', str(stacklist[-1])))})
+            metaparams.update(currentOtherParams)
+            for i, key in enumerate(list(metaparams.keys())):
+                mdatavals[iImages, i] = metaparams[key]
             d = self.metadata.getImageInformation(currentImage, 0)
             # Pass in a new TileInfo object to provide default values
             theTileInfo = self.metadata.getTileInfo(d, TileInfo())
@@ -148,7 +160,7 @@ class VoxelGroups():
             times[iImages % 5] = b
         numRawMV = np.sum(resultRaw, axis=1)  # one value per image, gives number of megavoxels
         dictResults = {}
-        for i, col in enumerate(list(currentOtherParams.keys())):
+        for i, col in enumerate(list(metaparams.keys())):
             dictResults[col] = mdatavals[:, i]
         if useTreatment:
             dictResults['Treatment'] = Treatments
@@ -201,21 +213,23 @@ if __name__ == '__main__':
         training.randFieldID = test.trainingSet
         vox = VoxelGroups(test)
 
-        tmpsave = 'testdata\\metadata_tests\\check_results.txt'
+        tmpsave = 'testdata/metadata_tests/check_results.txt'
         vox.action(tmpsave, training)
 
-        testpix = np.loadtxt('testdata\\metadata_tests\\pix.txt')
+        testpix = np.loadtxt('testdata/metadata_tests/pix.txt')
         print('Voxel categories match expected result:', np.allclose(testpix, vox.pixelImage.pixelBinCenters))
-        testsv = np.loadtxt('testdata\\metadata_tests\\sv.txt')
+        print(vox.pixelImage.pixelBinCenters, testpix)
+        testsv = np.loadtxt('testdata/metadata_tests/sv.txt')
         print('Supervoxel categories match expected results:', np.allclose(testsv, vox.superVoxelImage.superVoxelBinCenters))
-        testmv = np.loadtxt('testdata\\metadata_tests\\mv.txt')
+        print(vox.superVoxelImage.superVoxelBinCenters, testsv)
+        testmv = np.loadtxt('testdata/metadata_tests/mv.txt')
         print('Megavoxel categories match expected results:', np.allclose(testmv, vox.megaVoxelImage.megaVoxelBinCenters))
-        expected_output = pd.read_csv('testdata\\metadata_tests\\expected_output.txt', sep='\t')
-        test_output = pd.read_csv('testdata\\metadata_tests\\check_results.txt', sep='\t')
+        expected_output = pd.read_csv('testdata/metadata_tests/expected_output.txt', sep='\t')
+        test_output = pd.read_csv('testdata/metadata_tests/check_results.txt', sep='\t')
         expected_portion = expected_output.iloc[:, -41:]
         test_portion = test_output.iloc[:, -41:]
         print('Phindr3D output matches expected results:', (test_portion.equals(expected_portion)))
-        os.remove('testdata\\metadata_tests\\check_results.txt')
+        os.remove('testdata/metadata_tests/check_results.txt')
 
 
 

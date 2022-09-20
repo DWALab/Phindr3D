@@ -82,7 +82,7 @@ class MainGUI(QWidget, external_windows):
         slicescrollbar.setSingleStep(1)
         previmage = QPushButton("Prev Image")
         nextimage = QPushButton("Next Image")
-        phind = QPushButton("Phind")
+        phind = QPushButton("Phind: Feature File")
         # Button behaviour defined here
         def import_session(param=False):
             filename = QFileDialog.getOpenFileName(self, 'Open Exported Pickle File', '', 'Pickle file (*.pickle)')[0]
@@ -277,7 +277,7 @@ class MainGUI(QWidget, external_windows):
         menuexit = file.addAction("Exit")
 
         metadata = menubar.addMenu("Metadata")
-        createmetadata = metadata.addAction("Create Metafile")
+        createmetadata = metadata.addAction("Create Metadatafile")
         loadmetadata = metadata.addAction("Load Metadata")
 
         imagetab = menubar.addMenu("Image")
@@ -402,10 +402,15 @@ class MainGUI(QWidget, external_windows):
     def img_scroll(self, val, slicescrollbar, thresh, img_plot, sv, mv, values, imagenav, imagewindow):
         #next image/prev image
         img_id=self.img_ind+val
+        stack=slicescrollbar.value()
+        slicescrollbar.blockSignals(True)
         slicescrollbar.setValue(0)
+        slicescrollbar.blockSignals(False)
         issue=self.img_display(slicescrollbar, img_plot, sv, mv, values, img_id, imagewindow, thresh)
         if not issue:
             self.img_ind=self.img_ind+val
+        else:
+            slicescrollbar.setValue(stack)
         imagenav.setText(str(self.img_ind))
     #draws image layers
     def overlay_display(self, img_plot, params, checkbox_cur, checkbox_prev, type):
@@ -509,18 +514,18 @@ class MainGUI(QWidget, external_windows):
             self.training.randFieldID = self.metadata.trainingSet
             try:
                 if len(savefile) > 0:
-                    self.voxelGroups.metadata=self.metadata
-                    if self.voxelGroups.action(savefile, self.training):
-                        message = f'All Done!\n\nResults saved at:\n{savefile}'
-                        alert = self.buildErrorWindow(message, QMessageBox.Information, "Notice")
-                        alert.exec()
+                        self.voxelGroups.metadata=self.metadata
+                        if self.voxelGroups.action(savefile, self.training):
+                            message = f'All Done!\n\nFeature File Results saved at:\n{savefile}'
+                            alert = self.buildErrorWindow(message, QMessageBox.Information, "Notice")
+                            alert.exec()
             except Exception as ex:
-                alert = self.buildErrorWindow("Voxel Grouping Error. Phind Analysis Failed. \n\nPython Error: {} \n\nNote:If error is about quantity or size try reducing values in Set Voxel Parameters".format(ex), QMessageBox.Information, "Notice")
+                alert = self.buildErrorWindow("Voxel Grouping Error. Phind Analysis Failed. \n\nPython Error: {} \n\nNote:If error is about quantity or size try reducing values in Set Voxel Parameters (Categories, tile size)".format(ex), QMessageBox.Information, "Notice")
                 alert.exec()
-
         else:
-            # do nothing? display error window?
-            pass
+            alert = self.buildErrorWindow("Metadata File not found", QMessageBox.Information, "Notice")
+            alert.exec()
+
     # end phindButtonAction
 
     def buildErrorWindow(self, errormessage, icon, errortitle="ErrorDialog"):

@@ -172,20 +172,25 @@ def import_file(self, map_dropdown, colordropdown, twod, threed):
             try:
                 data=json.load(f)
                 if list(data.keys())==['plot_projection','plot_coordinates','x_limit','y_limit','z_limit', 'feature_filename']:
-                        self.plot_data.clear()
-                        self.plot_data.extend([np.array(plot_data) for plot_data in data.get('plot_coordinates')])
-                        self.original_xlim = data.get('x_limit')
-                        self.original_ylim = data.get('y_limit')
-                        self.original_zlim = data.get('z_limit')
-                        map_dropdown.blockSignals(True)
-                        map_dropdown.setCurrentIndex(map_dropdown.findText(data.get('plot_projection')))
-                        map_dropdown.blockSignals(False)
-                        #2d/3d set
-                        if np.all(self.plot_data[2]) != 0:
-                            threed.setChecked(True)
+                        plot_coord=[np.array(plot_data) for plot_data in data.get('plot_coordinates')]
+                        if len(plot_coord)==3:
+                            self.plot_data.clear()
+                            #2d/3d set
+                            if np.all(np.array(data.get('plot_coordinates')[2])) != 0:
+                                threed.setChecked(True)
+                            else:
+                                twod.setChecked(True)
+                            self.plot_data.extend(plot_coord)
+                            self.original_xlim = data.get('x_limit')
+                            self.original_ylim = data.get('y_limit')
+                            self.original_zlim = data.get('z_limit')
+                            map_dropdown.blockSignals(True)
+                            map_dropdown.setCurrentIndex(map_dropdown.findText(data.get('plot_projection')))
+                            map_dropdown.blockSignals(False)
+
+                            self.loadFeaturefile(colordropdown, map_dropdown.currentText(), False, data.get('feature_filename'))
                         else:
-                            twod.setChecked(True)
-                        self.loadFeaturefile(colordropdown, map_dropdown.currentText(), False, data.get('feature_filename'))
+                            errorWindow("Import Plot Data Error","Check JSON file. 'plot_coordinates' must be 3D (list of x, y, z coordinates)")
                 else:
                     errorWindow("Import Plot Data Error", "Check if correct file. Requires Following Labels: plot_projection, plot_coordinates, x_limit , y_limit ,z_limit, 'feature_filename'")
             except Exception as ex:

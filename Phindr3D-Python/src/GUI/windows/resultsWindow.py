@@ -127,7 +127,7 @@ class resultsWindow(QDialog):
                 self.main_plot.draw()
                 #rotate left click, disabled zoom right click
                 self.main_plot.axes.mouse_init(rotate_btn=1, zoom_btn=[])
-            if self.feature_file and colordropdown.count() > 0:
+            if self.feature_file and colordropdown.count() > 0 and len(self.plot_data)>0:
                 self.data_filt(colordropdown, self.projection, plot, True)
 
         # button features and callbacks
