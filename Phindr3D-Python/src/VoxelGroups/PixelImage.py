@@ -55,7 +55,7 @@ class PixelImage(VoxelBase):
         startVal = 0
         if metadata.intensityNormPerTreatment:
             treatmentColumnName = metadata.GetTreatmentColumnName()
-            grpVal = np.argwhere(metadata.GetTreatmentTypes() == image.GetTreatment(treatmentColumnName))[0][0]
+            grpVal = np.argwhere(np.array(metadata.GetTreatmentTypes()) == image.GetTreatment(treatmentColumnName))[0][0]
         slices = slices[0:(len(slices) // 2)]
         for zplane in slices:
             croppedIM = np.zeros((tileinfo.origX, tileinfo.origY, metadata.GetNumChannels()))

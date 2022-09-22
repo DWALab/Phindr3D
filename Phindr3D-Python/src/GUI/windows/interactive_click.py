@@ -158,11 +158,11 @@ class interactive_points():
                 if radio.isChecked():
                     pjt_label=radio.text()
                     break
-            file_text="Filename: " + data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()] + '\n\n Projection Type: ' + pjt_label
+            file_text="Filename: " + data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]
             if len(file_text)>20:
                 #prevent text placed off-screen
                 file_text=fill(file_text, 25)
-            file_info.setText(file_text)
+            file_info.setText(file_text + '\n\n Projection Type: ' + pjt_label)
             # lower/upperbounds, threshold for images
             bounds = json.loads(data['bounds'].iloc[0])
             threshold = json.loads(data['intensity_thresholds'].iloc[0])

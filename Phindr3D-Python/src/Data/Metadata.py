@@ -146,7 +146,7 @@ class Metadata:
             # these will be ordered at the end, for referencing purposes
             # order of a row of data: Channels, Other Parameters, Stack, MetadataFile, ImageID
             for col in metadata:
-                if col.startswith('Channel_') or col == 'Stack' or col == 'MetadataFile' or col == 'ImageID' or col =='bounds' or col =='intensity_thresholds':
+                if col.startswith('Channel_') or col in ['Stack','MetadataFile','ImageID','bounds','intensity_thresholds','treatmentColNameForNormalization']:
                     continue
                 row.append(metadata.at[i, col])
             row.append(metadata.at[i, 'Stack'])
@@ -160,7 +160,7 @@ class Metadata:
         for chan in channels:
             columnlabels.append(chan)
         for col in metadata:
-            if col.startswith('Channel_') or col == 'Stack' or col == 'MetadataFile' or col == 'ImageID' or col =='bounds' or col =='intensity_thresholds':
+            if col.startswith('Channel_') or col in ['Stack','MetadataFile','ImageID','bounds','intensity_thresholds','treatmentColNameForNormalization']:
                 continue
             columnlabels.append(col)
         columnlabels.append('Stack')

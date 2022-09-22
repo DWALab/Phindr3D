@@ -232,13 +232,12 @@ class resultsWindow(QDialog):
         # min-max scale all data and split to feature and metadata
         mind = np.min(image_feature_data[featurecols], axis=0)
         maxd = np.max(image_feature_data[featurecols], axis=0)
-
+        #check that mind, maxd doesn't return zero division
         if np.array_equal(mind, maxd) == False:
             featuredf = (image_feature_data[featurecols] - mind) / (maxd - mind)
             mdatadf = image_feature_data[mdatacols]
-            #drop rows and cols with over 80% nan
-            featuredf.dropna(axis=0, inplace=True, thresh=int(0.2 * featuredf.shape[0]))
-            featuredf.dropna(axis=1, inplace=True, thresh=int(0.2 * featuredf.shape[0]))
+            #drop cols with nan
+            featuredf.dropna(axis=1, inplace=True)
             mv_cols = featuredf.columns[featuredf.columns.map(lambda col: col.startswith('MV'))]
             # select data
             if len(self.filt) == 1:

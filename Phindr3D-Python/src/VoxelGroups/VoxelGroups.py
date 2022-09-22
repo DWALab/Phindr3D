@@ -94,8 +94,6 @@ class VoxelGroups():
         #collect parameters from phindconfig
         countBackground = self.metadata.countBackground
         textureFeatures = PhindConfig.textureFeatures
-        treatmentCol = self.metadata.GetAllTreatments()
-        treatmentColumnName = self.metadata.GetTreatmentColumnName()
         numMegaVoxelBins = self.numMegaVoxelBins
         if countBackground:
             totalBins = numMegaVoxelBins + 1
@@ -112,10 +110,6 @@ class VoxelGroups():
         resultRaw = np.zeros((len(uniqueImageID), totalBins))
         if textureFeatures:
             textureResults = np.zeros((len(uniqueImageID), 4))
-        useTreatment = False
-        if len(treatmentCol) > 0 and list(treatmentCol.values())!= [None] * len(treatmentCol):
-            useTreatment = True
-            Treatments = []
         #timing things
         times = np.zeros(5)
         meantime = 0
@@ -154,16 +148,12 @@ class VoxelGroups():
             resultRaw[iImages, :] = rawProfile
             if textureFeatures:
                 textureResults[iImages, :] = texture_features
-            if useTreatment:
-                Treatments.append(currentImage.GetTreatment(treatmentColumnName))
             b = time.time() - a
             times[iImages % 5] = b
         numRawMV = np.sum(resultRaw, axis=1)  # one value per image, gives number of megavoxels
         dictResults = {}
         for i, col in enumerate(list(metaparams.keys())):
             dictResults[col] = mdatavals[:, i]
-        if useTreatment:
-            dictResults['Treatment'] = Treatments
         dictResults['MetadataFile']=  np.full((len(uniqueImageID),), self.metadata.GetMetadataFilename(), dtype='object')
         dictResults['ImageID'] = np.full((len(uniqueImageID),), np.arange(1, len(uniqueImageID)+1), dtype='object')
         dictResults['NumMV'] = numRawMV

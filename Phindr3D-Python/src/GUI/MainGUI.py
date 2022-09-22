@@ -208,14 +208,19 @@ class MainGUI(QWidget, external_windows):
                 # When meta data is loaded, using the loaded data, change the data for image viewing
                 # Consider adding another class to store all of the data (GUIDATA in MATLab?)
                 try:
+                    #reset metadata/voxels when load newfile
+                    self.metadata = Metadata(Generator)
+                    self.voxelGroups = VoxelGroups(self.metadata)
                     self.metadata.loadMetadataFile(filename)
                     # If the file loaded correctly, proceed to calculating thresholds, scale factors, etc.
+                    #reset threshold/scrollbars
                     threshbar.blockSignals(True)
                     slicescrollbar.blockSignals(True)
                     threshbar.setValue(0)
                     slicescrollbar.setValue(0)
                     self.img_ind=1
                     imagenav.setText("1")
+                    #compute image bounds/threshold
                     self.metadata.computeImageParameters()
                     self.thresh=self.metadata.intensityThresholdValues
                     self.bounds=[self.metadata.lowerbound, self.metadata.upperbound]
