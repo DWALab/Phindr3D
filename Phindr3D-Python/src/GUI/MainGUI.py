@@ -26,6 +26,7 @@ from scipy.stats.mstats import mquantiles
 from .windows.plot_functions import *
 from .windows.helperclasses import *
 import pickle
+from PyQt5 import QtGui
 
 try:
     from ..VoxelGroups.VoxelGroups import *
@@ -49,10 +50,11 @@ class MainGUI(QWidget, external_windows):
         "or (at your option) any later version.\n" \
         "The software and licensing details can be found at\nhttps://github.com/SRI-RSST/Phindr3D"
 
-    def __init__(self):
+    def __init__(self, iconFile):
         """MainGUI constructor"""
         QMainWindow.__init__(self)
         super(MainGUI, self).__init__()
+        self.setWindowIcon(QtGui.QIcon(iconFile))
         self.training = Training()
         self.metadata = Metadata(Generator)
         self.voxelGroups = VoxelGroups(self.metadata)
@@ -552,10 +554,10 @@ class MainGUI(QWidget, external_windows):
         for window in QApplication.topLevelWidgets():
             window.close()
 
-def run_mainGUI():
+def run_mainGUI(iconFile):
     """Show the window and run the application exec method to start the GUI"""
     app = QApplication(sys.argv)
-    window = MainGUI()
+    window = MainGUI(iconFile)
     window.show()
     app.exec()
 

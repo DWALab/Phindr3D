@@ -15,12 +15,15 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 from src import *
+from os import path
 
 if __name__ == '__main__':
     """Phindr3D is designed for automated cell phenotype analysis"""
 
+    iconPath = path.abspath(path.join(path.dirname(__file__), 'phindr3d_icon.png'))
+
     # Create the GUI object
-    run_mainGUI()
+    run_mainGUI(iconPath)
     # on exit...
 
 # end main
