@@ -16,7 +16,7 @@ Mergenthaler P, Hariharan S, Pemberton JM, Lourenco C, Penn LZ, Andrews DW (2021
 
 ### <ins>Installation</ins>
 
-* To install the stand-alone program, download the executable *Phindr3D.exe* from the [**Releases**](releases) in the Github repository. This executable includes *Phindr3D* and the Organoid Contour Segmentation app. 
+* To install the stand-alone program, download the executable *Phindr3D.exe* from the [**Releases**](https://github.com/DWALab/Phindr3D/releases) in the Github repository. This executable includes *Phindr3D* and the Organoid Contour Segmentation app. 
 * The executable is built using the code written in Python, in a Python 3.10 environment. To run the Phindr3D Python code directly, download the repository, configure the Python environment to include the dependencies specified in the [**libraries**](Phindr3D-Python/docs/libraries) file, and run the Python code [**here**](Phindr3D-Python).
 
 ### <ins>3D Data Sets</ins>
