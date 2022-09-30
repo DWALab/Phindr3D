@@ -172,6 +172,7 @@ def import_file(self, map_dropdown, colordropdown, twod, threed):
             try:
                 data=json.load(f)
                 if list(data.keys())==['plot_projection','plot_coordinates','x_limit','y_limit','z_limit', 'feature_filename']:
+                    if os.path.exists(data.get('feature_filename')):
                         plot_coord=[np.array(plot_data) for plot_data in data.get('plot_coordinates')]
                         if len(plot_coord)==3:
                             self.plot_data.clear()
@@ -191,6 +192,8 @@ def import_file(self, map_dropdown, colordropdown, twod, threed):
                             self.loadFeaturefile(colordropdown, map_dropdown.currentText(), False, data.get('feature_filename'))
                         else:
                             errorWindow("Import Plot Data Error","Check JSON file. 'plot_coordinates' must be 3D (list of x, y, z coordinates)")
+                    else:
+                        errorWindow("Import Plot Data Error","Feature File Path found in selected Plot Data file does not exist: \n'{}'".format(data.get('feature_filename')))
                 else:
                     errorWindow("Import Plot Data Error", "Check if correct file. Requires Following Labels: plot_projection, plot_coordinates, x_limit , y_limit ,z_limit, 'feature_filename'")
             except Exception as ex:

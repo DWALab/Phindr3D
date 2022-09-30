@@ -14,21 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
-"""
-Ok, when are things supposed to happen?
-
-so metadata gets loaded, and then?
-
-
-
-
-
-
-
-"""
-
-
-from .TrainingFunctions import *
 from ..PhindConfig.PhindConfig import *
 
 
@@ -51,11 +36,11 @@ class Training:
         self.trainingPerColumn = PhindConfig.trainingPerColumn
         self.superVoxelPerField = PhindConfig.superVoxelPerField
 
-        # params to be defined later (in training functions)
+        # params to be defined later (in voxelGroups folder)
         # self.intensityThresholdValues = None  #gets computed at metadata loading stage
         # self.randZForTraining = None          #gets computed on a per-image basis during category making
         # self.randFieldID = None               #gets determined at metadata loading stage for scaling and thresholding
-        # self.randTrainingPerTreatment = None  #not sure about this one (intensity threshold values and scaling factors should already reflect training per treatment if chosen)
+        # self.randTrainingPerTreatment = None  #(intensity threshold values and scaling factors should already reflect training per treatment if chosen)
 
     # end constructor
 

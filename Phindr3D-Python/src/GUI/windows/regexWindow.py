@@ -17,7 +17,6 @@
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-# import re
 from array import *
 import os
 

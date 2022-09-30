@@ -27,7 +27,6 @@ except ImportError:
     from src.PhindConfig.PhindConfig import *
 
 import matplotlib.pyplot as plt
-#from mahotas.features import texture
 import mahotas as mt
 
 class VoxelBase:
