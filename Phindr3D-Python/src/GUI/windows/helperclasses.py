@@ -84,6 +84,11 @@ class selectWindow(object):
             ch_vbox.addStretch(1)
             ch_box.setLayout(ch_vbox)
             win.layout().addWidget(ch_box, 0, 2)
+            #Scroll if labels exceed window size
+            scrollArea = QScrollArea()
+            scrollArea.setWidget(ch_box)
+            scrollArea.setWidgetResizable(True)
+            win.layout().addWidget(scrollArea, 0, 2)
             win.layout().addWidget(ok_button, 1, 2)
             if len(chk_lbl) == 0:
                 ok_button.clicked.connect(lambda: win.close())
@@ -116,6 +121,11 @@ class selectWindow(object):
             grp_vbox.addStretch(1)
             self.grp_checkbox.setLayout(grp_vbox)
             win.layout().addWidget(self.grp_checkbox, chk_loc[0], chk_loc[1])
+            #scroll if labels exceed window size
+            scrollArea = QScrollArea()
+            scrollArea.setWidget(self.grp_checkbox)
+            scrollArea.setWidgetResizable(True)
+            win.layout().addWidget(scrollArea, chk_loc[0], chk_loc[1])
             if all_btn:
                 # select all button
                 all_button = QPushButton("Select All")
