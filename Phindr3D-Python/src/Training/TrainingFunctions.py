@@ -56,7 +56,7 @@ class TrainingFunctions:
         if len(np.unique(lbls))>1:
             win=selectWindow(np.unique(lbls), "", "Select Classes", "Classes", "", select_grps)
             if win.x_press:
-                print("Cancelled")
+                pass #print("Cancelled")
             elif len(select_grps)>1:
                 pts=[len(np.array(np.where(lbls==grp)[0], dtype=int)) for grp in select_grps]
                 if min(pts)>1:

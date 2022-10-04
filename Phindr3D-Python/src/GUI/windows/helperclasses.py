@@ -144,7 +144,6 @@ class selectWindow(object):
                 errorWindow("Filter by Feature Error", "Must Select At Least One Feature")
         if close:
             for checkbox in grp_checkbox.findChildren(QCheckBox):
-                # print('%s: %s' % (checkbox.text(), checkbox.isChecked()))
                 if checkbox.isChecked():
                     groupings.append(checkbox.text())
         self.x_press=False

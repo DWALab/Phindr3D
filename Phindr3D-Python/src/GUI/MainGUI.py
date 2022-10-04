@@ -574,7 +574,6 @@ class MainGUI(QWidget, external_windows):
         alert.exec()
 
     def closeEvent(self, event):
-        #print("closed all windows")
         for window in QApplication.topLevelWidgets():
             window.close()
 
