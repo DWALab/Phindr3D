@@ -63,7 +63,7 @@ Matching regular expression:
 <br>
 
 - Note: Phindr3D is designed for multichannel 3D images. The regular expression MUST have a "Channel" group for the channel number and a "Stack" group for the z plane number.
-
+  To see examples of regular expression usage press Show Example.
 ### <ins>Organoid Contour Segmentation</ins>
 
 - Ensure that the images for segmentation are in a dedicated folder, separate from other images (e.g. D:\ ... \experiment1\OrganoidsForSegmentation\).

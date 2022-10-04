@@ -234,21 +234,28 @@ class example_regex(QDialog):
         super(example_regex, self).__init__()
         layout = QGridLayout()
         self.setWindowTitle("Example Regex")
-
-        examplelabel = QLabel("Ex) If trying to extract ch3 which represents Channel 3, highlight 3 and put Channel in the Group Name textbox then click Add Group")
-        examplelabel.setWordWrap(True)
-        #example image
-        img = QLabel()
         try:
             # _MEIPASS is a temporary directory that only exists
             # while running a compiled executable
             path = sys._MEIPASS #run Phindr.exe (pyinstaller temp folder)
         except:
             path = os.path.dirname(os.path.abspath(__file__)) #run Phindr.py script
-        img.setPixmap(QPixmap(os.path.join(path, 'regex_example.png')))
+
+        # example image 1
+        examplelabel1 = QLabel("Ex 1) If trying to extract ch3 which represents Channel 3, highlight 3 and put Channel in the Group Name textbox then click Add Group")
+        examplelabel1.setWordWrap(True)
+        ex1_img = QLabel()
+        ex1_img.setPixmap(QPixmap(os.path.join(path, 'regex_example.png')))
+        #example image 2
+        examplelabel2 = QLabel("Ex 2) Don't highlight metadata prefix/separators in Sample File Name. In the example below 'f01' represents Field 01 where 'f' is the metadata prefix")
+        examplelabel2.setWordWrap(True)
+        incorrect_img = QLabel()
+        incorrect_img.setPixmap(QPixmap(os.path.join(path, 'regex_incorrect_example.png')))
         #add Widgets/layout
-        layout.addWidget(examplelabel, 0, 0)
-        layout.addWidget(img, 1, 0)
+        layout.addWidget(examplelabel1, 0, 0)
+        layout.addWidget(ex1_img, 1, 0, Qt.AlignCenter)
+        layout.addWidget(examplelabel2, 2, 0)
+        layout.addWidget(incorrect_img, 3, 0)
         self.setLayout(layout)
         self.show()
         self.exec()
