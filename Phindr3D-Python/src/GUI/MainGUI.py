@@ -92,17 +92,41 @@ class MainGUI(QWidget, external_windows):
                 #retrieve and set imported data
                 curfile=self.metadata.GetMetadataFilename()
                 with open(filename, 'rb') as f:
-                    self.metadata = pickle.load(f)
-                    self.metapandas = pd.DataFrame.from_dict(pickle.load(f), orient='index').T #metadata file as pandas dataframe
+                    session = pickle.load(f)
+                    session_pd = pd.DataFrame.from_dict(pickle.load(f), orient='index').T #metadata file as pandas dataframe
                     data= pickle.load(f)
-                    if not param:
+                    if not param: #imports the session
+                        self.metadata = session
+                        self.metapandas = session_pd
                         self.color = data.get('color')
                         self.ch_len= data.get('ch_len')
-                    else:
+                        self.bounds = data.get('bounds')[0]
+                        self.thresh = data.get('threshold')[0]
+                    else: #imports the parameters
                         self.metadata.SetMetadataFilename(curfile)# retain current metadatafile name if only parameters
-                        del self.metapandas
-                    self.bounds = data.get('bounds')[0]
-                    self.thresh = data.get('threshold')[0]
+                        self.metadata.countBackground=session.countBackground
+                        self.metadata.theTileInfo=session.theTileInfo
+                        metaheader = list(pd.read_csv(self.metadata.GetMetadataFilename(), nrows=1, sep='\t'))
+                        #check compatibility of imported trainingcol
+                        if session.trainbycondition and session.trainingColforImageCategories in metaheader:
+                            self.metadata.trainbycondition=session.trainbycondition
+                            self.metadata.trainingColforImageCategories=session.trainingColforImageCategories
+                        #check compatibility of imported threshold/bounds
+                        if np.shape(self.thresh)== np.shape(data.get('threshold')[0]) and np.shape(self.bounds) == np.shape(data.get('bounds')[0]):
+                            self.thresh = data.get('threshold')[0]
+                            self.bounds = data.get('bounds')[0]
+                        #check compatibility of imported normpertreatment
+                        if session.intensityNormPerTreatment and session.treatmentColNameForNormalization in metaheader:
+                            metacol=pd.read_csv(self.metadata.GetMetadataFilename(), sep='\t', usecols=[session.treatmentColNameForNormalization])
+                            self.metadata.intensityNormPerTreatment = session.intensityNormPerTreatment
+                            self.metadata.treatmentColNameForNormalization = session.treatmentColNameForNormalization
+                            if(metacol[session.treatmentColNameForNormalization].nunique(), self.ch_len) == np.shape(data.get('bounds')[0])[1:]:
+                                self.bounds = data.get('bounds')[0]
+                                self.thresh = data.get('threshold')[0]
+                            else:
+                                self.metadata.computeImageParameters()
+                                self.thresh = self.metadata.intensityThresholdValues
+                                self.bounds = [self.metadata.lowerbound, self.metadata.upperbound]
                     self.voxelGroups = VoxelGroups(self.metadata)
                     self.voxelGroups.numVoxelBins = data.get('numVoxelBins')
                     self.voxelGroups.numMegaVoxelBins = data.get('numMegaVoxelBins')
@@ -550,7 +574,6 @@ class MainGUI(QWidget, external_windows):
         alert.exec()
 
     def closeEvent(self, event):
-        #print("closed all windows")
         for window in QApplication.topLevelWidgets():
             window.close()
 

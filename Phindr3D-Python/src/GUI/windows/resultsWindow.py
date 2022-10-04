@@ -157,8 +157,6 @@ class resultsWindow(QDialog):
         filename=''
         if new_plot:
             filename, dump = QFileDialog.getOpenFileName(self, 'Open Feature File', '', 'Text files (*.txt)')
-        elif isinstance(prevfile, str) and os.path.exists(prevfile) == False:
-            errorWindow("Feature File Error","Feature File Path found in selected Plot Data file does not exist: \n'{}'".format(prevfile))
         if filename != '' or (not isinstance(prevfile, type(None)) and os.path.exists(prevfile)):
             try:
                 self.feature_file.clear()

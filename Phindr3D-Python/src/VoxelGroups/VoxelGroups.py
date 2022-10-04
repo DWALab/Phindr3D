@@ -14,7 +14,6 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
-#from mahotas.features import texture
 import time
 import imageio.v2 as io
 import matplotlib.pyplot as plt
@@ -81,10 +80,6 @@ class VoxelGroups():
         self.pixelImage.getPixelBinCenters(self.metadata, training)
         self.superVoxelImage.getSuperVoxelBinCenters(self.metadata, training, self.pixelImage)
         self.megaVoxelImage.getMegaVoxelBinCenters(self.metadata, training, self.pixelImage, self.superVoxelImage)
-
-        print("Pixels:", self.pixelImage.pixelBinCenters)
-        print("Super Voxels:", self.superVoxelImage.superVoxelBinCenters)
-        print("Mega Voxels:", self.megaVoxelImage.megaVoxelBinCenters)
 
         return True
     # end phindVoxelGroups
@@ -169,7 +164,6 @@ class VoxelGroups():
         if csv_name[-4:] != '.txt':
             csv_name = csv_name + '.txt'
         df.to_csv(csv_name, index=None, sep='\t')
-        print('\nAll done.')
         #return param, resultIM, resultRaw, df #, metaIndexTmp
         # Missing a first parameter from the return list
         return resultIM, resultRaw, df  # , metaIndexTmp
@@ -220,14 +214,6 @@ if __name__ == '__main__':
         test_portion = test_output.iloc[:, -41:]
         print('Phindr3D output matches expected results:', (test_portion.equals(expected_portion)))
         os.remove('testdata/metadata_tests/check_results.txt')
-
-
-
-
-    #load metadata, compute parameters
-    #phind bincenters in a deterministic manner + compare to expected result
-    #compute phindr3D results on synthetic image set with the deterministic bincenters + compare to expected results.
-
     else:
         print("loadMetadataFile was unsuccessful")
 

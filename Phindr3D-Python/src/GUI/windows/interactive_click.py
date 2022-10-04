@@ -263,8 +263,6 @@ class interactive_points():
                                         self.data[1][label_ind[imin]],
                                         self.data[2][label_ind[imin]], s=35, facecolor="none",
                                         edgecolor='gray', alpha=1)
-            #for debugging
-            #print(self.data[0][label_ind[imin]], self.data[1][label_ind[imin]], self.data[2][label_ind[imin]])
             self.main_plot.draw()
             self.main_plot.figure.canvas.draw_idle()
             self.buildImageViewer(self.labels,label, imin,self.color,self.feature_file, self.imageID)

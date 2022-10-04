@@ -138,6 +138,7 @@ class Metadata:
                     and (metadata.at[i, channel].endswith(".tiff")
                          or metadata.at[i, channel].endswith(".tif")):
                     row.append(metadata.at[i, channel])
+                #for linux (replace backslash with forward slash paths)
                 #if os.path.exists(metadata[channel].str.replace(r'\\', '/', regex=True)[i]) and (metadata.at[i, channel].endswith(".tiff") or metadata.at[i, channel].endswith(".tif")):
                 #    row.append(metadata[channel].str.replace(r'\\', '/', regex=True)[i])
                 else:
