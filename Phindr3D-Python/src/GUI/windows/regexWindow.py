@@ -213,7 +213,10 @@ class example_regex(QDialog):
         examplelabel.setWordWrap(True)
         #example image
         img = QLabel()
-        path = os.path.dirname(os.path.abspath(__file__))
+        try:
+            path = sys._MEIPASS #run Phindr.exe (pyinstaller temp folder)
+        except:
+            path = os.path.dirname(os.path.abspath(__file__)) #run Phindr.py script
         img.setPixmap(QPixmap(os.path.join(path, 'regex_example.png')))
         #add Widgets/layout
         layout.addWidget(examplelabel, 0, 0)

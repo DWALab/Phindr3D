@@ -8,7 +8,7 @@ a = Analysis(
     ['Phindr3D.py'],
     pathex=[],
     binaries=[],
-    datas=[('phindr3d_icon.png','.')],
+    datas=[('phindr3d_icon.png','.'), ('src/GUI/windows/regex_example.png', '.')],
     hiddenimports = ['imagecodecs._imcd', 'skimage.filters.edges'],
     hookspath=[],
     hooksconfig={},
