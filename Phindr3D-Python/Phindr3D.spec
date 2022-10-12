@@ -11,7 +11,7 @@ a = Analysis(
     datas=[('phindr3d_icon.png','.'),
            ('src/GUI/windows/regex_example.png','.'),
            ('src/GUI/windows/regex_incorrect_example.png', '.')],
-    hiddenimports = ['imagecodecs._imcd', 'skimage.filters.edges'],
+    hiddenimports = ['imagecodecs._imcd', 'skimage.filters.edges', 'skimage.filters.rank.core_cy'],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],
