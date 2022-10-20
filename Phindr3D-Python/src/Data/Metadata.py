@@ -20,6 +20,7 @@ import pandas
 import os.path
 import imageio.v2 as io
 import imagecodecs
+import json
 from scipy.stats.mstats import mquantiles
 
 try:
@@ -323,11 +324,10 @@ class Metadata:
     # end GetImage
 
     def getTrainingFields(self, numTrainingFields=10):
-        """
-        Get smaller subset of images (usually 10) to define parameters for further analysis.
+        """Get smaller subset of images (usually 10) to define parameters for further analysis.
         (nly used for scaling factors to scale down intensities from 0 to 1).
         output is a Numpy array of a subset of image IDs.
-        On error, returns an empty numpy array
+        On error, returns an empty numpy array.
         """
         randFieldID = np.array([])
         # Check the type of numTrainingFields
@@ -699,7 +699,6 @@ class Metadata:
 # end class Metadata
 
 if __name__ == '__main__':
-    import json
     """Tests of the Metadata class that can be run directly."""
 
     deterministic = Generator(1234)

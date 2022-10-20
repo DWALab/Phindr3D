@@ -14,19 +14,21 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
-from .external_windows import *
+import sys
+import random
+
 import matplotlib
 import matplotlib.colors as mcolors
 import pandas as pd
 import numpy as np
 import PIL.Image
-import sys
-import random
 from scipy.stats.mstats import mquantiles
-from .windows.plot_functions import *
-from .windows.helperclasses import *
 import pickle
 from PyQt5 import QtGui
+
+from .external_windows import *
+from .windows.plot_functions import *
+from .windows.helperclasses import *
 
 try:
     from ..VoxelGroups.VoxelGroups import *
@@ -37,7 +39,12 @@ except ImportError:
     from src.Clustering.Clustering import *
     from src.Training.Training import *
 
+# Define a random number generator with the global name Generator
 Generator = Generator()
+
+class InvalidImageError(Exception):
+    """Inherits from Exception, with no overrides or additions."""
+    pass
 
 class MainGUI(QWidget, external_windows):
     """Defines the main GUI window of Phindr3D"""
@@ -576,15 +583,4 @@ class MainGUI(QWidget, external_windows):
     def closeEvent(self, event):
         for window in QApplication.topLevelWidgets():
             window.close()
-
-def run_mainGUI(iconFile):
-    """Show the window and run the application exec method to start the GUI"""
-    app = QApplication(sys.argv)
-    window = MainGUI(iconFile)
-    window.show()
-    app.exec()
-
-class InvalidImageError(Exception):
-    pass
-
 # end class MainGUI
