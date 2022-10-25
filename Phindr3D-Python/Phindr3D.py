@@ -15,6 +15,7 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 from os import path
+
 from src import *
 
 def run_mainGUI(iconFile):
@@ -26,9 +27,9 @@ def run_mainGUI(iconFile):
 
 if __name__ == '__main__':
     """Phindr3D is designed for automated cell phenotype analysis."""
-    iconFile = path.abspath(path.join(path.dirname(__file__), 'phindr3d_icon.png'))
-
-    # Start the GUI found in src/GUI/MainGUI.py
+    iconFile = path.abspath(
+        path.join(path.dirname(__file__), 'phindr3d_icon.png'))
+    # Start the GUI defined in src/GUI/MainGUI.py
     run_mainGUI(iconFile)
 
 # end main

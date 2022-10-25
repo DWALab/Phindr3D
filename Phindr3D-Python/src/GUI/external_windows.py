@@ -13,24 +13,38 @@
 #
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
+
 from .windows import *
 
 class external_windows():
+    """Abstract class inherited by MainGUI with build methods for other windows."""
     def buildExtractWindow(self):
+        """Create an instance of class extractWindow."""
         return extractWindow()
 
     def buildResultsWindow(self, color, metadata):
+        """Create an instance of class resultsWindow."""
         return resultsWindow(color, metadata)
 
-    def buildParamWindow(self, metaheader, supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain, trainingcol, treatcol):
-        return paramWindow(metaheader, supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain, trainingcol, treatcol)
+    def buildParamWindow(
+            self, metaheader, supercoords, svcategories, megacoords,
+            mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain,
+            trainingcol, treatcol):
+        """Create an instance of class paramWindow."""
+        return paramWindow(
+            metaheader, supercoords, svcategories, megacoords,
+            mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain,
+            trainingcol, treatcol)
 
     def buildSegmentationWindow(self, metadata):
+        """Create an instance of class segmentationWindow."""
         return segmentationWindow(metadata)
 
     def buildColorchannelWindow(self):
+        """Create an instance of class colorchannelWindow."""
         return colorchannelWindow()
 
     def buildRegexWindow(self):
+        """Create an instance of class regexWindow."""
         return regexWindow()
 
