@@ -14,125 +14,163 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
+import time
+import json
+
+import numpy as np
+import pandas as pd
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
 from matplotlib.backend_bases import MouseButton
 from matplotlib.figure import Figure
 from mpl_toolkits.mplot3d import proj3d
 import matplotlib
 matplotlib.use('Qt5Agg')
-import numpy as np
-import pandas as pd
-import time
 from more_itertools import locate
+import PIL.Image
+
 from .plot_functions import *
 from .colorchannelWindow import *
-import PIL.Image
-import json
 
 Generator = Generator()
-#Callback will open image associated with data point. Note: in 3D plot pan is hold left-click swipe, zoom is hold right-click swipe (zoom disabled)
+
 class interactive_points():
+    """Open the image associated with a data point.
+
+    Callback will open image associated with data point.
+    Note: in 3D plot pan is hold left-click swipe,
+    zoom is hold right-click swipe (zoom disabled).
+    """
     def __init__(self, main_plot, projection, data, labels, feature_file, color, imageID):
-        self.main_plot=main_plot
-        self.projection=projection
-        self.data=data
-        self.labels=labels
-        self.feature_file=feature_file
-        self.color=color[:]
-        self.imageID=imageID
+        """Set the parameters associated with the plot."""
+        self.main_plot = main_plot
+        self.projection = projection
+        self.data = data
+        self.labels = labels
+        self.feature_file = feature_file
+        self.color = color[:]
+        self.imageID = imageID
+    # end constructor
+
     def buildImageViewer(self, label, cur_label, index, color, feature_file, imageID):
+        """Construct an image viewer window."""
+        self.win = QDialog()
+        self.win.resize(1200, 1000)
+        self.win.setWindowTitle("ImageViewer")
+        self.error=False
+        grid = QGridLayout()
 
-                self.win = QDialog()
-                self.win.resize(1200, 1000)
-                self.win.setWindowTitle("ImageViewer")
-                self.error=False
-                grid = QGridLayout()
+        #info layout
+        info_box = QVBoxLayout()
+        file_info=QLabel("FileName:")
+        file_info.setAlignment(Qt.AlignTop)
+        file_info.setStyleSheet("background-color: white")
+        file_info.setWordWrap(True)
+        ch_info=QLabel("Channels\n")
+        ch_info.setAlignment(Qt.AlignTop)
+        ch_info.setStyleSheet("background-color: white")
+        file_info.setFixedWidth(200)
+        file_info.setMinimumHeight(350)
+        ch_info.setFixedWidth(200)
+        ch_info.setMinimumHeight(350)
+        info_box.addStretch()
+        info_box.addWidget(file_info)
+        info_box.addWidget(ch_info)
+        info_box.addStretch()
+        ch_colour=QPushButton("Set Channel Colours")
+        #projection layout
+        pjt_box = QGroupBox("Projection Type")
+        pjt_type= QHBoxLayout()
+        slice_btn = QRadioButton("Slice")
+        slice_btn.setChecked(True)
+        mit_btn = QRadioButton("MIT")
+        montage_btn = QRadioButton("Montage")
+        pjt_type.addStretch()
+        pjt_type.addWidget(slice_btn)
+        pjt_type.addWidget(mit_btn)
+        pjt_type.addWidget(montage_btn)
+        pjt_type.addStretch()
+        pjt_type.setSpacing(100)
+        pjt_box.setLayout(pjt_type)
 
-                #info layout
-                info_box = QVBoxLayout()
-                file_info=QLabel("FileName:")
-                file_info.setAlignment(Qt.AlignTop)
-                file_info.setStyleSheet("background-color: white")
-                file_info.setWordWrap(True)
-                ch_info=QLabel("Channels\n")
-                ch_info.setAlignment(Qt.AlignTop)
-                ch_info.setStyleSheet("background-color: white")
-                file_info.setFixedWidth(200)
-                file_info.setMinimumHeight(350)
-                ch_info.setFixedWidth(200)
-                ch_info.setMinimumHeight(350)
-                info_box.addStretch()
-                info_box.addWidget(file_info)
-                info_box.addWidget(ch_info)
-                info_box.addStretch()
-                ch_colour=QPushButton("Set Channel Colours")
-                #projection layout
-                pjt_box = QGroupBox("Projection Type")
-                pjt_type= QHBoxLayout()
-                slice_btn = QRadioButton("Slice")
-                slice_btn.setChecked(True)
-                mit_btn = QRadioButton("MIT")
-                montage_btn = QRadioButton("Montage")
-                pjt_type.addStretch()
-                pjt_type.addWidget(slice_btn)
-                pjt_type.addWidget(mit_btn)
-                pjt_type.addWidget(montage_btn)
-                pjt_type.addStretch()
-                pjt_type.setSpacing(100)
-                pjt_box.setLayout(pjt_type)
+        #image plot layout
+        x = []
+        y = []
+        main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection='2d')
+        main_plot.fig.set_facecolor('#f0f0f0')
+        main_plot.axes.scatter(x, y)
+        main_plot.axes.get_xaxis().set_visible(False)
+        main_plot.axes.get_yaxis().set_visible(False)
 
-                #image plot layout
-                x = []
-                y = []
-                main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection='2d')
-                main_plot.fig.set_facecolor('#f0f0f0')
-                main_plot.axes.scatter(x, y)
-                main_plot.axes.get_xaxis().set_visible(False)
-                main_plot.axes.get_yaxis().set_visible(False)
+        # adjustbar layout
+        adjustbar = QSlider(Qt.Vertical)
+        adjustbar.setMinimum(0)
+        adjustbar.setValue(0)
+        adjustbar.setFixedWidth(50)
+        adjustbar.setPageStep(1)
+        adjustbar.setSingleStep(1)
+        adjustbar.setStyleSheet(
+            "QSlider::groove:vertical {background-color: #8DE8F6; border: 1px solid;height: 700px;margin: 0px;}"
+            "QSlider::handle:vertical {background-color: #8C8C8C; border: 1px silver; height: 30px; width: 10px; margin: -5px 0px;}")
 
-                # adjustbar layout
-                adjustbar = QSlider(Qt.Vertical)
-                adjustbar.setMinimum(0)
-                adjustbar.setValue(0)
-                adjustbar.setFixedWidth(50)
-                adjustbar.setPageStep(1)
-                adjustbar.setSingleStep(1)
-                adjustbar.setStyleSheet(
-                    "QSlider::groove:vertical {background-color: #8DE8F6; border: 1px solid;height: 700px;margin: 0px;}"
-                    "QSlider::handle:vertical {background-color: #8C8C8C; border: 1px silver; height: 30px; width: 10px; margin: -5px 0px;}")
+        #parent layout
+        grid.addLayout(info_box, 0, 0)
+        grid.addWidget(main_plot, 0, 1)
+        grid.addWidget(ch_colour, 1, 0)
+        grid.addWidget(pjt_box, 1, 1, Qt.AlignCenter)
+        grid.addWidget(adjustbar, 0, 2)
+        self.win.setLayout(grid)
 
-                #parent layout
-                grid.addLayout(info_box, 0, 0)
-                grid.addWidget(main_plot, 0, 1)
-                grid.addWidget(ch_colour, 1, 0)
-                grid.addWidget(pjt_box, 1, 1, Qt.AlignCenter)
-                grid.addWidget(adjustbar, 0, 2)
-                self.win.setLayout(grid)
+        #callbacks
+        self.plot_img(adjustbar, main_plot, self.color, label,
+            cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box)
+        adjustbar.valueChanged.connect(
+            lambda: self.plot_img(adjustbar, main_plot, self.color, label,
+                cur_label, index, feature_file, file_info,
+                ch_info, imageID, pjt_box))
+        slice_btn.toggled.connect(
+            lambda: self.plot_img(adjustbar, main_plot, self.color, label,
+                cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box)
+                if pjt_box.findChildren(QRadioButton)[0].isChecked() else None)
+        mit_btn.toggled.connect(
+            lambda: self.plot_img(adjustbar, main_plot, self.color, label,
+                cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box)
+                if pjt_box.findChildren(QRadioButton)[1].isChecked() else None)
+        montage_btn.toggled.connect(
+            lambda: self.plot_img(adjustbar, main_plot, self.color, label,
+                cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box)
+                if pjt_box.findChildren(QRadioButton)[2].isChecked() else None)
+        ch_colour.clicked.connect(
+            lambda: self.color_change((ch_info.text()).count("Channel_"),
+                self.color, "Custom Colour Picker", "Channels",
+                ["Channel_" +str(i+1) for i in range((ch_info.text()).count("Channel_"))],
+                adjustbar, main_plot, label, cur_label, index, feature_file,
+                file_info, ch_info, imageID, pjt_box))
+        if not self.error:
+            self.win.exec()
+    # end buildImageViewer
 
-                #callbacks
-                self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box)
-                adjustbar.valueChanged.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box))
-                slice_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[0].isChecked() else None)
-                mit_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[1].isChecked() else None)
-                montage_btn.toggled.connect(lambda: self.plot_img(adjustbar, main_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box) if pjt_box.findChildren(QRadioButton)[2].isChecked() else None)
-                ch_colour.clicked.connect(lambda: self.color_change((ch_info.text()).count("Channel_"), self.color, "Custom Colour Picker", "Channels", ["Channel_" +str(i+1) for i in range((ch_info.text()).count("Channel_"))], adjustbar, main_plot, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt_box))
-                if not self.error:
-                    self.win.exec()
-    def read_featurefile(self, slicescrollbar, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
+    def read_featurefile(
+            self, slicescrollbar, color, label, cur_label, index,
+            feature_file, file_info, ch_info, imageID, pjt):
+        """Read the feature file."""
         if feature_file:
             # extract image details from feature file
             data = pd.read_csv(feature_file[0], sep="\t", na_values='NaN')
-            if os.path.exists(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0])==False:
+            if os.path.exists(data["MetadataFile"].str.replace(
+                    r'\\', '/', regex=True).iloc[0]) == False:
                 self.error = True
                 raise FileNotFoundError
-            data = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], sep="\t", na_values='NaN')
+            data = pd.read_csv(data["MetadataFile"].str.replace(
+                r'\\', '/', regex=True).iloc[0], sep="\t", na_values='NaN')
 
             #getting metadatafile
             cols=data.columns.to_list()
-            if any("Channel" in ch for ch in cols)==False or ('Stack' not in cols) or ('ImageID' not in cols):
+            if any("Channel" in ch for ch in cols) == False \
+                    or ('Stack' not in cols) or ('ImageID' not in cols):
                 self.error = True
                 raise MissingChannelStackError
             ch_len = (list(np.char.find(list(data.columns), 'Channel_')).count(0))
@@ -158,17 +196,19 @@ class interactive_points():
                 if radio.isChecked():
                     pjt_label=radio.text()
                     break
-            file_text="Filename: " + data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]
+            file_text = "Filename: " + data['Channel_1'].str.replace(
+                r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]
             if len(file_text)>20:
                 #prevent text placed off-screen
-                file_text=fill(file_text, 25)
+                file_text = fill(file_text, 25)
             file_info.setText(file_text + '\n\n Projection Type: ' + pjt_label)
             # lower/upperbounds, threshold for images
             bounds = json.loads(data['bounds'].iloc[0])
             threshold = json.loads(data['intensity_thresholds'].iloc[0])
             #if normpertreatment was set
             if 'treatmentColNameForNormalization' in cols:
-                bounds = treatment_bounds(data, bounds, meta_loc, data['treatmentColNameForNormalization'].iloc[0])
+                bounds = treatment_bounds(data, bounds, meta_loc,
+                    data['treatmentColNameForNormalization'].iloc[0])
                 if not bounds:
                     self.win.close()
             #only slice projection can use slider
@@ -177,19 +217,28 @@ class interactive_points():
             else:
                 slicescrollbar.setMaximum(0)
             # initialize array as image size with rgb and # channels
-            empty_img = PIL.Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]).size
-            if PIL.Image.open(data['Channel_1'].str.replace(r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]).mode in ["CMYK","HSV", "LAB", "RGB", "RGBA", "RGBX", "YCbCr"]:
+            empty_img = PIL.Image.open(data['Channel_1'].str.replace(
+                r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]).size
+            if PIL.Image.open(data['Channel_1'].str.replace(
+                    r'\\', '/', regex=True).iloc[meta_loc + slicescrollbar.value()]).mode \
+                    in ["CMYK","HSV", "LAB", "RGB", "RGBA", "RGBX", "YCbCr"]:
                 self.error = True
                 raise ColorIMG
             empty_img = np.zeros((ch_len, empty_img[1], empty_img[0], 3))
             return(data, empty_img, meta_loc, stacks, ch_len, bounds, threshold)
-    def plot_img(self, slicescrollbar, img_plot, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
-        #reset subplots
+    # end read_featurefile
+
+    def plot_img(
+            self, slicescrollbar, img_plot, color, label, cur_label, index,
+            feature_file, file_info, ch_info, imageID, pjt):
+        """Reset subplots."""
         try:
             allaxes = img_plot.fig.get_axes()
             for ax in allaxes:
                 img_plot.fig.delaxes(ax)
-            data, empty_img, metaloc, stacks,ch_len, bounds, threshold=self.read_featurefile(slicescrollbar, color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt)
+            data, empty_img, metaloc, stacks, ch_len, bounds, threshold \
+                = self.read_featurefile(slicescrollbar, color, label,
+                cur_label, index, feature_file, file_info, ch_info, imageID, pjt)
 
             #slice projection only calculate for current slice
             if pjt.findChildren(QRadioButton)[0].isChecked():
@@ -199,7 +248,9 @@ class interactive_points():
                 max_img = np.full((empty_img.shape[1], empty_img.shape[2], 3), np.NINF)
 
             for x in range(1, stacks+1):
-                img=merge_channels(data, empty_img, ch_len, slicescrollbar.value(), color, metaloc+x-1, pjt.findChildren(QRadioButton)[2].isChecked(), bounds, threshold)
+                img = merge_channels(data, empty_img, ch_len,
+                    slicescrollbar.value(), color, metaloc+x-1,
+                    pjt.findChildren(QRadioButton)[2].isChecked(), bounds, threshold)
                 #MIP Projection (max intensity projection - take largest element-wise from image stack)
                 if pjt.findChildren(QRadioButton)[1].isChecked():
                     max_img=np.maximum(max_img, img)
@@ -208,7 +259,8 @@ class interactive_points():
                 #plotting
                 if pjt.findChildren(QRadioButton)[1].isChecked()==False or x==stacks:
                     if pjt.findChildren(QRadioButton)[1].isChecked() == False:
-                        axes=img_plot.fig.add_subplot(int(np.ceil(np.sqrt(stacks))),int(np.round_(np.sqrt(stacks), decimals=0)),x)
+                        axes = img_plot.fig.add_subplot(int(np.ceil(np.sqrt(stacks))),
+                            int(np.round_(np.sqrt(stacks), decimals=0)),x)
                     else:
                         axes = img_plot.fig.add_subplot(1,1,1)
                     axes.imshow(img)
@@ -221,26 +273,43 @@ class interactive_points():
         except ColorIMG:
             errorWindow("Metadata Error", "Cannot use RGB/A or Colored Images")
         except FileNotFoundError:
-            errorWindow("Metadata Error", "Cannot Find Metadatafile path. Check that Metadatafile path in Feature File is valid")
+            errorWindow("Metadata Error",
+                "Cannot Find Metadatafile path. Check that Metadatafile path in Feature File is valid")
         except MissingChannelStackError:
-            errorWindow("Metadata Error", "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid")
+            errorWindow("Metadata Error",
+                "Metadata Extraction Failed: Channel/Stack/ImageID column(s) missing and/or invalid")
         except Exception as ex:
             errorWindow("Metadata Error", "Python Error Message: {}".format(ex))
             self.error = True
-    def color_change(self, ch, color, win_title, col_title, labels, slicescrollbar, img_plot, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt):
-        colors=colorchannelWindow(ch, color, win_title, col_title, labels)
-        self.color=colors.color
-        self.plot_img(slicescrollbar, img_plot, self.color, label, cur_label, index, feature_file, file_info, ch_info, imageID, pjt)
+    # end plot_img
 
-    def __call__ (self, event): #picker is right-click activation
-        if event.mouseevent.inaxes is not None and event.mouseevent.button is MouseButton.RIGHT:
-            #https://github.com/matplotlib/matplotlib/issues/ 19735   ---- code below from github open issue. wrong event.ind coordinate not fixed in current version matplotlib...
+    def color_change(
+            self, ch, color, win_title, col_title, labels, slicescrollbar,
+            img_plot, label, cur_label, index, feature_file, file_info,
+            ch_info, imageID, pjt):
+        """Change colors based on user selection in color channel window."""
+        colors = colorchannelWindow(ch, color, win_title, col_title, labels)
+        self.color = colors.color
+        self.plot_img(slicescrollbar, img_plot, self.color, label, cur_label,
+            index, feature_file, file_info, ch_info, imageID, pjt)
+    # end color_change
+
+    def __call__ (self, event):
+        """Right-click activation for picker."""
+        if event.mouseevent.inaxes is not None \
+                and event.mouseevent.button is MouseButton.RIGHT:
+            # https://github.com/matplotlib/matplotlib/issues/ 19735
+            # ---- code below from github open issue. wrong event.ind
+            # coordinate not fixed in current version matplotlib...
             xx = event.mouseevent.x
             yy = event.mouseevent.y
             label = event.artist.get_label()
             label_ind=np.where(np.array(self.labels)==label)[0]
-            # magic from https://stackoverflow.com/questions/10374930/matplotlib-annotating-a-3d-scatter-plot
-            x2, y2, z2 = proj3d.proj_transform(self.data[0][label_ind[0]], self.data[1][label_ind[0]], self.data[2][label_ind[0]], self.main_plot.axes.get_proj())
+            # magic from https://stackoverflow.com/questions/10374930/
+            #     matplotlib-annotating-a-3d-scatter-plot
+            x2, y2, z2 = proj3d.proj_transform(self.data[0][label_ind[0]],
+                self.data[1][label_ind[0]], self.data[2][label_ind[0]],
+                self.main_plot.axes.get_proj())
             x3, y3 = self.main_plot.axes.transData.transform((x2, y2))
             # the distance
             d = np.sqrt((x3 - xx) ** 2 + (y3 - yy) ** 2)
@@ -250,22 +319,30 @@ class interactive_points():
             imin = 0
             dmin = 10000000
             for i in range(np.shape(label_ind)[0]):
-                # magic from https://stackoverflow.com/questions/10374930/matplotlib-annotating-a-3d-scatter-plot
-                x2, y2, z2 = proj3d.proj_transform(self.data[0][label_ind[i]], self.data[1][label_ind[i]], self.data[2][label_ind[i]], self.main_plot.axes.get_proj())
+                # magic from https://stackoverflow.com/questions/10374930/
+                #     matplotlib-annotating-a-3d-scatter-plot
+                x2, y2, z2 = proj3d.proj_transform(self.data[0][label_ind[i]],
+                    self.data[1][label_ind[i]], self.data[2][label_ind[i]],
+                    self.main_plot.axes.get_proj())
                 x3, y3 = self.main_plot.axes.transData.transform((x2, y2))
-                # magic from https://stackoverflow.com/questions/10374930/matplotlib-annotating-a-3d-scatter-plot
+                # magic from https://stackoverflow.com/questions/10374930/
+                #     matplotlib-annotating-a-3d-scatter-plot
                 d = np.sqrt((x3 - xx) ** 2 + (y3 - yy) ** 2)
                 # We find the distance and also the index for the closest datapoint
                 if d < dmin:
                     dmin = d
                     imin = i
             self.main_plot.axes.scatter3D(self.data[0][label_ind[imin]],
-                                        self.data[1][label_ind[imin]],
-                                        self.data[2][label_ind[imin]], s=35, facecolor="none",
-                                        edgecolor='gray', alpha=1)
+                self.data[1][label_ind[imin]],
+                self.data[2][label_ind[imin]], s=35, facecolor="none",
+                edgecolor='gray', alpha=1)
             self.main_plot.draw()
             self.main_plot.figure.canvas.draw_idle()
-            self.buildImageViewer(self.labels,label, imin,self.color,self.feature_file, self.imageID)
+            self.buildImageViewer(self.labels,label, imin,
+                self.color, self.feature_file, self.imageID)
+    # end __call__
+# end interactive_points
 
 class ColorIMG(Exception):
+    """Derive a specific exception from the base class Exception."""
     pass
