@@ -14,10 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import os
+
 try:
     from .regexWindow import regexWindow
     from ...Data import *
@@ -26,7 +28,9 @@ except ImportError:
     from src.Data import *
 
 class extractWindow(QDialog):
+    """Build window to take input from user to create a metadata file."""
     def __init__(self):
+        """Construct the window, its widgets, and button actions."""
         super(extractWindow, self).__init__()
         largetext = QFont("Arial", 12, 1)
         self.setWindowTitle("Create Metadatafile")
@@ -96,6 +100,7 @@ class extractWindow(QDialog):
 
         # button functions
         def selectImageDir():
+            """Act on user clicking Select Image button."""
             imagedir = QFileDialog.getExistingDirectory()
             if not os.path.exists(imagedir):
                 return
@@ -105,7 +110,10 @@ class extractWindow(QDialog):
                 if file.endswith('.tiff') or file.endswith('.tif'):
                     samplefilebox.setText(file)
                     break
+        # end selectImageDir
+
         def createFile():
+            """Act on user clicking Create File button."""
             imagedir = imagerootbox.toPlainText()
             regex = expressionbox.text()
             outputname = outputfilebox.text()
@@ -142,8 +150,10 @@ class extractWindow(QDialog):
                 alert.setIcon(QMessageBox.Critical)
                 alert.show()
                 alert.exec()
+        # end createFile
 
         def evalRegex():
+            """Act on user clicking Evaluate Regular Expression button."""
             regex = expressionbox.text()
             samplefile = samplefilebox.toPlainText()
             if regex == "":
@@ -199,7 +209,7 @@ class extractWindow(QDialog):
         #end evalRegex
 
         def regexCreation():
-            """open regex creation window"""
+            """Open regex creation window in response to button click."""
             creationWindow = regexWindow()
             creationWindow.samplefile = samplefilebox.toPlainText()
             creationWindow.inputSampleFile()
@@ -208,6 +218,7 @@ class extractWindow(QDialog):
             if result:
                 expressionbox.setText(creationWindow.regex)
                 creationWindow.close()
+        # end regexCreation
 
         cancel.clicked.connect(self.close)
         selectimage.clicked.connect(selectImageDir)

@@ -14,14 +14,16 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
+import numpy as np
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-import numpy as np
 
 class colorchannelWindow(object):
+    """Build a GUI window to allow a choice of colors by the user."""
     def __init__(self, ch, color, win_title, col_title, labels):
-        #main layout
+        """Construct the main layout of the color channel selection window."""
         win = QDialog()
         win.setWindowTitle(win_title)
         title = QLabel(col_title)
@@ -48,7 +50,7 @@ class colorchannelWindow(object):
         for i in range(ch):
             self.btn.append(QPushButton(labels[i]))
             #channel button colour is colour of respective channel
-            self.btn[i].setStyleSheet('background-color: rgb' +str(tuple((np.array(self.color[i])*255).astype(int))) +';')
+            self.btn[i].setStyleSheet('background-color: rgb' + str(tuple((np.array(self.color[i])*255).astype(int))) +';')
             btn_layout.addWidget(self.btn[i])
             btn_grp.addButton(self.btn[i], i+1)
         button_box.setLayout(btn_layout)
@@ -71,22 +73,31 @@ class colorchannelWindow(object):
 
         win.show()
         win.exec()
+    # end constructor
 
     def colorpicker_window(self, button):
-            #Qt custom Colorpicker. Update channel button and current colour to selected colour. Update channel color list.
-            wincolor=QColorDialog()
-            btn_num=0
-            for btns in range(len(self.btn)):
-                if self.btn[btns].text()==button.text():
-                    btn_num=btns
-                    break
-            curcolor = (np.array(self.tmp_color[btn_num]) * 255).astype(int)
-            wincolor.setCurrentColor(QColor.fromRgb(curcolor[0], curcolor[1], curcolor[2]))
-            wincolor.exec_()
-            rgb_color = wincolor.selectedColor()
-            if rgb_color.isValid():
-                self.btn[btn_num].setStyleSheet('background-color: rgb' +str(rgb_color.getRgb()[:-1]) +';')
-                self.tmp_color[btn_num] = np.array(rgb_color.getRgb()[:-1]) / 255
+        """Display the Qt custom color picker.
+
+        Display the Qt custom Colorpicker. Update channel button
+        and current colour to selected colour. Update channel color list.
+        """
+        wincolor=QColorDialog()
+        btn_num=0
+        for btns in range(len(self.btn)):
+            if self.btn[btns].text()==button.text():
+                btn_num=btns
+                break
+        curcolor = (np.array(self.tmp_color[btn_num]) * 255).astype(int)
+        wincolor.setCurrentColor(QColor.fromRgb(curcolor[0], curcolor[1], curcolor[2]))
+        wincolor.exec_()
+        rgb_color = wincolor.selectedColor()
+        if rgb_color.isValid():
+            self.btn[btn_num].setStyleSheet('background-color: rgb' +str(rgb_color.getRgb()[:-1]) +';')
+            self.tmp_color[btn_num] = np.array(rgb_color.getRgb()[:-1]) / 255
+    # end colorpicker_window
+
     def confirmed_colors(self, win):
+        """Set the member variable color in response to button click."""
         self.color=self.tmp_color[:]
         win.close()
+    # end confirmed_colors
