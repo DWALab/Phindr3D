@@ -20,16 +20,18 @@ except ImportError:
     from ImageChannel import *
 
 class Stack:
-    """This class handles groups of image files and the associated metadata.
-       Static methods that draw closely from transliterations of the MATLAB functions
-       can be found in the DataFunctions class."""
+    """This class handles groups of image files associated with a particular stack value."""
 
     def __init__(self):
         """Stack class constructor"""
         self.channels = {}
         self.otherparams = {}
 
-    def addChannels(self, row, columnlabels): # row is a list of elements from one row in metadata file
+    def addChannels(self, row, columnlabels):
+        """Create dictionaries associated with Channel column labels and other parameters.
+
+        Row is a list of elements from one row in metadata file.
+        """
         # rowi (row index) used to iterate row alongside columns
         rowi = 0
         for col in columnlabels:
@@ -47,10 +49,13 @@ class Stack:
     # end addChannels
 
     def GetTreatment(self, treatmentColumnName='Treatment'):
-        """Treatment is an optional column in the metadata. If the column exists,
-            this method returns the value from that column. If no Treatment value was
-            found in the metadata, this method returns None.
-            The parameter treatmentColumnName has a default value of 'Treatment'."""
+        """Return the value from the Treatment column if it exists.
+
+        Treatment is an optional column in the metadata. If the column exists,
+        this method returns the value from that column. If no Treatment value was
+        found in the metadata, this method returns None.
+        The parameter treatmentColumnName has a default value of 'Treatment'.
+        """
         try:
             return self.otherparams[treatmentColumnName]
         except (KeyError, AttributeError):
@@ -58,16 +63,8 @@ class Stack:
     # end GetTreatment
 
     def GetNumChannels(self):
-        """Get the number of channels in each stack layer"""
+        """Get the number of channels in each stack layer."""
         return len(self.channels)
     # end GetNumChannels
 
 # end class Stack
-
-if __name__ == '__main__':
-    """Tests of the Stack class that can be run directly."""
-
-    pass
-
-
-# end main

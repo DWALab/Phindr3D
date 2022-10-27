@@ -35,6 +35,7 @@ import PIL.Image
 from .plot_functions import *
 from .colorchannelWindow import *
 
+# Define a random number generator with the global name Generator
 Generator = Generator()
 
 class interactive_points():

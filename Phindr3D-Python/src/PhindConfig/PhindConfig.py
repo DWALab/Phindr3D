@@ -15,17 +15,19 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 class PhindConfig:
-    """Static configuration parameters for Phindr3D. Modified from
-       https://github.com/SRI-RSST/Phindr3D-python/blob/e902f6e8015a5a091667c83eef4dab61dbfd79b6/phindr3d.ipynb
-       These may move from this class if they require modification."""
-    # No constructor. All parameters and methods are static
+    """Static configuration parameters for Phindr3D.
+
+    No constructor. All parameters and methods are static.
+    Modified from
+    https://github.com/SRI-RSST/Phindr3D-python/blob/e902f6e8015a5a091667c83eef4dab61dbfd79b6/phindr3d.ipynb
+    These may move from this class if they require modification.
+    """
 
     @staticmethod
     def random_cmap(map_len=40, black_background=True):
-        """
-        This static method creates a random color map, useful in segmentation maps.
-        :param map_len: optional. length of color map. default is 256.
+        """This static method creates a random color map, useful in segmentation maps.
 
+        :param map_len: optional. length of color map. default is 256.
         :return: random color map.
         """
         from matplotlib import colors
@@ -66,24 +68,20 @@ class PhindConfig:
     numRemoveZEnd = 1
     computeTAS = False
     trainingPerColumn = False
-    # treatmentColNameForNormalization = ''
-    # imageTreatments = []
-    # allTreatments = []
-    # trainingColforImageCategories = []
     superVoxelPerField = randTrainingSuperVoxel//randTrainingFields
-    # numChannels = 3
 
     svcolormap = random_cmap(map_len=numSuperVoxelBins+1)
     mvcolormap = random_cmap(map_len=numMegaVoxelBins+1)
-
 # end class PhindConfig
-
 
 class TileInfo:
     """Contains configuration parameters for tiles, voxels, offsets, etc.
-        Many parameters are defined in the getTileInfo method.
-        They are defined and set to 'None' at __init__ in this class."""
+
+    Many parameters are defined in the getTileInfo method.
+    They are defined and set to 'None' at __init__ in this class.
+    """
     def __init__(self):
+        """Define the initial parameters for the TileInfo class."""
         # Super-Voxel dimensions
         self.tileX = 10
         self.tileY = 10
@@ -128,4 +126,5 @@ class TileInfo:
         self.numSuperVoxelsXY = None
         self.numMegaVoxels = None
         self.numMegaVoxelsXY = None
+    # end constructor
 # end class TileInfo

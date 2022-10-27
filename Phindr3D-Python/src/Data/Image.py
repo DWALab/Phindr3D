@@ -20,21 +20,23 @@ except ImportError:
     from Stack import Stack
 
 class Image:
-    """This class handles groups of image files and the associated metadata.
-       Static methods that draw closely from transliterations of the MATLAB functions
-       can be found in the DataFunctions class."""
+    """This class handles groups of image files and the associated metadata."""
 
     def __init__(self):
-        """Image class constructor"""
+        """Image class constructor."""
         self.imageID = None
         self.stackLayers = {}
         pass
 
     def setImageID(self, number):
+        """Set the imageID member variable."""
         self.imageID = number
 
     def addStackLayers(self, layerlist, columnlabels):
-        # layerlist is a list of rows of metadata, each represented as a list of data elements
+        """Build a dictionary of Stack classes from the source metadata.
+
+        layerlist is a list of rows of metadata, each represented as a list of data elements
+        """
         for layer in layerlist:
             key = layer[layer.__len__() - 3] # index len - 3 will always be stack column
             newStackLayer = Stack()
@@ -43,12 +45,15 @@ class Image:
     # end addStackLayers
 
     def GetTreatment(self, treatmentColumnName='Treatment'):
-        """Treatment is an optional column in the metadata. Treatment values are stored
-            on separate lines, though one ImageID should have a unique treatment value.
-            This method gets the Treatment values from the member stackLayers, if they exist.
-            If they are all None, or if more than one value is found, this method returns None.
-            treatmentColumnName has a default value of 'Treatment'. If the value of
-            treatmentColumnName is 'ImageID', this method returns this Image ID."""
+        """Get the Treatment values from the member stackLayers, if they exist.
+
+        Treatment is an optional column in the metadata. Treatment values are stored
+        on separate lines, though one ImageID should have a unique treatment value.
+        This method gets the Treatment values from the member stackLayers, if they exist.
+        If they are all None, or if more than one value is found, this method returns None.
+        treatmentColumnName has a default value of 'Treatment'. If the value of
+        treatmentColumnName is 'ImageID', this method returns this Image ID.
+        """
         if treatmentColumnName == 'ImageID':
             return (self.imageID)
         # else
@@ -60,24 +65,26 @@ class Image:
             return None
         # Use set to find unique values in a list, then change type back to list
         treatmentValList = list(set(tmpList))
-        if len(treatmentValList) != 1: #len will be 0 if no treatment, len can only be more than 1 if multiple different treatments within 1 image which is impossible
+        # len will be 0 if no treatment, len can only be more than 1
+        # if multiple different treatments within 1 image which is impossible
+        if len(treatmentValList) != 1:
             return None
         else:
             return treatmentValList[0]
     # end GetTreatment
 
     def GetOtherParams(self):
-        """
-        Get otherparams attribute from first stack instance in stacklayers
-        """
+        """Get otherparams attribute from first stack instance in stacklayers."""
         for stack in self.stackLayers:
             return self.stackLayers[stack].otherparams
     # end GetOtherParams
 
     def GetNumChannels(self):
-        """Get the number of channels associated with the stacks in this image,
-            only if all stacks have the same number of channels. If they have different
-            numbers of channels, return None."""
+        """Get the number of channels associated with the stacks in this image.
+
+        Get the number of channels only if all stacks have the same number of channels.
+        If they have different numbers of channels, return None.
+        """
         tmpList = []
         try:
             for stkID in self.stackLayers:
@@ -91,15 +98,4 @@ class Image:
         else:
             return channelValList[0]
     # end GetNumChannels
-
 # end class Image
-
-
-
-if __name__ == '__main__':
-    """Tests of the Image class that can be run directly."""
-
-    pass
-
-
-# end main
