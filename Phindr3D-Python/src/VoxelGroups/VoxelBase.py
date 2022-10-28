@@ -15,6 +15,8 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 import imageio.v2 as io
+import matplotlib.pyplot as plt
+import mahotas as mt
 
 try:
     from .VoxelFunctions import *
@@ -26,20 +28,18 @@ try:
 except ImportError:
     from src.PhindConfig.PhindConfig import *
 
-import matplotlib.pyplot as plt
-import mahotas as mt
-
 class VoxelBase:
-    """From pixels to supervoxels to megavoxels"""
+    """Base class for pixel, supervoxel, and megavoxel classes."""
 
     def __init__(self):
-        """Constructor"""
+        """Construct base class instance for pixels, supervoxels, and megavoxels."""
         self.numVoxelBins = None
         self.numSuperVoxelBins = None
         self.numMegaVoxelBins = None
         self.textureFeatures = PhindConfig.textureFeatures
 
     def setVoxelBins(self, numVoxelBins, numSuperVoxelBins, numMegaVoxelBins):
+        """Set member variables."""
         self.numVoxelBins = numVoxelBins
         self.numSuperVoxelBins = numSuperVoxelBins
         self.numMegaVoxelBins = numMegaVoxelBins
@@ -50,24 +50,26 @@ class VoxelBase:
     # end getPixelBins (base class)
 
     def getTileProfiles(self, metadata, imageObject, pixelBinCenters, pixelBinCenterDifferences, theTileInfo):
-        """Tile profiles. Called in extractImageLevelTextureFeatures, getMegaVoxelBinCenters,
-            called in getSuperVoxelBinCenters.
-            Computes low level categorical features for supervoxels
-            function assigns categories for each pixel, computes supervoxel profiles for each supervoxel
-            Inputs:
+        """Compute low level categorical features for supervoxels.
 
-            - an Image object (with Stack and Channel member objects)
-            - pixelBinCenters - Location of pixel categories: number of bins x number of channels
-            - tileInfo - a TileInfo object
-            - intensityNormPerTreatment - whether the treatment is considered when analyzing data
+        Tile profiles. Called in extractImageLevelTextureFeatures, getMegaVoxelBinCenters,
+        called in getSuperVoxelBinCenters.
+        Computes low level categorical features for supervoxels
+        function assigns categories for each pixel, computes supervoxel profiles for each supervoxel
+        Inputs:
 
-            ii: current image id
-            % Output:
-            % superVoxelProfile: number of supervoxels by number of supervoxelbins plus a background
-            % fgSuperVoxel: Foreground supervoxels - At lease one of the channels
-            % should be higher than the respective threshold
-            % TASScores: If TAS score is selected
-            """
+        - an Image object (with Stack and Channel member objects)
+        - pixelBinCenters - Location of pixel categories: number of bins x number of channels
+        - tileInfo - a TileInfo object
+        - intensityNormPerTreatment - whether the treatment is considered when analyzing data
+
+        ii: current image id
+        Output:
+        superVoxelProfile: number of supervoxels by number of supervoxelbins plus a background
+        fgSuperVoxel: Foreground supervoxels - At lease one of the channels
+        should be higher than the respective threshold
+        TASScores: If TAS score is selected
+        """
         errorVal = (None, None)
         allTreatmentTypes = metadata.GetTreatmentTypes()
         # Create local copies of external variables (easier to merge code)
@@ -172,14 +174,11 @@ class VoxelBase:
             x = np.reshape(croppedIM, (theTileInfo.croppedX*theTileInfo.croppedY, numChannels))
             # want to be greater than threshold in at least 1 channel
             fg = np.sum(x > intensityThreshold, axis=1) >= 1
-            pixelCategory = np.argmin(np.add(pixelBinCenterDifferences, dfunc.mat_dot(x[fg,:], x[fg,:], axis=1)).T - 2*(x[fg,:] @ pixelBinCenters.T), axis=1) + 1
+            pixelCategory = np.argmin(np.add(pixelBinCenterDifferences,
+                dfunc.mat_dot(x[fg,:], x[fg,:], axis=1)).T - 2*(x[fg,:] @ pixelBinCenters.T), axis=1) + 1
             x = np.zeros(theTileInfo.croppedX*theTileInfo.croppedY, dtype='uint8')
             # assign voxel bin categories to the flattened array
             x[fg] = pixelCategory
-
-            ## uncomment for testing if needed.
-            # x_show = np.reshape(x, (theTileInfo.croppedX, param.croppedY))
-            # np.savetxt(r'<location>\pytvoxelim.csv', x_show, delimiter=',')
 
             #here, x can be reshaped to croppedX by croppedY and will give the map
             # of pixel assignments for the image slice
@@ -211,15 +210,18 @@ class VoxelBase:
 
         if not countBackground:
             superVoxelProfile = superVoxelProfile[:, 1:]
-        superVoxelProfile = np.divide(superVoxelProfile, np.array([np.sum(superVoxelProfile, axis=1)]).T) #dont worry about divide by zero errors, they are supposed to happen here!
+        superVoxelProfile = np.divide(superVoxelProfile,
+            np.array([np.sum(superVoxelProfile, axis=1)]).T) #dont worry about divide by zero errors, they are supposed to happen here!
         superVoxelProfile[superVoxelProfile == np.nan] = 0
         fgSuperVoxel = fgSuperVoxel.astype(bool)
         ##fgSuperVoxel used to be fgSuperVoxel.T
         return superVoxelProfile, fgSuperVoxel
     # end getTileProfiles
 
-    def getMegaVoxelProfile(self, superVoxelBinCenters, tileProfile, tileInfo, fgSuperVoxel, training, analysis=False):
-        """called in extractImageLevelTextureFeatures and getMegaVoxelBinCenters"""
+    def getMegaVoxelProfile(
+            self, superVoxelBinCenters, tileProfile, tileInfo, fgSuperVoxel,
+            training, analysis=False):
+        """Called in extractImageLevelTextureFeatures and getMegaVoxelBinCenters."""
         # Create local copies of external variables (easier to merge code)
         errorVal = (None, None)
         showImage = PhindConfig.showImage
@@ -346,8 +348,10 @@ class VoxelBase:
     # end getMegaVoxelProfile
 
     def getImageProfile(self, metadata, megaVoxelBinCenters, megaVoxelProfile, tileInfo, fgMegaVoxel):
-        """provides multi-parametric representation of image based on megavoxel categories.
-            called in extractImageLevelTextureFeatures"""
+        """provide multi-parametric representation of image based on megavoxel categories.
+
+        called in extractImageLevelTextureFeatures
+        """
         errorVal = (None, None)
         showImage = PhindConfig.showImage
         countBackground = metadata.countBackground
@@ -385,21 +389,4 @@ class VoxelBase:
         return imageProfile, rawProfile  # , texture_features
     # end getImageProfile
 
-
-
-
 # end class VoxelBase
-
-
-
-
-if __name__ == '__main__':
-    """Unit tests"""
-
-    pass
-
-
-
-
-
-# end main
