@@ -65,7 +65,7 @@ class TrainingFunctions:
         """Open a window for the user to select training classes, and pass to random forest model."""
         select_grps=[]
         if len(np.unique(lbls))>1:
-            win=selectWindow(np.unique(lbls), "", "Select Classes", "Classes", "", select_grps)
+            win=selectWindow(np.unique(lbls), "", "Select Controls", "Classes", "", select_grps)
             if win.x_press:
                 pass #print("Cancelled")
             elif len(select_grps)>1:
