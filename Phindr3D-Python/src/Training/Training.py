@@ -16,12 +16,7 @@
 
 from ..PhindConfig.PhindConfig import *
 
-
 class Training:
-    """This class ...
-       Static methods that draw closely from transliterations of the MATLAB functions
-       can be found in the SegmentationFunctions class."""
-
     def __init__(self):
         """Training class constructor"""
         # params defined in Phind Config
@@ -35,26 +30,6 @@ class Training:
         self.pixelsPerImage = PhindConfig.pixelsPerImage
         self.trainingPerColumn = PhindConfig.trainingPerColumn
         self.superVoxelPerField = PhindConfig.superVoxelPerField
-
-        # params to be defined later (in voxelGroups folder)
-        # self.intensityThresholdValues = None  #gets computed at metadata loading stage
-        # self.randZForTraining = None          #gets computed on a per-image basis during category making
-        # self.randFieldID = None               #gets determined at metadata loading stage for scaling and thresholding
-        # self.randTrainingPerTreatment = None  #(intensity threshold values and scaling factors should already reflect training per treatment if chosen)
-
     # end constructor
 
-
-
-
 # end class Training
-
-
-
-
-if __name__ == '__main__':
-    """Tests of the Training class that can be run directly."""
-
-
-
-# end main

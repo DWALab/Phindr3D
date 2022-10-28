@@ -29,9 +29,10 @@ try:
 except ImportError:
     from src.GUI.windows.helperclasses import *
 
-#manually enter cluster number
 class setcluster(object):
+    """Manually enter cluster number."""
     def __init__(self, clusternum, datafilt, plot_data, labels, group):
+        """Construct GUI window to set the number of clusters."""
         self.clust=clusternum
         #main layout
         win = QDialog()
@@ -58,17 +59,30 @@ class setcluster(object):
             win.layout().addRow(labelc2)
             win.layout().addRow(labelc3)
         win.layout().addRow(btn_ok, btn_close)
-        btn_ok.clicked.connect(lambda: self.confirmed_cluster(clusterset, datafilt, clusterset.value(), plot_data, labels, labelc1, labelc2, labelc3, group) if group=="Treatment" and len(np.unique(labels))>1 else self.confirmed_cluster(clusterset, datafilt, clusterset.value(), plot_data, labels, None, None, None, group))
+        btn_ok.clicked.connect(
+            lambda: self.confirmed_cluster(clusterset, datafilt, clusterset.value(),
+                plot_data, labels, labelc1, labelc2, labelc3, group)
+                if group=="Treatment" and len(np.unique(labels))>1
+                else self.confirmed_cluster(clusterset, datafilt, clusterset.value(),
+                    plot_data, labels, None, None, None, group))
         btn_close.clicked.connect(lambda: win.close())
         win.show()
         win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         win.exec()
-    #return number of clusters. If current colorby is "Treatment" displays mutual information.
-    def confirmed_cluster(self, num, datafilt, numclusters, plot_data, labels, labelc1, labelc2, labelc3, group):
+    # end constructor
+
+    def confirmed_cluster(
+            self, num, datafilt, numclusters, plot_data,
+            labels, labelc1, labelc2, labelc3, group):
+        """Return number of clusters.
+
+        If current colorby is "Treatment" displays mutual information.
+        """
         if num.value()>0:
             self.clust=num.value()
             if group=="Treatment" and len(np.unique(labels))>1:
-                clusters, counts, idx =Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
+                clusters, counts, idx =Clustering().computeClustering(
+                    datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
                 treatlabels = np.zeros(labels.shape)
                 for i, t in enumerate(labels):
                     treatlabels[labels == t] = i + 1
@@ -77,14 +91,19 @@ class setcluster(object):
                 labelc3.setText('Adjusted mutual information: ' + str(met.normalized_mutual_info_score(treatlabels, idx)))
         else:
             errorWindow("Cluster Error", "Number of Clusters must be a positive value")
-#export clusters
+    # end confirmed_cluster
+# end setcluster
+
 class export_cluster(object):
+    """Export clusters"""
     def __init__(self, plot_data, datafilt, numclusters, featurefile):
+        """Construct GUI window to export the clusters."""
         if numclusters!=None:
             name = QFileDialog.getSaveFileName(None, 'Save File', filter='.txt')
             if name[0]!= '':
                 #get clusters/locations
-                clusters, count, idx = Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
+                clusters, count, idx = Clustering().computeClustering(
+                    datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
                 #get info from feature/metadatafile
                 cols = list(pd.read_csv(featurefile, nrows=1, sep='\t'))
                 cols=list(filter(lambda col: (col[:2]!='MV' and col!='bounds' and col!='intensity_thresholds'), cols))
@@ -99,7 +118,9 @@ class export_cluster(object):
                 cols = list(pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], nrows=1, sep='\t'))
                 if 'Stack' in cols:
                     stack=[]
-                    metadata = pd.read_csv(data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0], usecols= ['Stack', 'ImageID'], sep="\t",na_values='NaN')
+                    metadata = pd.read_csv(
+                        data["MetadataFile"].str.replace(r'\\', '/', regex=True).iloc[0],
+                        usecols= ['Stack', 'ImageID'], sep="\t",na_values='NaN')
                     for ind in np.unique(data['ImageID'].to_numpy()):
                         idstack=metadata['Stack'].loc[metadata['ImageID'] == ind]
                         if idstack.min()!=idstack.max():
@@ -116,15 +137,19 @@ class export_cluster(object):
                     errorWindow('Cluster Export', "Check Validity of Metadata and Feature File. \n Python Exception: {}".format(ex))
         else:
             errorWindow("Export Error", "Please 'Set Number of Clusters' before using Export Cluster Results")
-#show clusters and piechart percentage of labels
+# end export_cluster
+
 class piechart(object):
+    """Show clusters and piechart percentage of labels."""
     def __init__(self, plot_data, datafilt, numclusters, labels, colors):
+        """Construct a GUI window to show pie charts of cluster compositions."""
         if isinstance(numclusters, int):
             win = QDialog()
             win.setWindowTitle("Piechart")
             win.setLayout(QGridLayout())
             #clusters and centers
-            clusters, count, idx=Clustering().computeClustering(datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
+            clusters, count, idx=Clustering().computeClustering(
+                datafilt, numclusters, np.array(list(zip(plot_data[0], plot_data[1]))))
             groups=np.unique(labels)
             self.max_piesize=3000 # maximum matplotlib piechart size.
             self.main_plot = MplCanvas(self, width=10, height=10, dpi=100, projection="2d")
@@ -133,7 +158,9 @@ class piechart(object):
                 ind=np.where(idx==i)
                 self.main_plot.axes.plot(plot_data[0][ind], plot_data[1][ind], 'ok', alpha=0.4)
                 for x in ind[0]:
-                    self.main_plot.axes.plot([plot_data[0][x], plot_data[0][i]], [plot_data[1][x], plot_data[1][i]], 'k-', alpha=0.2)
+                    self.main_plot.axes.plot(
+                        [plot_data[0][x], plot_data[0][i]],
+                        [plot_data[1][x], plot_data[1][i]], 'k-', alpha=0.2)
             # pie radius norm
             axisRange = abs(np.max(plot_data[0]) - np.min(plot_data[0]));
             maxRadius = .06 * axisRange
@@ -144,22 +171,36 @@ class piechart(object):
                 rsize = (maxRadius - minRadius) * rsize + minRadius;
             else:
                 rsize=np.ones(len(count))
-            cluster_percent=[np.array([np.count_nonzero(labels[np.where(idx == i)[0].astype(int)]==trt)/np.count_nonzero(idx==i) for trt in groups]) for i in clusters]
-            #pie divisions (derived from https://matplotlib.org/stable/gallery/lines_bars_and_markers/scatter_piecharts.html)
+            cluster_percent=[np.array([np.count_nonzero(
+                labels[np.where(idx == i)[0].astype(int)]==trt)/np.count_nonzero(idx==i)
+                    for trt in groups]) for i in clusters]
+
             def pie_slice(prev_ratio, cur_ratio):
+                """Pie divisions
+
+                (derived from https://matplotlib.org/stable/gallery/lines_bars_and_markers/scatter_piecharts.html)
+                """
                 x1 = np.cos(2 * np.pi * np.linspace(prev_ratio, cur_ratio))
                 y1 = np.sin(2 * np.pi * np.linspace(prev_ratio, cur_ratio))
                 xy1 = np.row_stack([[0, 0], np.column_stack([x1, y1])])
                 s1 = np.abs(xy1).max()
                 return(s1, xy1)
+            # end pie_slice
+
             #plot pie slices per cluster
             for pt, cluster, size_ind in zip(cluster_percent, clusters, range(len(clusters))):
                 parts_ind=np.nonzero(pt)
                 parts=np.array(pt[parts_ind[0].astype(int)])
                 for x in range(len(parts)):
                     s1, mark=pie_slice(sum(parts[:x]), sum(parts[:x+1]))
-                    self.main_plot.axes.scatter(plot_data[0][cluster], plot_data[1][cluster], marker=mark, s=s1 ** 2 *self.max_piesize*rsize[size_ind], facecolor=colors[parts_ind[0][x]])
-                self.main_plot.axes.text(plot_data[0][cluster], plot_data[1][cluster], s=size_ind+1, horizontalalignment='center', verticalalignment='center', bbox=dict(facecolor='white', alpha=0.7))
+                    self.main_plot.axes.scatter(
+                        plot_data[0][cluster], plot_data[1][cluster],
+                        marker=mark, s=s1 ** 2 *self.max_piesize*rsize[size_ind],
+                        facecolor=colors[parts_ind[0][x]])
+                self.main_plot.axes.text(
+                    plot_data[0][cluster], plot_data[1][cluster], s=size_ind+1,
+                    horizontalalignment='center', verticalalignment='center',
+                    bbox=dict(facecolor='white', alpha=0.7))
             self.main_plot.axes.set_aspect('equal')
             self.main_plot.fig.tight_layout()
             self.main_plot.axes.axis('off')
@@ -173,10 +214,10 @@ class piechart(object):
         else:
             errorWindow("PieChart Error", "Please 'Set Number of Clusters' before using Piechart")
 
-#cluster line plots
 class clusterdisplay(object):
+    """Cluster line plots."""
     def __init__(self, x, y, xp, yp, win_title, xlabel, ylabel, opt_label, text, plot):
-        #main layout
+        """Construct main GUI layout for clustering display."""
         win = QDialog()
         win.setWindowTitle(win_title)
         win.setLayout(QGridLayout())
@@ -209,6 +250,8 @@ class clusterdisplay(object):
         win.layout().addWidget(self.main_plot)
         win.show()
         win.exec()
+    # end constructor
+# end clusterdisplay
 
 class perplexity_set(object):
     def __init__(self, X):
@@ -229,6 +272,7 @@ class perplexity_set(object):
         win.show()
         win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         win.exec()
+
     def confirmed_perplexity(self, perplexity, win):
         if perplexity>0:
             self.perplexity=perplexity
@@ -242,9 +286,8 @@ class Clustering:
         self.realmin = np.finfo(np.float64).tiny
         self.realmax = np.finfo(np.float64).max
 
-    #projection data calculation
     def plot_type(self, X, dim, plot):
-
+        """Projection data calculation."""
         if plot == "PCA":
             func = 'linear'
             sc = StandardScaler()
@@ -322,8 +365,8 @@ class Clustering:
 
     @staticmethod
     def rescale(x, newmin=0, newmax=1):
-        """
-        This function linearly rescales an array to the range [newmin, newmax]
+        """Linearly rescale an array to the range [newmin, newmax].
+
         :param x:, numpy array, to be rescaled
         :param newmin: float, minimum value in new range
         :param newmax: float, maximum value in new range
@@ -335,11 +378,15 @@ class Clustering:
         return (x - minx) / (maxx - minx) * (newmax - newmin) + newmin
 
     @staticmethod
-    def sammon(self, x, n, display=0, inputdist='raw', maxhalves=20, maxiter=500, tolfun=1e-9, init='default'):
-        """copied from https://github.com/tompollard/sammon as no other python libraries appear to have implemented sammon mapping.
+    def sammon(
+            self, x, n, display=0, inputdist='raw', maxhalves=20,
+            maxiter=500, tolfun=1e-9, init='default'):
+        """Perform Sammon mapping on dataset x.
+
+        Copied from https://github.com/tompollard/sammon as no other
+        python libraries appear to have implemented sammon mapping.
         this appears to be the same implementation as is used in matlab's drtoolbox.
 
-        Perform Sammon mapping on dataset x
         y = sammon(x) applies the Sammon nonlinear mapping procedure on
         multivariate data x, where each row represents a pattern and each column
         represents a feature.  On completion, y contains the corresponding
@@ -480,10 +527,7 @@ class Clustering:
         return [y, E]
 
     class C_class:
-        """
-        a data structure used in the clsIn function.
-        """
-
+        """A data structure used in the clsIn function."""
         def __init__(self):
             self.minClsSize = 5
             self.maxCls = 10
@@ -495,8 +539,9 @@ class Clustering:
 
     @staticmethod
     def preferenceRange(self, s, method='bound'):
-        """called in clsIn
-        in third party/clustering folder
+        """Computes a lower bound, pmin, and the exact value of the preference, pmax.
+
+        Called in clsIn in third party/clustering folder
         Given a set of similarities, s, this function computes a lower
         bound, pmin, on the value for the preference where the optimal
         number of clusters (exemplars) changes from 1 to 2, and the
@@ -585,11 +630,16 @@ class Clustering:
             S[k, k] = -np.inf
             pmax = np.max(S)
         return pmin, pmax
+    # end
 
+    def computeClustering(
+            self, data, numberClusters, projection_data, type='AP', sparse=False,
+            maxits=500, convits=15, dampfact=0.5,
+            plot=False, details=False, nonoise=False):
+        """Compute data clusters for the given input parameters.
 
-    # computeClustering.m
-    def computeClustering(self, data, numberClusters, projection_data, type='AP', sparse=False, maxits=500, convits=15, dampfact=0.5,
-                          plot=False, details=False, nonoise=False):
+        computeClustering.m
+        """
         percent_dev = 1  # percentage by which final number of clusters may deviate from Nclusters
         type = type.upper()
         C = self.clsIn(self,data)
@@ -603,14 +653,11 @@ class Clustering:
         else:
             clusterResult = np.arange(0, data.shape[0])
         return (clusters, counts, idx)
-
+    # end computeClustering
 
     @staticmethod
     def clsIn(self, data, beta=0.05, dis='euclidean'):
-        """
-        dis can be: "euclidean" OR "cosine" OR "hamming"
-        """
-
+        """Parameter dis can be: 'euclidean' OR 'cosine' OR 'hamming'."""
         dis = dis.lower()
         if data.size == 0:  # check if data is empty array
             print('Data is empty')
@@ -639,9 +686,11 @@ class Clustering:
     # https://www.mathworks.com/matlabcentral/mlc-downloads/downloads/submissions/14620/versions/4/previews/apcluster.m/index.html
     # https://www.mathworks.com/matlabcentral/fileexchange/25722-fast-affinity-propagation-clustering-under-given-number-of-clusters?tab=discussions
     @staticmethod
-    def apcluster(self, s, p, sparse=False, maxits=500, convits=50, dampfact=0.5, plot=False, details=False,
-                  nonoise=False):
-        """in third party/clustering
+    def apcluster(self, s, p, sparse=False, maxits=500, convits=50,
+            dampfact=0.5, plot=False, details=False, nonoise=False):
+        """Identify data clusters using affinity propagation.
+
+        in third party/clustering
         s = similarities
         p = preferences
         APCLUSTER uses affinity propagation (Frey and Dueck, Science,
@@ -969,17 +1018,15 @@ class Clustering:
     
     @staticmethod
     def apclusterK(self, s, kk, prc=10):
-        """called in computeClustering"""
-        """in third party/clustering folder"""
-        """
-        % Finds approximately k clusters using affinity propagation (BJ Frey and
-        % D Dueck, Science 2007), by searching for an appropriate preference value
-        % using a bisection method. By default, the method stops refining the
-        % number of clusters when it is within 10%% of the value k provided by the
-        % user. To change this percentage, use apclusterK(s,k,prc) -- eg, setting
-        % prc to 0 causes the method to search for exactly k clusters. In any case
-        % the method terminates after 20 bisections are attempted.
-        %
+        """Finds approximately k clusters using affinity propagation.
+
+        Finds approximately k clusters using affinity propagation (BJ Frey and
+        D Dueck, Science 2007), by searching for an appropriate preference value
+        using a bisection method. By default, the method stops refining the
+        number of clusters when it is within 10%% of the value k provided by the
+        user. To change this percentage, use apclusterK(s,k,prc) -- eg, setting
+        prc to 0 causes the method to search for exactly k clusters. In any case
+        the method terminates after 20 bisections are attempted.
         """
         # Construct similarity matrix and add a tiny amount of noise
         if s.shape[1] == 3:
@@ -1071,6 +1118,7 @@ class Clustering:
 
     @staticmethod
     def estimateNumClusters(self, X, pl=True):
+        """Estimate the number of clusters."""
         C = self.clsIn(self, X)  # make similarity matrix
         step = 100
         pref = np.linspace(C.pmin, C.pmax, step, endpoint=True)
@@ -1088,18 +1136,18 @@ class Clustering:
         numclust = self.getBestPreference(pref, yCls, pl=pl)
         print(f'Estimated optimal number of clusters: {numclust}')
         return numclust
+    # end estimateNumClusters
 
-    #   getBestPreference.m
     @staticmethod
     def getBestPreference(x, y, pl=True):
-        """
-        % %getBestPreference Perform knee point detection
-        % to get the best clusters
-        % "Knee Point Detection in BIC for Detecting the Number of Clusters"
-        % Input:
-        %       x - X axis values
-        %       y - y axis values
-        %       pl - toggle plotting option
+        """Perform knee point detection to get the best clusters.
+
+        From getBestPreference.m
+        "Knee Point Detection in BIC for Detecting the Number of Clusters"
+        Input:
+              x - X axis values
+              y - y axis values
+              pl - toggle plotting option
         """
         yp = 0  # i think that these are supposed to be indices, so i set to 0. if not, then it should be 1
         xp = np.argwhere(y == 1)
@@ -1146,19 +1194,18 @@ class Clustering:
             winc = clusterdisplay(x, y, xp, yp, 'Cluster Estimation', 'Preference',
                                   '# Clusters', 'Optimal Cluster', [xCent, yCent, optText], 1)
         return yp
-    # end Clustering
+    # end getBestPreference
 
-#unit test for clustering.py
 if __name__ == '__main__':
-    #want to test cluster estimation function
-
-    testdata = "testdata\\cluster_test\\iris.txt"   #Data in sample file is already rescaled and filtered as it would be by phindr3D (0-1 along columns, drop duplicates, sort by feature columns in ascending order.)
+    """Tests of cluster estimation function
+    
+    Unit test for clustering.py
+    Data in sample file is already rescaled and filtered as it would be by phindr3D 
+    (0-1 along columns, drop duplicates, sort by feature columns in ascending order.)
+    """
+    testdata = "testdata\\cluster_test\\iris.txt"
     testdata = np.loadtxt(testdata, delimiter='\t', skiprows=1, usecols=(2,3,4,5))
     clusterTest = Clustering()
     print('\nTesting Cluster estimation...\n')
     numclust = clusterTest.estimateNumClusters(clusterTest, testdata, pl=False)
     print(f'\tEstimated 3 clusters from iris dataset: {numclust == 3}')
-
-    #want to test clustering result
-    
-
