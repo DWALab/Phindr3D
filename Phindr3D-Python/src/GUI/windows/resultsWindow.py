@@ -208,7 +208,6 @@ class resultsWindow(QDialog):
                     self.feature_file.append(filename)
                 else:
                     self.feature_file.append(prevfile)
-                print(self.feature_file)
                 grouping, cancel=self.color_groupings(grouping)
                 if not cancel:
                     reset_view(self)
@@ -253,6 +252,7 @@ class resultsWindow(QDialog):
                 grouping.addItem(col)
         grouping.blockSignals(False)
         return(grouping, win.x_press)
+    # end color_groupings
 
     def data_filt(self, grouping, projection, plot, new_plot):
         """Choose dataset to use for clustering.
@@ -299,8 +299,6 @@ class resultsWindow(QDialog):
                 X = featuredf.to_numpy().astype(np.float64)
             else:
                 X = featuredf[mv_cols].to_numpy().astype(np.float64)
-                print('Invalid data set choice. Using Megavoxel frequencies.')
-            print('Dataset shape:', X.shape)
             self.filtered_data = X
 
             # reset imageIDs
@@ -316,7 +314,6 @@ class resultsWindow(QDialog):
             # misc info
             numMVperImg = np.array(image_feature_data['NumMV']).astype(np.float64)
             num_images_kept = X.shape[0]
-            print(f'\nNumber of images: {num_images_kept}\n')
             result_plot(self, X, projection, plot, new_plot)
         else:
             errorWindow('Feature File Data Error',
