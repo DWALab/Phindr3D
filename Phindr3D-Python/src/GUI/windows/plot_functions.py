@@ -17,13 +17,15 @@
 import numpy as np
 from cv2 import medianBlur
 import PIL.Image
-from .colorchannelWindow import *
 import matplotlib
 import matplotlib.pyplot as plt
 from math import ceil, floor
 from textwrap import fill
-from .helperclasses import *
 import json
+
+from .helperclasses import *
+from .colorchannelWindow import *
+
 try:
     from ...Clustering import Clustering
     from ...Data.DataFunctions import *
@@ -34,20 +36,22 @@ except ImportError:
     from src.Data.DataFunctions import *
 
 def treatment_bounds(data, bounds, id, treatmentcol):
-
+    """Find upper and lower intensity values in the treatmentcol data column."""
     try:
         trt = data[treatmentcol].iloc[id]
-        trt_loc =int(np.where(data[treatmentcol].unique() == trt)[0])
+        trt_loc = int(np.where(data[treatmentcol].unique() == trt)[0])
 
         bound = [bounds[0][trt_loc], bounds[1][trt_loc]]
         return(bound)
     except Exception as ex:
         win = errorWindow("Error TreatmentNorm","intensityNormPerTreatment was set with error: {}".format(ex))
         return(False)
+# end treatment_bounds
 
-
-def merge_channels(data, rgb_img, ch_len, scroller_value, color, meta_loc, box, bounds, IntensityThreshold):
-    # threshold/colour each image channel
+def merge_channels(
+        data, rgb_img, ch_len, scroller_value, color,
+        meta_loc, box, bounds, IntensityThreshold):
+    """Compute threshold/colour for each image channel."""
     for ind, rgb_color in zip(range(scroller_value, scroller_value + ch_len), color):
         ch_num = str(ind - scroller_value + 1)
         data['Channel_' + ch_num] = data['Channel_' + ch_num].str.replace(r'\\', '/', regex=True)
@@ -55,7 +59,8 @@ def merge_channels(data, rgb_img, ch_len, scroller_value, color, meta_loc, box, 
         # medianfilter for slice or MIP projection
         if box == False:
             cur_img = medianBlur(cur_img, 3)
-        cur_img= (cur_img - bounds[0][int(ch_num)-1])/(bounds[1][int(ch_num)-1]-bounds[0][int(ch_num)-1]) #bounds from metadata functions compute
+        # bounds from metadata functions compute
+        cur_img = (cur_img - bounds[0][int(ch_num)-1])/(bounds[1][int(ch_num)-1]-bounds[0][int(ch_num)-1])
         cur_img[cur_img < IntensityThreshold[0][int(ch_num)-1]] = 0
         cur_img[cur_img > 1] = 1
         cur_img = np.dstack((cur_img, cur_img, cur_img))
@@ -65,9 +70,10 @@ def merge_channels(data, rgb_img, ch_len, scroller_value, color, meta_loc, box, 
     max_rng = [np.max(rgb_img[:, :, i]) if np.max(rgb_img[:, :, i]) > 0 else 1 for i in range(3)]
     rgb_img = np.divide(rgb_img, max_rng)
     return (rgb_img)
+# end merge_channels
 
 def result_plot(self, X, projection, plot, new_plot):
-    #reset plot
+    """Compose a plot of data points to display."""
     self.main_plot.axes.clear()
     del self.plots[:]
     if new_plot:
@@ -83,22 +89,30 @@ def result_plot(self, X, projection, plot, new_plot):
         else:
             self.plot_data.append(np.zeros(len(self.plot_data[-1])))
     #plot data
-    colors= plt.cm.get_cmap('gist_ncar')(range(0, 255, floor(255/len(np.unique(self.labels)))))
+    colors = plt.cm.get_cmap('gist_ncar')(range(0, 255, floor(255/len(np.unique(self.labels)))))
     if len(np.unique(self.labels))>1:
         for label, i in zip(np.unique(self.labels), range(len(np.unique(self.labels)))):
-            self.plots.append(self.main_plot.axes.scatter3D(self.plot_data[0][np.where(np.array(self.labels)==label)[0]], self.plot_data[1][np.where(np.array(self.labels)==label)[0]], self.plot_data[2][np.where(np.array(self.labels)==label)[0]], label=label,
-                            s=10, alpha=1, color=[colors[i]], depthshade=False, picker=1.5, cmap=colors))
+            self.plots.append(self.main_plot.axes.scatter3D(
+                self.plot_data[0][np.where(np.array(self.labels)==label)[0]],
+                self.plot_data[1][np.where(np.array(self.labels)==label)[0]],
+                self.plot_data[2][np.where(np.array(self.labels)==label)[0]],
+                label=label, s=10, alpha=1, color=[colors[i]],
+                depthshade=False, picker=1.5, cmap=colors))
     else:
-        self.plots.append(self.main_plot.axes.scatter3D(self.plot_data[0], self.plot_data[1], self.plot_data[2], label=self.labels[0],
-                        s=10, alpha=1, color=[colors[0]], depthshade=False, picker=2, cmap=colors))
+        self.plots.append(self.main_plot.axes.scatter3D(
+            self.plot_data[0], self.plot_data[1], self.plot_data[2],
+            label=self.labels[0], s=10, alpha=1, color=[colors[0]],
+            depthshade=False, picker=2, cmap=colors))
     legend_format(self, plot, colors, new_plot)
+# end result_plot
 
 def legend_format(self, plot, colors, new_plot):
-    #default legend formating
-    cols=2
-    bbox=(1.3, 0.75)
-    text=""
-    handle=[matplotlib.patches.Patch(color=colour, label=label) for label, colour in zip(self.labels, colors)]
+    """Set the default legend formatting."""
+    cols = 2
+    bbox = (1.3, 0.75)
+    text = ""
+    handle = [matplotlib.patches.Patch(color=colour, label=label)
+        for label, colour in zip(self.labels, colors)]
     #increase legend columns if too many labels
     if len(self.labels)>1:
         text=max(self.labels, key = len)
@@ -117,25 +131,32 @@ def legend_format(self, plot, colors, new_plot):
     self.main_plot.axes.set_ylabel(plot + " 2")
     #save original x,y,z axis limits for resetview
     if new_plot:
-        self.original_xlim=[self.plots[-1].axes.get_xlim3d()[0], self.plots[-1].axes.get_xlim3d()[1]]
-        self.original_ylim=[self.plots[-1].axes.get_ylim3d()[0], self.plots[-1].axes.get_ylim3d()[1]]
-        self.original_zlim=[self.plots[-1].axes.get_zlim3d()[0], self.plots[-1].axes.get_zlim3d()[1]]
+        self.original_xlim=[self.plots[-1].axes.get_xlim3d()[0],
+                            self.plots[-1].axes.get_xlim3d()[1]]
+        self.original_ylim=[self.plots[-1].axes.get_ylim3d()[0],
+                            self.plots[-1].axes.get_ylim3d()[1]]
+        self.original_zlim=[self.plots[-1].axes.get_zlim3d()[0],
+                            self.plots[-1].axes.get_zlim3d()[1]]
     self.main_plot.draw()
+# end legend_format
 
 def reset_view(self):
-    #reset to starting x, y, z limit
+    """Reset to starting x, y, z limit."""
     self.main_plot.axes.set_xlim3d(self.original_xlim)
     self.main_plot.axes.set_ylim3d(self.original_ylim)
     self.main_plot.axes.set_zlim3d(self.original_zlim)
     #xy-plane view
     self.main_plot.axes.view_init(azim=-90, elev=90)
     self.main_plot.draw()
+# end reset_view
 
 def legend_colors(self):
-    #get plot rgb values
+    """Get plot rgb values."""
     map_colors=[np.array(plot.get_facecolor()[0][0:3]) for plot in self.plots]
     #GUI colorpicker
-    colors = colorchannelWindow(len(np.unique(self.labels)), map_colors[:], "Custom Colour Picker", "Labels", np.unique(self.labels))
+    colors = colorchannelWindow(
+        len(np.unique(self.labels)), map_colors[:], "Custom Colour Picker",
+        "Labels", np.unique(self.labels))
     colors=np.array(colors.color)
     #change plot colours
     if np.array_equal(colors, np.array(map_colors))==False:
@@ -148,9 +169,10 @@ def legend_colors(self):
             self.plots[0].set_color(colors[0])
             legend.legendHandles[0].set_color(colors[0])
         self.main_plot.draw()
+# end legend_colors
 
-#export current plot data and x, y, z limits
 def save_file(self, map):
+    """Export current plot data and x, y, z limits."""
     name = QFileDialog.getSaveFileName(self, 'Save File', filter=self.tr('.json'))
     if name[0] !='':
         info = {
@@ -160,21 +182,25 @@ def save_file(self, map):
                 'y_limit': self.original_ylim,
                 'z_limit': self.original_zlim,
                 'feature_filename': self.feature_file[0]
-        }
+            }
         with open("".join(name), 'w') as f:
             json.dump(info, f)
+# end save_file
 
-#import plot data
 def import_file(self, map_dropdown, colordropdown, twod, threed):
-    filename= QFileDialog.getOpenFileName(self, 'Open Plot Data JSON File', '', 'JSON file (*.json)')[0]
+    """Import plot data."""
+    filename= QFileDialog.getOpenFileName(
+        self, 'Open Plot Data JSON File', '', 'JSON file (*.json)')[0]
     if filename != '':
         with open(filename, "r") as f:
             try:
                 data=json.load(f)
-                if list(data.keys())==['plot_projection','plot_coordinates','x_limit','y_limit','z_limit', 'feature_filename']:
+                if list(data.keys()) == ['plot_projection', 'plot_coordinates',
+                        'x_limit', 'y_limit', 'z_limit', 'feature_filename']:
                     if os.path.exists(data.get('feature_filename')):
-                        plot_coord=[np.array(plot_data) for plot_data in data.get('plot_coordinates')]
-                        if len(plot_coord)==3:
+                        plot_coord = [np.array(plot_data)
+                            for plot_data in data.get('plot_coordinates')]
+                        if len(plot_coord) == 3:
                             self.plot_data.clear()
                             #2d/3d set
                             if np.all(np.array(data.get('plot_coordinates')[2])) != 0:
@@ -186,15 +212,22 @@ def import_file(self, map_dropdown, colordropdown, twod, threed):
                             self.original_ylim = data.get('y_limit')
                             self.original_zlim = data.get('z_limit')
                             map_dropdown.blockSignals(True)
-                            map_dropdown.setCurrentIndex(map_dropdown.findText(data.get('plot_projection')))
+                            map_dropdown.setCurrentIndex(
+                                map_dropdown.findText(data.get('plot_projection')))
                             map_dropdown.blockSignals(False)
 
-                            self.loadFeaturefile(colordropdown, map_dropdown.currentText(), False, data.get('feature_filename'))
+                            self.loadFeaturefile(
+                                colordropdown, map_dropdown.currentText(),
+                                False, data.get('feature_filename'))
                         else:
-                            errorWindow("Import Plot Data Error","Check JSON file. 'plot_coordinates' must be 3D (list of x, y, z coordinates)")
+                            errorWindow("Import Plot Data Error",
+                                "Check JSON file. 'plot_coordinates' must be 3D (list of x, y, z coordinates)")
                     else:
-                        errorWindow("Import Plot Data Error","Feature File Path found in selected Plot Data file does not exist: \n'{}'".format(data.get('feature_filename')))
+                        errorWindow("Import Plot Data Error",
+                            "Feature File Path found in selected Plot Data file does not exist: \n'{}'".format(data.get('feature_filename')))
                 else:
-                    errorWindow("Import Plot Data Error", "Check if correct file. Requires Following Labels: plot_projection, plot_coordinates, x_limit , y_limit ,z_limit, 'feature_filename'")
+                    errorWindow("Import Plot Data Error",
+                        "Check if correct file. Requires Following Labels: plot_projection, plot_coordinates, x_limit , y_limit ,z_limit, 'feature_filename'")
             except Exception as ex:
                 errorWindow("Import Plot Data Error", "Check if correct file. \n\nPython Error: {}".format(ex))
+# end import_file

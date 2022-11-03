@@ -27,10 +27,13 @@ except ImportError:
     from src.Segmentation import *
     from src.GUI.windows.helperclasses import *
 
+# Define a random number generator with the global name Generator
 Generator = Generator()
 
 class segmentationWindow(QDialog):
+    """Build a GUI window for the user to segment organoids from images."""
     def __init__(self, metadata):
+        """Construct the GUI window for users to segment organoids from images."""
         super(segmentationWindow, self).__init__()
         self.setWindowTitle("Organoid Segmentation")
         self.setLayout(QGridLayout())
@@ -68,6 +71,7 @@ class segmentationWindow(QDialog):
 
         # button functions
         def setSegmentationSettings(self):
+            """Respond to user click of Set Segmentation Settings."""
             newdialog = QDialog()
             newdialog.setWindowTitle("Set Segmentation Settings")
             newdialog.setLayout(QGridLayout())
@@ -86,6 +90,7 @@ class segmentationWindow(QDialog):
             save2json = QPushButton('Save settings to file')
 
             def updateSettingDisplay(self):
+                """Transfer stored segmentation setting values to the displayed fields."""
                 minarea.setText(str(self.segmentation.settings['min_area_spheroid']))
                 intensity.setText(str(self.segmentation.settings['intensity_threshold']))
                 radius.setText(str(self.segmentation.settings['radius_spheroid']))
@@ -94,7 +99,10 @@ class segmentationWindow(QDialog):
                 entropy.setText(str(self.segmentation.settings['entropy_threshold']))
                 maximage.setText(str(self.segmentation.settings['max_img_fraction']))
                 removeborderbox.setChecked(self.segmentation.settings['remove_border_objects'])
+            # end updateSettingDisplay
+
             def updateSettingVals(self):
+                """Respond to user click of Confirm button."""
                 try:
                     self.segmentation.settings['min_area_spheroid'] = float(minarea.text())
                     self.segmentation.settings['intensity_threshold'] = float(intensity.text())
@@ -106,38 +114,56 @@ class segmentationWindow(QDialog):
                     self.segmentation.settings['remove_border_objects'] = removeborderbox.isChecked()
                     return True
                 except ValueError:
-                    alert = self.buildErrorWindow('Segmentation settings can only include numerical values.', QMessageBox.Critical)
+                    alert = self.buildErrorWindow(
+                        'Segmentation settings can only include numerical values.',
+                        QMessageBox.Critical)
                     alert.exec()
                     return False
+            # end updateSettingVals
+
             def confirmClicked(self):
+                """Respond to user click of Confirm button."""
                 if updateSettingVals(self):
                     newdialog.close()
+
             def cancelClicked():
+                """Respond to user click of Cancel button."""
                 newdialog.close()
+
             def loadClicked(self, loadbutton):
-                settingfile, dump = QFileDialog.getOpenFileName(newdialog, 'Open File', '', 'JSON file (*.json)')
+                """Respond to user click of Load Settings button."""
+                settingfile, dump = QFileDialog.getOpenFileName(
+                    newdialog, 'Open File', '', 'JSON file (*.json)')
                 if os.path.exists(settingfile):
                     try:
                         self.segmentation.loadSettings(settingfile)
                         loadbutton.setToolTip(settingfile)
                         updateSettingDisplay(self)
                     except:
-                        alert = self.buildErrorWindow('Failed to load segmentation settings file.', QMessageBox.Critical)
+                        alert = self.buildErrorWindow(
+                            'Failed to load segmentation settings file.', QMessageBox.Critical)
                         alert.exec()
                 else:
-                    load_setting_win = self.buildErrorWindow("Select valid Segmentation Settings File (.json)", QMessageBox.Critical)
+                    load_setting_win = self.buildErrorWindow(
+                        "Select valid Segmentation Settings File (.json)", QMessageBox.Critical)
                     load_setting_win.show()
                     load_setting_win.exec()
+            # end loadClicked
+
             def save2jsonClicked(self, savebutton):
+                """Respond to user click of Save Settings button."""
                 if updateSettingVals(self):
-                    savefile, dump = QFileDialog.getSaveFileName(newdialog, 'Save settings', '', '(*.json)')
+                    savefile, dump = QFileDialog.getSaveFileName(
+                        newdialog, 'Save settings', '', '(*.json)')
                     try:
                         self.segmentation.saveSettings(savefile)
                         savebutton.setToolTip(f'Last save at: {savefile}')
                     except FileNotFoundError:
-                        alert = self.buildErrorWindow('Settings not saved.', QMessageBox.Critical)
+                        alert = self.buildErrorWindow(
+                            'Settings not saved.', QMessageBox.Critical)
                         alert.exec()
-                
+            # end save2jsonClicked
+
             confirm.clicked.connect(lambda: confirmClicked(self))
             cancel.clicked.connect(lambda: cancelClicked())
             load.clicked.connect(lambda: loadClicked(self, load))
@@ -169,6 +195,7 @@ class segmentationWindow(QDialog):
         # End setSegmentationSettings
         
         def loadMetadata(self, loadbutton):
+            """Select and load metadata for images to be segmented."""
             filename, dump = QFileDialog.getOpenFileName(self, 'Select Metadata File', '', 'Text files (*.txt)')
             if os.path.exists(filename):
                 try:
@@ -193,6 +220,7 @@ class segmentationWindow(QDialog):
         # End loadMetadata
 
         def setOutputPath(self, outputbutton):
+            """Set the location to save segmentation output."""
             dirname = QFileDialog.getExistingDirectory(self, 'Select Segmentation Output Directory')
             if os.path.exists(dirname):
                 self.outdir = dirname
@@ -208,6 +236,7 @@ class segmentationWindow(QDialog):
         # End setOutputPath
         
         def showSegmentation(self):
+            """Update the display."""
             if self.focusIM is None or self.labelIM is None:
                 pass
             else:
@@ -223,16 +252,19 @@ class segmentationWindow(QDialog):
         # End showSegmentation
 
         def nextimageClicked(self):
+            """Respond to user clicking Next Image."""
             self.focusIM, self.labelIM = self.segmentation.getNextIMs()
             showSegmentation(self)
         # End nextimageClicked
 
         def previmageClicked(self):
+            """Respond to user clicking Previous Image."""
             self.focusIM, self.labelIM = self.segmentation.getPrevIMs()
             showSegmentation(self)
         # End previmageClicked
         
         def segmentImages(self):
+            """Load images and create new images of segmented organoids."""
             if not self.metadata.metadataLoadSuccess:
                 loadMetadata(self, selectmetadata)
                 if not self.metadata.metadataLoadSuccess:
@@ -253,7 +285,7 @@ class segmentationWindow(QDialog):
             else:
                 alert = self.buildErrorWindow('Segmentation Failed.', QMessageBox.Critical)
                 alert.exec()
-        # End segment Images   
+        # End segmentImages
 
         selectmetadata.clicked.connect(lambda: loadMetadata(self, selectmetadata))
         outputpath.clicked.connect(lambda: setOutputPath(self, outputpath))
@@ -273,13 +305,14 @@ class segmentationWindow(QDialog):
         self.layout().addWidget(segmentbox, 0, 6, 5, 5)
         self.layout().addWidget(previmage, 5, 3, 1, 1)
         self.layout().addWidget(nextimage, 5, 8, 1, 1)
-
+    #end constructor
 
     def buildErrorWindow(self, errormessage, icon, errortitle="ErrorDialog"):
+        """Construct an error window GUI and return a reference to it."""
         alert = QMessageBox()
         alert.setWindowTitle(errortitle)
         alert.setText(errormessage)
         alert.setIcon(icon)
         return alert
-
+    # end buildErrorWindow
 # End segmentationWindow class

@@ -14,17 +14,20 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
-# These classes are not windows, but help build other features in windows
+"""These classes are not windows, but help build other features in windows."""
+
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg
+from matplotlib.backends.backend_qt5agg import NavigationToolbar2QT as NavigationToolbar
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from matplotlib.figure import Figure
-from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg, NavigationToolbar2QT as NavigationToolbar
 
-#matplotlib figure-plot creation
 class MplCanvas(FigureCanvasQTAgg):
-
+    """matplotlib figure-plot creation"""
     def __init__(self, parent=None, width=5, height=5, dpi=100, projection="3d"):
+        """Build canvas widget derived from matplotlib.FigureCanvasQTAgg."""
         self.fig = Figure(figsize=(width, height), dpi=dpi)
         if projection=="3d":
             self.axes = self.fig.add_subplot(111, projection=projection)
@@ -34,12 +37,13 @@ class MplCanvas(FigureCanvasQTAgg):
         self.cmap = None
     
     def setNearFull(self):
+        """Set the size of the axes within the canvas."""
         self.axes.set_aspect('auto')
         self.axes.set_position([0.01, 0.01, 0.98, 0.98])
-    
+# end MplCanvas
 
-#imported matplotlib toolbar. Only use desired functions.
 class NavigationToolbar(NavigationToolbar):
+    """Create a custom toolbar derived from the base NavigationToolbar class."""
     NavigationToolbar.toolitems = (
         (None, None, None, None),
         (None, None, None, None),
@@ -51,9 +55,15 @@ class NavigationToolbar(NavigationToolbar):
         (None, None, None, None),
         ('Save', 'Save the figure', 'filesave', 'save_figure')
     )
-#selectclasses and featurefile checkbox window
+# end NavigationToolbar
+
 class selectWindow(object):
-    def __init__(self, chk_lbl, col_lbl, win_title, grp_title, col_title, groupings, filtby='False', filterlist=[], filt_title="Filter By Feature(s)"):
+    """Create a window for the user to select classes using checkboxes."""
+    def __init__(
+            self, chk_lbl, col_lbl, win_title, grp_title, col_title,
+            groupings, filtby='False', filterlist=[],
+            filt_title="Filter By Feature(s)"):
+        """Construct select window GUI."""
         win = QDialog()
         win.setWindowTitle(win_title)
         win.setLayout(QGridLayout())
@@ -66,9 +76,13 @@ class selectWindow(object):
                 filt_box=self.checkbox(filt_title, filtby, win, [0, 1], False)
                 if len(filtby)==1:
                     filt_box.grp_list[0].setChecked(True)
-                ok_button.clicked.connect(lambda: self.selected(lbl_box.grp_checkbox, filt_box.grp_checkbox, win, groupings, filterlist))
+                ok_button.clicked.connect(
+                    lambda: self.selected(lbl_box.grp_checkbox,
+                        filt_box.grp_checkbox, win, groupings, filterlist))
             else:
-                ok_button.clicked.connect(lambda: self.selected(lbl_box.grp_checkbox, filtby, win, groupings, filterlist))
+                ok_button.clicked.connect(
+                    lambda: self.selected(lbl_box.grp_checkbox,
+                        filtby, win, groupings, filterlist))
         # setup Column box
         if len(col_lbl) > 0:
             ch_title = QLabel(col_title)
@@ -100,12 +114,15 @@ class selectWindow(object):
         minsize.setWidth(win.minimumSizeHint().width() + 100)
         win.setFixedSize(minsize)
         win.show()
-        win.setWindowFlags(win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        win.setWindowFlags(
+            win.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         win.exec()
+    # end constructor
 
     class checkbox(object):
+        """Define a box consisting of a list of text options with checkboxes."""
         def __init__(self, grp_title, chk_lbl, win, chk_loc, all_btn):
-            # checkbox setup
+            """Construct the textbox widget."""
             grp_title = QLabel(grp_title)
             grp_title.setFont(QFont('Arial', 10))
             self.grp_checkbox = QGroupBox()
@@ -130,10 +147,13 @@ class selectWindow(object):
                 # select all button
                 all_button = QPushButton("Select All")
                 win.layout().addWidget(all_button, 1, 0)
-                all_button.clicked.connect(lambda: [box.setChecked(True) for box in self.grp_list])
+                all_button.clicked.connect(
+                    lambda: [box.setChecked(True) for box in self.grp_list])
+        # end constructor
+    # end checkbox
 
-    #return selected groups
     def selected(self, grp_checkbox, filt_checkbox, win, groupings, filtlist):
+        """Compose lists of the checked options in the select window."""
         close=True
         if ('False' != filt_checkbox):
             for checkbox in filt_checkbox.findChildren(QCheckBox):
@@ -149,12 +169,20 @@ class selectWindow(object):
         self.x_press=False
         if close:
             win.close()
+    # end selected
+# end selectWindow
+
 class errorWindow(object):
+    """Show an error window with a specified title and error text."""
     def __init__(self, win_title, text):
+        """Construct and show the error window with the given title and error text."""
         alert = QMessageBox()
         alert.setWindowTitle(win_title)
         alert.setText(text)
         alert.setIcon(QMessageBox.Critical)
         alert.show()
-        alert.setWindowFlags(alert.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
+        alert.setWindowFlags(
+            alert.windowFlags() | Qt.CustomizeWindowHint | Qt.WindowStaysOnTopHint)
         alert.exec()
+    # end constructor
+# end errorWindow

@@ -19,7 +19,11 @@ from PyQt5.QtGui import *
 from PyQt5.QtCore import *
 
 class paramWindow(QDialog):
-    def __init__(self, metacolumns, supercoords, svcategories, megacoords, mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain, trainingcol, treatmentcol):
+    """Build a GUI window for setting voxel parameters."""
+    def __init__(self, metacolumns, supercoords, svcategories, megacoords,
+            mvcategories, voxelnum, trainingnum, bg, norm, conditiontrain,
+            trainingcol, treatmentcol):
+        """Construct the GUI window for setting voxel parameters."""
         super(paramWindow, self).__init__()
         self.setWindowTitle("Set Parameters")
         self.done = False
@@ -97,7 +101,7 @@ class paramWindow(QDialog):
         trainingimages = QLineEdit()
         trainingimages.setFixedWidth(30)
         trainingimages.setText(str(trainingnum))
-        usebackground = QCheckBox("Use Background Voxels for comparing") # text is cutoff, don't know actual line?
+        usebackground = QCheckBox("Use Background Voxels for comparing")
         usebackground.setChecked(bg)
         normalise = QCheckBox("Normalise Intensity\n Per Condition")
         normalise.setChecked(norm)
@@ -109,8 +113,10 @@ class paramWindow(QDialog):
         trainfilter = QComboBox()
         trainfilter.addItems(metacolumns)
         trainfilter.setEnabled(False)
-        normalise.clicked.connect(lambda: normtreatfilter.setEnabled(not normtreatfilter.isEnabled()))
-        trainbycondition.clicked.connect(lambda: trainfilter.setEnabled(not trainfilter.isEnabled()))
+        normalise.clicked.connect(
+            lambda: normtreatfilter.setEnabled(not normtreatfilter.isEnabled()))
+        trainbycondition.clicked.connect(
+            lambda: trainfilter.setEnabled(not trainfilter.isEnabled()))
 
         mainbox.layout().addWidget(QLabel("#Voxel\nCategories"), 0, 0, 1, 1)
         mainbox.layout().addWidget(voxelcategories, 0, 1, 1, 1)
@@ -134,11 +140,14 @@ class paramWindow(QDialog):
         if trainingcol!='':
             trainfilter.setEnabled(True)
             trainfilter.setCurrentIndex(trainfilter.findText(trainingcol))
+
         # button behaviours
         def donePressed():
-            # When done is pressed, all the inputted values are returned, stored in their place
-            # and the window closes
-            # Theoretically stored where overall parameters are stored (externally)
+            """Respond to the user clicking Done on the parameter window.
+
+            When done is pressed, all the inputted values are returned,
+            stored in their place and the window closes.
+            """
             try:
                 self.superx = int(superxin.text())
                 self.supery = int(superyin.text())
@@ -164,14 +173,14 @@ class paramWindow(QDialog):
                     self.normintensitycol=''
                 # dropdown behaviour goes here <--
                 self.close()
-
             except ValueError:
                 alert = QMessageBox()
                 alert.setWindowTitle("Error")
                 alert.setText("Invalid input")
                 alert.exec()
 
-        def resetPressed(): # reset parameters
+        def resetPressed():
+            """Reset the parameters to the initial values when window opened."""
             superxin.setText(str(supercoords[0]))
             superyin.setText(str(supercoords[1]))
             superzin.setText(str(supercoords[2]))
@@ -195,6 +204,7 @@ class paramWindow(QDialog):
                 trainfilter.setCurrentIndex(trainfilter.findText(trainingcol))
             else:
                 trainfilter.setCurrentIndex(0)
+        # resetPressed
 
         done.clicked.connect(donePressed)
         reset.clicked.connect(resetPressed)
@@ -205,3 +215,4 @@ class paramWindow(QDialog):
         winlayout.addWidget(done, 2, 1, 1, 1)
         winlayout.setAlignment(Qt.AlignLeft)
         self.setLayout(winlayout)
+    # end constructor

@@ -14,16 +14,22 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
-from src import *
 from os import path
 
+from src import *
+
+def run_mainGUI(iconFile):
+    """Create an instance of MainGUI and run the application."""
+    app = QApplication(sys.argv)
+    window = MainGUI(iconFile)
+    window.show()
+    app.exec()
+
 if __name__ == '__main__':
-    """Phindr3D is designed for automated cell phenotype analysis"""
-
-    iconPath = path.abspath(path.join(path.dirname(__file__), 'phindr3d_icon.png'))
-
-    # Create the GUI object
-    run_mainGUI(iconPath)
-    # on exit...
+    """Phindr3D is designed for automated cell phenotype analysis."""
+    iconFile = path.abspath(
+        path.join(path.dirname(__file__), 'phindr3d_icon.png'))
+    # Start the GUI defined in src/GUI/MainGUI.py
+    run_mainGUI(iconFile)
 
 # end main

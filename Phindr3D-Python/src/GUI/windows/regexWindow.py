@@ -14,14 +14,18 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
+import os
+import sys
+from array import *
+
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui import *
 from PyQt5.QtCore import *
-from array import *
-import os
 
 class regexWindow(QDialog):
+    """Build a GUI window for the user to assemble a regular expression."""
     def __init__(self):
+        """Construct the GUI window for users to assemble regular expressions."""
         super(regexWindow, self).__init__()
         largetext = QFont("Arial", 12, 1)
         self.setWindowTitle("Create Regular Expression")
@@ -49,12 +53,16 @@ class regexWindow(QDialog):
 
         instructionlabel = QLabel()
         instructionlabel.setWordWrap(True)
-        instText = "To extract metadata info from the Sample File Name, highlight the metadata value in the Sample File Name. " \
-                   "Then enter the metadata name in the Group Name textbox and click the Add Group button. " \
+        instText = "To extract metadata info from the Sample File Name, " \
+                   "highlight the metadata value in the Sample File Name. " \
+                   "Then enter the metadata name in the Group Name textbox " \
+                   "and click the Add Group button. " \
                    "The change should be reflected in regular expression textbox. " \
-                   "Repeat until all metadata info is accounted for in the regular expression." \
+                   "Repeat until all metadata info is accounted for " \
+                   "in the regular expression." \
                    "\nNote: Don't highlight the metadata prefix or filename separators." \
-                   "\nRe-selecting a previous value will produce errors. Click the Reset button to start over." \
+                   "\nRe-selecting a previous value will produce errors. " \
+                   "Click the Reset button to start over." \
                    "\nDo not use the following reserved group names: " + ", ".join(self.reservedKeys)
         instructionlabel.setText(instText)
         instructionlabel.setFixedSize(450, 175)
@@ -96,12 +104,16 @@ class regexWindow(QDialog):
         cancel.setFixedHeight(30)
 
         def addRegexGroup():
-            # The array fileToRegexPos tracks where characters in
-            # the original sample file are in the regular expression
-            # as group labels are added to the regex
-            # Use 9999 as the previous use value for safety. The type of fileToRegexPos
-            # is set to 'i' (signed int), but if it is set to 'I' (unsigned int),
-            # using -1 as the previousUseVal crashes the program (full crash, not Python error).
+            """Add a search term for a group to the regex text.
+
+            The array fileToRegexPos tracks where characters in
+            the original sample file are in the regular expression
+            as group labels are added to the regex
+            Use 9999 as the previous use value for safety. The type of fileToRegexPos
+            is set to 'i' (signed int), but if it is set to 'I' (unsigned int),
+            using -1 as the previousUseVal crashes the program
+            (full crash, not Python error).
+            """
             previousUseVal = 9999
             try:
                 filename = self.samplefilebox.toPlainText()
@@ -175,6 +187,7 @@ class regexWindow(QDialog):
         # end addRegexGroup
 
         def resetRegex():
+            """Enter the source file name in the regex string and display widgets."""
             self.samplefilebox.setText(self.samplefile)
             self.regex = self.samplefile
             self.regexview.setText(self.regex)
@@ -186,10 +199,13 @@ class regexWindow(QDialog):
             # (back to first positions)
             for ix in range(len(self.samplefile)):
                 self.fileToRegexPos.append(ix)
+        # end resetRegex
 
         def finishRegex():
+            """Respond to user clicking the Finish button."""
             self.regex = self.regexview.toPlainText()
             QDialog.accept(self)
+        # end finishRegex
 
         cancel.clicked.connect(self.close)
         reset.clicked.connect(resetRegex)
@@ -210,8 +226,10 @@ class regexWindow(QDialog):
         layout.addWidget(cancel, 4, 2, 1, 1)
         self.setLayout(layout)
         self.setFixedSize(self.minimumSizeHint())
+    # end constructor
 
     def inputSampleFile(self):
+        """Fill the sample file box with a file name, and the fileToRegexPos array."""
         self.samplefilebox.setText(self.samplefile)
         self.regex = self.samplefile
         self.regexview.setText(self.regex)
@@ -220,17 +238,22 @@ class regexWindow(QDialog):
         # Fill the index values in the array
         for ix in range(len(self.samplefile)):
             self.fileToRegexPos.append(ix)
+    # end inputSampleFile
 
     def buildErrorWindow(self, errormessage, icon, errortitle="ErrorDialog"):
+        """Construct an error window GUI and return a reference to it."""
         alert = QMessageBox()
         alert.setWindowTitle(errortitle)
         alert.setText(errormessage)
         alert.setIcon(icon)
         return alert
+    # end buildErrorWindow
+# end regexWindow
 
-import sys
 class example_regex(QDialog):
+    """Build a window to show example regular expressions."""
     def __init__(self):
+        """Construct the window to show usage examples to the user."""
         super(example_regex, self).__init__()
         layout = QGridLayout()
         self.setWindowTitle("Example Regex")
@@ -242,12 +265,18 @@ class example_regex(QDialog):
             path = os.path.dirname(os.path.abspath(__file__)) #run Phindr.py script
 
         # example image 1
-        examplelabel1 = QLabel("Ex 1) If trying to extract ch3 which represents Channel 3, highlight 3 and put Channel in the Group Name textbox then click Add Group")
+        ex1_text = "Ex 1) If trying to extract ch3 which " \
+            + "represents Channel 3, highlight 3 and put Channel " \
+            + "in the Group Name textbox then click Add Group"
+        examplelabel1 = QLabel(ex1_text)
         examplelabel1.setWordWrap(True)
         ex1_img = QLabel()
         ex1_img.setPixmap(QPixmap(os.path.join(path, 'regex_example.png')))
         #example image 2
-        examplelabel2 = QLabel("Ex 2) Don't highlight metadata prefix/separators in Sample File Name. In the example below 'f01' represents Field 01 where 'f' is the metadata prefix")
+        ex2_text = "Ex 2) Don't highlight metadata prefix/separators " \
+            + "in Sample File Name. In the example below 'f01' represents " \
+            + "Field 01 where 'f' is the metadata prefix"
+        examplelabel2 = QLabel(ex2_text)
         examplelabel2.setWordWrap(True)
         incorrect_img = QLabel()
         incorrect_img.setPixmap(QPixmap(os.path.join(path, 'regex_incorrect_example.png')))
@@ -259,9 +288,9 @@ class example_regex(QDialog):
         self.setLayout(layout)
         self.show()
         self.exec()
+    # end constructor
+# end example_regex
 
-
-import sys
 if __name__ == '__main__':
     app = QApplication(sys.argv)
     window = regexWindow()
@@ -278,5 +307,4 @@ if __name__ == '__main__':
     print("Result from the regex window is " + "True" if result else "False")
     if result:
         window.close()
-
 # end main

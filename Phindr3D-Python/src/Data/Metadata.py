@@ -14,12 +14,12 @@
 # You should have received a copy of the GNU General Public License
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
-# Static functions for data and metadata handling
 import numpy as np
 import pandas
 import os.path
 import imageio.v2 as io
 import imagecodecs
+import json
 from scipy.stats.mstats import mquantiles
 
 try:
@@ -35,7 +35,9 @@ except ImportError:
     from src.PhindConfig.PhindConfig import *
 
 class Generator():
+    """Define a class to hold a Numpy random number generator."""
     def __init__(self, seed=None):
+        """Construct a class with a random number generator with optional seed value."""
         self.seed = seed
         if seed == None:
             self.Generator = np.random.default_rng()
@@ -45,12 +47,10 @@ class Generator():
 # end Generator
 
 class Metadata:
-    """This class handles groups of image files and the associated metadata.
-       Static methods that draw closely from transliterations of the MATLAB functions
-       can be found in the DataFunctions class."""
+    """This class handles groups of image files and the associated metadata."""
 
     def __init__(self, rng):
-        """Metadata class constructor"""
+        """Metadata class constructor."""
         # Initialize a random number generator
         # NOTE: 12345 is set as seed for testing purposes
         self.Generator = rng
@@ -82,9 +82,10 @@ class Metadata:
     # end constructor
 
     def SetMetadataFilename(self, omf):
-        """Set method to check the type of the filename string
-            and set the member variable. Returns True if successful,
-            False on error."""
+        """Check the type of the filename string and set the member variable.
+
+        Returns True if successful, False on error.
+        """
         if not isinstance(omf, str):
             return False
         else:
@@ -93,8 +94,10 @@ class Metadata:
     # end SetMetadataFilename
 
     def GetMetadataFilename(self):
-        """Get method to return the metadata filename string.
-            If the filename is empty or None, return False"""
+        """Return the metadata filename string.
+
+        If the filename is empty or None, return False.
+        """
         if self.metadataFilename is None:
             return False
         elif self.metadataFilename == "":
@@ -105,8 +108,10 @@ class Metadata:
 
     def metadataFileExists(self, omf):
         """Check whether the filename specified already exists.
-            Returns True if the file exists, False if it does not, or if the given
-            argument is not a string."""
+
+        Returns True if the file exists, False if it does not, or if the given
+        argument is not a string.
+        """
         if not isinstance(omf, str):
             return False
         else:
@@ -114,8 +119,10 @@ class Metadata:
     # end metadataFileExists
 
     def loadMetadataFile(self, filepath):
-        # Loads metadata file into a hierarchy of classes
-        # Returns true if successful, prints error message and returns false if failure
+        """Load metadata file into a hierarchy of classes.
+
+        Returns true if successful, prints error message and returns false if failure.
+        """
         if not self.metadataFileExists(filepath):
             raise FileNotFoundError
         metadata = pandas.read_table(filepath, usecols=lambda c: not c.startswith('Unnamed:'), delimiter='\t')
@@ -147,7 +154,8 @@ class Metadata:
             # these will be ordered at the end, for referencing purposes
             # order of a row of data: Channels, Other Parameters, Stack, MetadataFile, ImageID
             for col in metadata:
-                if col.startswith('Channel_') or col in ['Stack','MetadataFile','ImageID','bounds','intensity_thresholds','treatmentColNameForNormalization']:
+                if col.startswith('Channel_') or col in ['Stack', 'MetadataFile', 'ImageID',
+                        'bounds', 'intensity_thresholds', 'treatmentColNameForNormalization']:
                     continue
                 row.append(metadata.at[i, col])
             row.append(metadata.at[i, 'Stack'])
@@ -161,7 +169,8 @@ class Metadata:
         for chan in channels:
             columnlabels.append(chan)
         for col in metadata:
-            if col.startswith('Channel_') or col in ['Stack','MetadataFile','ImageID','bounds','intensity_thresholds','treatmentColNameForNormalization']:
+            if col.startswith('Channel_') or col in ['Stack', 'MetadataFile', 'ImageID',
+                    'bounds', 'intensity_thresholds', 'treatmentColNameForNormalization']:
                 continue
             columnlabels.append(col)
         columnlabels.append('Stack')
@@ -194,6 +203,7 @@ class Metadata:
     # end loadMetadataFile
 
     def GetNumChannels(self):
+        """Get the number of channels in the stacks in the images in this metadata."""
         try:
             for image in self.images:
                 for stack in self.images[image].stackLayers:
@@ -207,9 +217,12 @@ class Metadata:
     # end GetNumChannels
 
     def GetTreatmentColumnName(self):
-        """This method uses member variables to determine which column to use
-            as the source of Treatment names. If the member variables are undefined,
-            the default value is 'Treatment' """
+        """Determine which column to use as the source of Treatment names.
+
+        This method uses member variables to determine which column to use
+        as the source of Treatment names. If the member variables are undefined,
+        the default value is 'Treatment'.
+        """
         try:
             if self.intensityNormPerTreatment:
                 treatmentColumnName = self.treatmentColNameForNormalization
@@ -222,16 +235,18 @@ class Metadata:
     # end GetTreatmentColumnName
 
     def GetAllTreatments(self):
-        """If there was a Treatment column in the metadata, Image instances
-            in images will have Treatment data. The Image.GetTreatment method
-            returns the treatment value for that image, or None on error.
-            This method uses member variables to determine which column to use
-            as the source of treatment names.
-            This method creates a dictionary of imageIDs and the Treatment values,
-            if they exist, or None if not. On error, returns an empty dictionary.
+        """Create a dictionary of imageIDs and the Treatment values if they exist.
 
-            dictionary: { key=imageID : value=treatment, ... }
-            """
+        If there was a Treatment column in the metadata, Image instances
+        in images will have Treatment data. The Image.GetTreatment method
+        returns the treatment value for that image, or None on error.
+        This method uses member variables to determine which column to use
+        as the source of treatment names.
+        This method creates a dictionary of imageIDs and the Treatment values,
+        if they exist, or None if not. On error, returns an empty dictionary.
+
+        dictionary: { key=imageID : value=treatment, ... }
+        """
         treatmentColumnName = self.GetTreatmentColumnName()
         allTreatments = {}
         try:
@@ -254,19 +269,18 @@ class Metadata:
     # end GetAllTreatments
 
     def GetTreatmentTypes(self):
-        """If there was a Treatment column in the metadata, Stack instances
-            in stackLayers will have Treatment data. There should be a unique
-            Treatment value for all stackLayers in an image. If there are different
-            treatments for stacks in the same image, this is considered an error,
-            and None is returned.
-            This method collects the treatment types, including multiple treatments
-            in the same image, if this condition exists.
-            The treatmentColumnName parameter has a default value of 'Treatment'.
-            This method returns a list of strings of all treatment types if they
-            exist, or an empty list if not. Returns an empty list on error.
-            list: [treatments found in the metadata]
-            The treatment column name is determined based on the values of member variables.
-            """
+        """Collect Treatment types from all Images, returned in a list.
+
+        If there was a Treatment column in the metadata, Stack instances
+        in stackLayers will have Treatment data.
+        This method collects the treatment types, including multiple treatments
+        in the same image, if this condition exists.
+        The treatmentColumnName parameter has a default value of 'Treatment'.
+        This method returns a list of strings of all treatment types if they
+        exist, or an empty list if not. Returns an empty list on error.
+        list: [treatments found in the metadata]
+        The treatment column name is determined based on the values of member variables.
+        """
         treatmentColumnName = self.GetTreatmentColumnName()
 
         treatmentList = []
@@ -294,8 +308,10 @@ class Metadata:
     # end GetTreatmentTypes
 
     def GetAllImageIDs(self):
-        """Returns a list of all the image ID values, if found.
-            If no image IDs are found, an empty list is returned."""
+        """Return a list of all the image ID values, if found.
+
+        If no image IDs are found, an empty list is returned.
+        """
         idList = []
         try:
             if len(self.images) > 0:
@@ -313,8 +329,10 @@ class Metadata:
     # end GetAllImageIDs
 
     def GetImage(self, theImageID):
-        """Returns the Image class with the given image ID, if it is found.
-            If the requested image ID is not found, returns None."""
+        """Return the Image class with the given image ID, if it is found.
+
+        If the requested image ID is not found, returns None.
+        """
         # Attempt to get the Image object with the given ID, return None on failure
         try:
             return self.images[theImageID]
@@ -323,11 +341,11 @@ class Metadata:
     # end GetImage
 
     def getTrainingFields(self, numTrainingFields=10):
-        """
-        Get smaller subset of images (usually 10) to define parameters for further analysis.
-        (nly used for scaling factors to scale down intensities from 0 to 1).
+        """Get smaller subset of images (usually 10) to define parameters for further analysis.
+
+        (Only used for scaling factors to scale down intensities from 0 to 1).
         output is a Numpy array of a subset of image IDs.
-        On error, returns an empty numpy array
+        On error, returns an empty numpy array.
         """
         randFieldID = np.array([])
         # Check the type of numTrainingFields
@@ -378,7 +396,7 @@ class Metadata:
     # end getTrainingFields
 
     def getScalingFactorforImages(self, randFieldIDforNormalization):
-        """compute lower and higher scaling values for each image"""
+        """Compute lower and higher scaling values for each image."""
         # randFieldIDforNormalization is the IDs of the images for training
         # On error, return the following value
         treatmentColumnName = self.GetTreatmentColumnName()
@@ -461,8 +479,10 @@ class Metadata:
 
     def getImageInformation(self, theImage, chan=0):
         """Get information about the image files.
-            Called in getPixelBinCenters, getImageThresholdValues,
-            extractImageLevelTextureFeatures"""
+
+        Called in getPixelBinCenters, getImageThresholdValues,
+        extractImageLevelTextureFeatures
+        """
         d = np.ones(3, dtype=int)
         # Get one file name from the full 3D image
         # (first file is convenient.)
@@ -488,10 +508,12 @@ class Metadata:
     # end getImageInformation
 
     def getTileInfo(self, dimSize, tileInfo):
-        """computes how many pixels and stacks that need to be retained based on user choices.
-            Called in getPixelBinCenters, extractImageLevelTextureFeatures,
-            getImageThresholdValues, getSuperVoxelbinCenters.
-            This method gets configuration information from PhindConfig"""
+        """compute how many pixels and stacks that need to be retained based on user choices.
+
+        Called in getPixelBinCenters, extractImageLevelTextureFeatures,
+        getImageThresholdValues, getSuperVoxelbinCenters.
+        This method gets configuration information from PhindConfig.
+        """
         xOffset = dimSize[0] % tileInfo.tileX
         yOffset = dimSize[1] % tileInfo.tileY
         zOffset = dimSize[2] % tileInfo.tileZ
@@ -596,7 +618,7 @@ class Metadata:
     # end getTileInfo
 
     def getIndividualChannelThreshold(self, theImageObject, theTileInfo):
-        """individual channel threshold"""
+        """Get thresholds for channels, either a single value or one per treatment."""
         numChannels = self.GetNumChannels()
         allTreatmentTypes = self.GetTreatmentTypes()
         treatmentColumnName = self.GetTreatmentColumnName()
@@ -649,9 +671,10 @@ class Metadata:
     # end getIndividualChannelThreshold
 
     def getImageThresholdValues(self, randFieldID):
-        """get image threshold values for dataset.
-            On error return one row of num channels entries, each entry np.nan
-            """
+        """Get image threshold values for dataset.
+
+        On error return one row of num channels entries, each entry np.nan
+        """
         numChannels = self.GetNumChannels()
         intensityThresholdValues = np.full((5000, numChannels), np.nan)  # not sure why we want 5000 rows
         # define a value to return on error
@@ -679,10 +702,12 @@ class Metadata:
     # end getImageThresholdValues
 
     def computeImageParameters(self):
-        """Call after loading metadata. Calls functions that compute the scaling factors and thresholds.
-            On success, fills the scaling factor and intensity member variables and returns True.
-            If the metadata did not load successfully, returns False
-            """
+        """Compute the scaling factors and thresholds.
+
+        Call after loading metadata. Calls functions that compute the scaling factors and thresholds.
+        On success, fills the scaling factor and intensity member variables and returns True.
+        If the metadata did not load successfully, returns False.
+        """
         # If the metadata has not loaded successfully, return False
         if not self.metadataLoadSuccess:
             return False
@@ -699,7 +724,6 @@ class Metadata:
 # end class Metadata
 
 if __name__ == '__main__':
-    import json
     """Tests of the Metadata class that can be run directly."""
 
     deterministic = Generator(1234)

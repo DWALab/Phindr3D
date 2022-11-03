@@ -15,26 +15,13 @@
 # along with Phindr3D.  If not, see <http://www.gnu.org/licenses/>.
 
 class ImageChannel:
-    """This class handles groups of image files and the associated metadata.
-       Static methods that draw closely from transliterations of the MATLAB functions
-       can be found in the DataFunctions class."""
-
+    """This class handles single image files associated with a single data channel."""
     def __init__(self):
-        """ImageChannel class constructor"""
+        """ImageChannel class constructor."""
         self.channelpath = ""
         pass
 
     def setPath(self, channelpath):
+        """Set the channelpath member variable value."""
         self.channelpath = channelpath
-
 # end class ImageChannel
-
-
-
-if __name__ == '__main__':
-    """Tests of the ImageChannel class that can be run directly."""
-
-    pass
-
-
-# end main

@@ -36,33 +36,37 @@ except ImportError:
     from src.PhindConfig.PhindConfig import *
     from src.Data.Metadata import *
 
-
 class VoxelGroups():
-    """From pixels to supervoxels to megavoxels"""
+    """Class to manage grouping operations from pixels to supervoxels to megavoxels."""
 
     def __init__(self, metaref):
-        """Constructor"""
+        """Construct and define member variables related to voxel grouping."""
         self.metadata = metaref
         self.numVoxelBins = PhindConfig.numVoxelBins
         self.numSuperVoxelBins = PhindConfig.numSuperVoxelBins
         self.numMegaVoxelBins = PhindConfig.numMegaVoxelBins
         self.pixelImage = PixelImage()
-        self.pixelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
+        self.pixelImage.setVoxelBins(
+            self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
         self.superVoxelImage = SuperVoxelImage()
-        self.superVoxelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
+        self.superVoxelImage.setVoxelBins(
+            self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
         self.megaVoxelImage = MegaVoxelImage()
-        self.megaVoxelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
-
+        self.megaVoxelImage.setVoxelBins(
+            self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
     #end constructor
 
     def updateImages(self):
+        """Update bins for the three levels based on new input."""
         self.pixelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
         self.superVoxelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
         self.megaVoxelImage.setVoxelBins(self.numVoxelBins, self.numSuperVoxelBins, self.numMegaVoxelBins)
 
     def action(self, outputFileName, training):
         """Action performed by this class when user requests the Phind operation.
-            Returns the True/False result of the phindVoxelGroups method."""
+
+        Returns the True/False result of the phindVoxelGroups method.
+        """
         if self.phindVoxelGroups(training):
             if self.extractImageLevelTextureFeatures(outputFileName=outputFileName, training=training):
                 return True
@@ -70,22 +74,21 @@ class VoxelGroups():
                 return False
         else:
             return False
-
     # end action
 
     def phindVoxelGroups(self, training):
-        """Phind operation.
-            Returns True if successful, False on failure or error"""
+        """Generate voxel groupings as part of Phind operation.
 
+        Returns True if successful, False on failure or error.
+        """
         self.pixelImage.getPixelBinCenters(self.metadata, training)
         self.superVoxelImage.getSuperVoxelBinCenters(self.metadata, training, self.pixelImage)
         self.megaVoxelImage.getMegaVoxelBinCenters(self.metadata, training, self.pixelImage, self.superVoxelImage)
-
         return True
     # end phindVoxelGroups
 
     def extractImageLevelTextureFeatures(self, outputFileName='imagefeatures.csv', training=None):
-        """Given pixel/super/megavoxel bin centers, creates a feature file"""
+        """Creates a feature file given pixel/super/megavoxel bin centers."""
         #collect parameters from phindconfig
         countBackground = self.metadata.countBackground
         textureFeatures = PhindConfig.textureFeatures
@@ -126,7 +129,8 @@ class VoxelGroups():
             #get channel path
             theChannels = zStack[firstStack].channels
             starte=time.time()
-            metaparams=dict(zip(['Channel_'+str(ch) for ch in list(theChannels.keys())], [theChannels[ch].channelpath for ch in list(theChannels.keys())]))
+            metaparams=dict(zip(['Channel_'+str(ch) for ch in list(theChannels.keys())],
+                [theChannels[ch].channelpath for ch in list(theChannels.keys())]))
             #combine dictionaries
             currentOtherParams.update({'Stacks': "".join(('Stacks: ',str(firstStack),'-', str(stacklist[-1])))})
             metaparams.update(currentOtherParams)
@@ -135,10 +139,19 @@ class VoxelGroups():
             d = self.metadata.getImageInformation(currentImage, 0)
             # Pass in a new TileInfo object to provide default values
             theTileInfo = self.metadata.getTileInfo(d, TileInfo())
-            pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(self.pixelImage.pixelBinCenters, self.pixelImage.pixelBinCenters, axis=1)]).T
-            superVoxelProfile, fgSuperVoxel = self.superVoxelImage.getTileProfiles(self.metadata, currentImage, self.pixelImage.pixelBinCenters, pixelBinCenterDifferences, theTileInfo)
-            megaVoxelProfile, fgMegaVoxel, texture_features = self.megaVoxelImage.getMegaVoxelProfile(self.superVoxelImage.superVoxelBinCenters, superVoxelProfile, theTileInfo, fgSuperVoxel, training, analysis=textureFeatures)
-            imgProfile, rawProfile = self.megaVoxelImage.getImageProfile(self.metadata, self.megaVoxelImage.megaVoxelBinCenters, megaVoxelProfile, theTileInfo, fgMegaVoxel)
+            pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(
+                self.pixelImage.pixelBinCenters,
+                self.pixelImage.pixelBinCenters, axis=1)]).T
+            superVoxelProfile, fgSuperVoxel = self.superVoxelImage.getTileProfiles(
+                self.metadata, currentImage, self.pixelImage.pixelBinCenters,
+                pixelBinCenterDifferences, theTileInfo)
+            megaVoxelProfile, fgMegaVoxel, texture_features \
+                = self.megaVoxelImage.getMegaVoxelProfile(
+                    self.superVoxelImage.superVoxelBinCenters, superVoxelProfile,
+                    theTileInfo, fgSuperVoxel, training, analysis=textureFeatures)
+            imgProfile, rawProfile = self.megaVoxelImage.getImageProfile(
+                self.metadata, self.megaVoxelImage.megaVoxelBinCenters,
+                megaVoxelProfile, theTileInfo, fgMegaVoxel)
             resultIM[iImages, :] = imgProfile
             resultRaw[iImages, :] = rawProfile
             if textureFeatures:
@@ -149,15 +162,18 @@ class VoxelGroups():
         dictResults = {}
         for i, col in enumerate(list(metaparams.keys())):
             dictResults[col] = mdatavals[:, i]
-        dictResults['MetadataFile']=  np.full((len(uniqueImageID),), self.metadata.GetMetadataFilename(), dtype='object')
-        dictResults['ImageID'] = np.full((len(uniqueImageID),), np.arange(1, len(uniqueImageID)+1), dtype='object')
+        dictResults['MetadataFile'] = np.full((len(uniqueImageID),),
+            self.metadata.GetMetadataFilename(), dtype='object')
+        dictResults['ImageID'] = np.full((len(uniqueImageID),),
+            np.arange(1, len(uniqueImageID)+1), dtype='object')
         dictResults['NumMV'] = numRawMV
 
         for i in range(resultIM.shape[1]):
             mvlabel = f'MV{i + 1}'
             dictResults[mvlabel] = resultIM[:, i]  # e.g. mv cat 1: for each image, put here frequency of mvs of type 1.
         if textureFeatures:
-            for i, name in enumerate(['text_ASM', 'text_entropy', 'text_info_corr1', 'text_infor_corr2']):
+            for i, name in enumerate(
+                    ['text_ASM', 'text_entropy', 'text_info_corr1', 'text_infor_corr2']):
                 dictResults[name] = textureResults[:, i]
         df = pd.DataFrame(dictResults)
         csv_name = outputFileName
@@ -168,16 +184,10 @@ class VoxelGroups():
         # Missing a first parameter from the return list
         return resultIM, resultRaw, df  # , metaIndexTmp
     # end extractImageLevelTextureFeatures
-
-
-
 # end class VoxelGroups
 
-
-
-
 if __name__ == '__main__':
-    """Unit testing"""
+    """Unit testing for voxel grouping."""
     from src.Data.Metadata import *
     from src.Training.Training import *
     import numpy as np
