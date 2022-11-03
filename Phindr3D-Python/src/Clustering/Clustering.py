@@ -34,17 +34,17 @@ class setcluster(object):
     """Manually enter cluster number."""
     def __init__(self, clusternum, datafilt, plot_data, labels, group):
         """Construct GUI window to set the number of clusters."""
-        self.clust=clusternum
+        self.clust = clusternum
         #main layout
         win = QDialog()
         win.setWindowTitle("Set Number of Clusters")
         win.setLayout(QFormLayout())
-        label=QLabel("Enter number of clusters to try. \nNote: Final cluster total after analysis may be different")
-        clusterset=QSpinBox()
-        btn_ok=QPushButton("OK")
-        btn_close=QPushButton("Close")
+        label = QLabel("Enter number of clusters to try. \nNote: Final cluster total after analysis may be different")
+        clusterset = QSpinBox()
+        btn_close = QPushButton("Cancel")
+        btn_ok = QPushButton("OK")
         #set spinbox value. Trailing position cursor
-        if isinstance(clusternum, type(None))==False:
+        if isinstance(clusternum, type(None)) == False:
             clusterset.setValue(clusternum)
             clusterset.lineEdit().setCursorPosition(len(str(clusterset.value())))
         else:
@@ -52,19 +52,19 @@ class setcluster(object):
             clusterset.lineEdit().setCursorPosition(1)
         #Add widgets and callbacks
         win.layout().addRow(label, clusterset)
-        if group=="Treatment" and len(np.unique(labels))>1:
-            labelc1=QLabel('Mutual information: N\A')
-            labelc2=QLabel('Normalized mutual information: N\A')
-            labelc3=QLabel('Adjusted mutual information: N\A')
+        if group == "Treatment" and len(np.unique(labels))>1:
+            labelc1 = QLabel('Mutual information: N\A')
+            labelc2 = QLabel('Normalized mutual information: N\A')
+            labelc3 = QLabel('Adjusted mutual information: N\A')
             win.layout().addRow(labelc1)
             win.layout().addRow(labelc2)
             win.layout().addRow(labelc3)
-        win.layout().addRow(btn_ok, btn_close)
+        win.layout().addRow(btn_close, btn_ok)
         btn_ok.clicked.connect(
-            lambda: self.confirmed_cluster(clusterset, datafilt, clusterset.value(),
+            lambda: self.confirmed_cluster(win, clusterset, datafilt, clusterset.value(),
                 plot_data, labels, labelc1, labelc2, labelc3, group)
                 if group=="Treatment" and len(np.unique(labels))>1
-                else self.confirmed_cluster(clusterset, datafilt, clusterset.value(),
+                else self.confirmed_cluster(win, clusterset, datafilt, clusterset.value(),
                     plot_data, labels, None, None, None, group))
         btn_close.clicked.connect(lambda: win.close())
         win.show()
@@ -73,7 +73,7 @@ class setcluster(object):
     # end constructor
 
     def confirmed_cluster(
-            self, num, datafilt, numclusters, plot_data,
+            self, win, num, datafilt, numclusters, plot_data,
             labels, labelc1, labelc2, labelc3, group):
         """Return number of clusters.
 
@@ -93,6 +93,7 @@ class setcluster(object):
                     + str(met.normalized_mutual_info_score(treatlabels, idx)))
                 labelc3.setText('Adjusted mutual information: '
                     + str(met.normalized_mutual_info_score(treatlabels, idx)))
+            win.close()
         else:
             errorWindow("Cluster Error", "Number of Clusters must be a positive value")
     # end confirmed_cluster
@@ -311,6 +312,7 @@ class Clustering:
         self.eps = np.finfo(np.float64).eps
         self.realmin = np.finfo(np.float64).tiny
         self.realmax = np.finfo(np.float64).max
+    # end constructor
 
     def plot_type(self, X, dim, plot):
         """Projection data calculation."""
@@ -330,10 +332,11 @@ class Clustering:
             return (S)
         else:
             raise Exception("Invalid plot")
+    # end plot_type
 
     def cluster_est(self, X):
         numclust = self.estimateNumClusters(self, X)
-
+    # cluster_est
 
     #cluster functions from Matlab - Python Translation
     """Static methods for cluster analysis. Referenced from
@@ -1141,6 +1144,7 @@ class Clustering:
         pref = tmppref
         # print(f'Found {tmpk} clusters using a preference of {pref}')
         return idx, netsim, dpsim, expref, pref
+    # end apclusterK
 
     @staticmethod
     def estimateNumClusters(self, X, pl=True):
