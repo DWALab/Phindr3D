@@ -19,14 +19,14 @@ import json
 import numpy as np
 import tifffile as tf
 from scipy import ndimage
+
 try:
     from .SegmentationFunctions import *
 except ImportError:
     from SegmentationFunctions import *
+
 class Segmentation:
-    """This class ...
-       Static methods that draw closely from transliterations of the MATLAB functions
-       can be found in the SegmentationFunctions class."""
+    """Class associated with segmenting organoids from a 3D image."""
 
     def __init__(self):
         """Segmentation class constructor"""
@@ -51,30 +51,39 @@ class Segmentation:
         self.labelIms = {} #same same.
         self.allIDs = [] 
         self.IDidx = None
-        # end constructor
+    # end constructor
     
     def saveSettings(self, outputpath):
+        """Save the settings to a json file for later use."""
         with open(outputpath, 'w', encoding='utf-8') as f:
             json.dump(self.settings, f, ensure_ascii=False, indent=4)
+    # end saveSettings
 
     def loadSettings(self, settingJsonPath):
+        """Restore saved settings from a json file."""
         with open(settingJsonPath, 'r') as f:
             newsettings = json.load(f)
         self.settings = newsettings
+    # end loadSettings
     
     def createSubfolders(self):
+        """Create folders for labelled and segmented image outputs."""
         self.labDir = os.path.join(self.outputDir, 'LabelledImages')
         self.segDir = os.path.join(self.outputDir, 'SegmentedImages')
         os.makedirs(self.labDir, exist_ok=True)
         os.makedirs(self.segDir, exist_ok=True)
-    
+    # end createSubfolders
+
     def getCurrentIMs(self):
+        """Open, read, and return image objects for the current image."""
         if self.allIDs == []:
             return None, None
         else:
             return tf.imread(self.focusIms[self.allIDs[self.IDidx]]), tf.imread(self.labelIms[self.allIDs[self.IDidx]])
-    
+    # end getCurrentIMs
+
     def getNextIMs(self):
+        """Open, read, and return image objects for the next image."""
         if self.allIDs == []:
             return None, None
         else:
@@ -83,8 +92,10 @@ class Segmentation:
             else:
                 self.IDidx += 1
             return tf.imread(self.focusIms[self.allIDs[self.IDidx]]), tf.imread(self.labelIms[self.allIDs[self.IDidx]])
+    # end getNextIMs
 
     def getPrevIMs(self):
+        """Open, read, and return image objects for the previous image."""
         if self.allIDs == []:
             return None, None
         else:
@@ -93,8 +104,10 @@ class Segmentation:
             else:
                 self.IDidx -= 1
             return tf.imread(self.focusIms[self.allIDs[self.IDidx]]), tf.imread(self.labelIms[self.allIDs[self.IDidx]])
+    # end getPrevIMs
 
     def RunSegmentation(self, mdata):
+        """Segment a 3D image stack into component organoids."""
         try: 
             for id in mdata.images:
                 imstack = mdata.images[id]
@@ -167,12 +180,7 @@ class Segmentation:
             self.allIDs = []
             self.IDidx = None
             self.segmentationSuccess = False
-
     # End RunSegmentation
-
-
-
-
 # end class Segmentation
 
 if __name__ == '__main__':

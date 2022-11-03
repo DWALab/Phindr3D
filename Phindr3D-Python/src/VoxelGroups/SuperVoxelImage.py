@@ -22,21 +22,30 @@ except ImportError:
     from PixelImage import *
 
 class SuperVoxelImage(VoxelBase):
+    """Image managed as super voxels, derived from VoxelBase class."""
     def __init__(self):
+        """Construct base class and define additional member variable."""
         super().__init__()
         self.superVoxelBinCenters = None # np array
+    # end constructor
 
     def getSuperVoxelBinCenters(self, metadata, training, pixelImage):
-        # Same as getPixelBinCenters, but super
-        # required: randFieldID, metadata, pixels, image params (tileinfo)
+        """Identify super voxel bin centers by using getPixelBins from the base class.
+
+        Same as getPixelBinCenters, but super
+        required: randFieldID, metadata, pixels, image params (tileinfo)
+        """
         pixelCenters = pixelImage.pixelBinCenters
-        pixelBinCenterDifferences = np.array([DataFunctions.mat_dot(pixelCenters, pixelCenters, axis=1)]).T
+        pixelBinCenterDifferences = np.array(
+            [DataFunctions.mat_dot(pixelCenters, pixelCenters, axis=1)]).T
         tilesForTraining = []
         for id in metadata.trainingSet:
             currentIm = metadata.GetImage(id)
             d = metadata.getImageInformation(currentIm)
             info = metadata.getTileInfo(d, metadata.theTileInfo)
-            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(metadata, metadata.GetImage(id), pixelCenters, pixelBinCenterDifferences, info)
+            superVoxelProfile, fgSuperVoxel = self.getTileProfiles(
+                metadata, metadata.GetImage(id), pixelCenters,
+                pixelBinCenterDifferences, info)
             tmp = superVoxelProfile[fgSuperVoxel]
             if tmp.size != 0:
                 if len(tilesForTraining) == 0:
@@ -44,14 +53,19 @@ class SuperVoxelImage(VoxelBase):
                 if training.superVoxelPerField > tmp.shape[0]:
                     tilesForTraining = np.concatenate((tilesForTraining, tmp))
                 else:
-                    tmp2Add = np.array([tmp[i, :] for i in metadata.Generator.Generator.choice(tmp.shape[0], size=training.superVoxelPerField, replace=False, shuffle=False)])
+                    tmp2Add = np.array(
+                        [tmp[i, :] for i in metadata.Generator.Generator.choice(
+                            tmp.shape[0], size=training.superVoxelPerField,
+                            replace=False, shuffle=False)])
                     tilesForTraining = np.concatenate((tilesForTraining, tmp2Add))
         if len(tilesForTraining) == 0:
-            print('\nNo foreground super-voxels found. consider changing parameters') 
+            print('\nNo foreground super-voxels found. consider changing parameters')
+        # This choice of seed is associated with unit tests in VoxelGroups.py
         if metadata.Generator.seed == 1234:
             random_state = 1234
         else:
             random_state = None
-        self.superVoxelBinCenters = self.getPixelBins(tilesForTraining, metadata, self.numSuperVoxelBins, random_state=random_state)
-
+        self.superVoxelBinCenters = self.getPixelBins(
+            tilesForTraining, metadata, self.numSuperVoxelBins, random_state=random_state)
+    # end getSuperVoxelBinCenters
 # end class SuperVoxelImage

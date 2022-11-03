@@ -19,11 +19,11 @@ import re
 import tifffile as tf
 import pandas as pd
 import numpy as np
-# import imageio.v2 as io
-# import imagecodecs
 
 class DataFunctions:
-    """Static methods for Metadata handling. Referenced from
+    """Static methods for Metadata handling.
+
+    Referenced from
     https://github.com/DWALab/Phindr3D/tree/9b95aebbd2a62c41d3c87a36f1122a78a21019c8/Lib
     and
     https://github.com/SRI-RSST/Phindr3D-python/blob/ba588bc925ef72c72103738d17ea922d20771064/phindr_functions.py
@@ -32,10 +32,13 @@ class DataFunctions:
 
     @staticmethod
     def parseAndCompareRegex(sampleFile, regex):
-        """Given a sample file name string and a regex string, parse the file name
-            and find the fields specified in the regular expression. If no fields
-            can be found, return empty dictionary. Otherwise, return a dictionary with the
-            field names and their values. On re.error return empty dictionary. """
+        """Parse the sample file name string and find the fields specified in the regular expression.
+
+        Given a sample file name string and a regex string, parse the file name
+        and find the fields specified in the regular expression. If no fields
+        can be found, return empty dictionary. Otherwise, return a dictionary with the
+        field names and their values. On re.error return empty dictionary.
+        """
         # Check that both sampleFile and regex are strings
         if not isinstance(sampleFile, str) or not isinstance(regex, str):
             return {}
@@ -55,9 +58,10 @@ class DataFunctions:
     @staticmethod
     def directoryExists(theDir):
         """Check whether the directory specified by the string theDir exists.
-            Raises TypeError if theDir is not a string.
-            Returns True if the directory exists, False if it does not.
-            """
+
+        Raises TypeError if theDir is not a string.
+        Returns True if the directory exists, False if it does not.
+        """
         if not isinstance(theDir, str):
             raise TypeError("Wrong type in static method DataFunctions.directoryExists. Argument must be a string.")
         else:
@@ -66,10 +70,13 @@ class DataFunctions:
 
     @staticmethod
     def regexPatternCompatibility(regex):
-        """Provides compatibility between MATLAB regular expressions and Python.
-            Replaces '?<' patterns with '?P<' to make compatible with re.fullmatch function.
-            It first checks if '?<' corresponds to a '?<=' or '?<!' pattern first before replacing
-            part of Python specific regular expression syntax."""
+        """Convert MATLAB-style regular expressions to Python.
+
+        Provides compatibility between MATLAB regular expressions and Python.
+        Replaces '?<' patterns with '?P<' to make compatible with re.fullmatch function.
+        It first checks if '?<' corresponds to a '?<=' or '?<!' pattern first before replacing
+        part of Python specific regular expression syntax.
+        """
         # set the default value if no modifications are necessary
         outstring = ""
         strlist = regex.split("?<")
@@ -77,28 +84,27 @@ class DataFunctions:
             return regex
         else:
             for i in range(len(strlist)-1):
-                outstring = outstring+strlist[i]
+                outstring = outstring + strlist[i]
                 try:
                     theSep = "?<" if (strlist[i+1][0] == '=' or strlist[i+1][0] == '!') else "?P<"
                 except IndexError:
                     theSep = "?<"
                 outstring = outstring + theSep
-            outstring = outstring+strlist[len(strlist)-1]
+            outstring = outstring + strlist[len(strlist)-1]
         return outstring
     # end regexPatternCompatibility
 
     @staticmethod
     def createMetadata(folder_path, regex, mdatafilename='metadata_python.txt'):
-        """
-        This function creates a metadata txt file in the same format as used in the matlab Phindr implementation
+        """Create a metadata txt file in the same format as used in the matlab Phindr implementation.
 
         folder_path: path to image folder (full or relative)
-        regex: regular expression matching image file names. must include named groups for all required image attributes (wellID, field, treatment, channel, stack, etc.)
-        Matlab style regex can be adapted by adding P before group names. ex. : "(?P<WellID>\w+)__(?P<Treatment>\w+)__z(?P<Stack>\d+)__ch(?P<Channel>\d)__example.tiff"
+        regex: regular expression matching image file names.
+        must include named groups for all required image attributes (wellID, field, treatment, channel, stack, etc.)
+        Matlab style regex can be adapted by adding P before group names.
+        ex. : "(?P<WellID>\w+)__(?P<Treatment>\w+)__z(?P<Stack>\d+)__ch(?P<Channel>\d)__example.tiff"
         mdatafilename: filename for metadatafile that will be written.
-
-        regex groups MUST INCLUDE Channel and Stack and at least one other image identification group
-        regex groups CANNOT include ImageID or
+        regex groups MUST INCLUDE Channel and Stack and at least one other image identification group.
         """
 
         f = os.listdir(folder_path)
@@ -154,7 +160,8 @@ class DataFunctions:
                     else:
                         fname += row[dkey]
                 fname += fileparts[i+1] #add the .tif(f)
-                df.iat[index, df.columns.get_loc(f'Channel_{chan}')] = os.path.abspath(f'{folder_path}/{fname}') #place the name at the right spot
+                df.iat[index, df.columns.get_loc(f'Channel_{chan}')] \
+                    = os.path.abspath(f'{folder_path}/{fname}') #place the name at the right spot
         df['Stack']=df['Stack'].astype(int)
         df.sort_values(by=['ImageID','Stack'], ascending=[1, 1], inplace=True)
         df.replace(r'\\', r'/', regex=True, inplace=True)
@@ -164,9 +171,7 @@ class DataFunctions:
 
     @staticmethod
     def mat_dot(A, B, axis=0):
-        """
-        equivalent to dot product for matlab (can choose axis as well)
-        """
+        """Equivalent to dot product for matlab (can choose axis as well)."""
         return np.sum(A.conj() * B, axis=axis)
     # end mat_dot
 
@@ -174,9 +179,13 @@ class DataFunctions:
 
     @staticmethod
     def im2col(img, blkShape):
-        # this function is modified from https://github.com/Mullahz/Python-programs-for-MATLAB-in-built-functions/blob/main/im2col.py
-        # provides same functionality as matlab's im2col builtin function in distinct mode
-        # actuall tested and compared to matlab version this time. produces nice results.
+        """Reproduce the MATLAB im2col function.
+
+        This function is modified from
+        https://github.com/Mullahz/Python-programs-for-MATLAB-in-built-functions/blob/main/im2col.py
+        provides same functionality as matlab's im2col builtin function in distinct mode
+        actual tested and compared to matlab version this time. produces nice results.
+        """
         imgw = img.shape[0]
         imgh = img.shape[1]
         blk_sizew = blkShape[0]
@@ -198,6 +207,7 @@ class DataFunctions:
 
     @staticmethod
     def imfinfo(filename):
+        """Create and return an info class with image height, width, and format."""
         class info:
             pass
 
@@ -215,9 +225,7 @@ class DataFunctions:
 
     @staticmethod
     def rescaleIntensity(im, low=0, high=1):
-        """Called in getIndividualChannelThreshold.
-        Rescales intensity of image based on lower and upper bounds
-        """
+        """Rescale intensity of image based on lower and upper bounds."""
         im = im.astype(np.float64)
         diffIM = high - low
         im = (im - low) / diffIM
@@ -228,7 +236,7 @@ class DataFunctions:
 
     @staticmethod
     def selectPixelsbyweights(x):
-        """called in getTrainingPixels. x type is """
+        """called in getTrainingPixels."""
         n, bin_edges = np.histogram(x, bins=(int(1/0.025) + 1), range=(0,1), )
         q = np.digitize(x, bin_edges)
         n = n / np.sum(n)
@@ -270,33 +278,29 @@ class DataFunctions:
 
     @staticmethod
     def getImageWithSVMVOverlay(IM, param, type):
+        """Add an overlay grid to the image IM showing supervoxels or megavoxels."""
         if type == 'SV':
             IM[range(0,IM.shape[0],param.tileX), :,:] = (0.7, 0.7, 0.7, 1.0)
             IM[:, range(0,IM.shape[1], param.tileY),:] = (0.7, 0.7, 0.7, 1.0)
             if IM.shape[0]>500 or IM.shape[1]>500:
                 IM[range(1,IM.shape[0],param.tileX), :,:] = (0.7, 0.7, 0.7, 1.0)
                 IM[:, range(1,IM.shape[1], param.tileY),:] = (0.7, 0.7, 0.7, 1.0)
-
         else:
             IM[range(0,IM.shape[0],param.tileX* param.megaVoxelTileX), :,:] = (1.0, 1.0, 1.0, 1.0)
             IM[:, range(0,IM.shape[1],param.tileY* param.megaVoxelTileY),:] = (1.0, 1.0, 1.0, 1.0)
             if IM.shape[0] > 500 or IM.shape[1] > 500:
                 IM[range(1,IM.shape[0],param.tileX* param.megaVoxelTileX), :,:] = (1.0, 1.0, 1.0, 1.0)
                 IM[:, range(1,IM.shape[1],param.tileY*param.megaVoxelTileY),:] = (1.0, 1.0, 1.0, 1.0)
-
         return IM
     # end getImageWithSVMVOverlay
-
-
 # end DataFunctions
 
 # error classes
 class MissingChannelStackError(Exception):
     pass
 
-
 def test_directoryExists():
-    """A set of tests of the static method directoryExists"""
+    """A set of tests of the static method directoryExists."""
     success = "Success in test_directoryExists test "
     failure = "Failure in test_directoryExists test "
     # Test 1
@@ -325,9 +329,8 @@ def test_directoryExists():
         print(failure+str(tnum))
 # end test_directoryExists
 
-
 def test_parseAndCompareRegex():
-    """A set of tests of the static method parseAndCompareRegex"""
+    """A set of tests of the static method parseAndCompareRegex."""
     success = "Success in test_parseAndCompareRegex test "
     failure = "Failure in test_parseAndCompareRegex test "
     # Test 1
@@ -338,14 +341,10 @@ def test_parseAndCompareRegex():
     t1regex = DataFunctions.regexPatternCompatibility(t1regex)
     t1out = DataFunctions.parseAndCompareRegex(t1file, t1regex)
     print(success + str(tnum) if t1out == t1expected else failure + str(tnum))
-
 # end test_parseAndCompareRegex
-
 
 if __name__ == '__main__':
     """Tests of the static methods that can be run directly."""
-
     test_directoryExists()
     test_parseAndCompareRegex()
-
 # end if main
