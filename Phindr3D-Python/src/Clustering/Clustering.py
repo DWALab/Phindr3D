@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Sunnybrook Research Institute
+# Copyright (C) 2023 Sunnybrook Research Institute
 # This file is part of Phindr3D <https://github.com/DWALab/Phindr3D>.
 #
 # Phindr3D is free software: you can redistribute it and/or modify
