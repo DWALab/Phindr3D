@@ -73,7 +73,7 @@ class MainGUI(QWidget, external_windows):
         #Default color values for image plot
         keys, values = zip(*mcolors.CSS4_COLORS.items())
         values=[values[x] for x, y in enumerate(keys) if 'white' not in y]
-        self.color = [(0, 0.45, 0.74),(0.85, 0.33, 0.1), (0.93, 0.69, 0.13)]
+        self.color = [(0, 0.45, 0.74), (0.85, 0.33, 0.1), (0.93, 0.69, 0.13)]
         self.ch_len=1
         layout = QGridLayout()
         layout.setAlignment(Qt.AlignBottom)
