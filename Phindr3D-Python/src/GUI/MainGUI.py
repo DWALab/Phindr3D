@@ -73,7 +73,7 @@ class MainGUI(QWidget, external_windows):
         #Default color values for image plot
         keys, values = zip(*mcolors.CSS4_COLORS.items())
         values=[values[x] for x, y in enumerate(keys) if 'white' not in y]
-        self.color = [(0, 0.45, 0.74),(0.85, 0.33, 0.1), (0.93, 0.69, 0.13)]
+        self.color = [(0, 0.45, 0.74), (0.85, 0.33, 0.1), (0.93, 0.69, 0.13)]
         self.ch_len=1
         layout = QGridLayout()
         layout.setAlignment(Qt.AlignBottom)
@@ -203,7 +203,7 @@ class MainGUI(QWidget, external_windows):
             """
             if not self.metadata.GetMetadataFilename():
                 alert = self.buildErrorWindow(
-                    "Metadata not found!!", QMessageBox.Critical)
+                    "Metadata not found!!", QMessageBox.Critical, "Metadata not found")
                 alert.exec()
             elif buttonPressed == "Set Voxel Parameters":
                 try:
@@ -266,21 +266,21 @@ class MainGUI(QWidget, external_windows):
                             slicescrollbar, img_plot, sv, mv, values, self.img_ind, imgwindow)
                 except Exception as e:
                     errortext = "Could not set voxel parameters: " + str(e)
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Parameter error")
                     alert.exec()
             elif buttonPressed == "Set Channel Colors":
                 color = QColorDialog.getColor()
                 return color
             elif buttonPressed == "Image Go":
                 errortext = "Image Out of Range"
-                alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Image error")
                 alert.exec()
             elif buttonPressed == "Phind":
                 try:
                     self.phindButtonAction()
                 except Exception as e:
                     errortext = "Could not execute Phind operation: " + str(e)
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Could not Phind")
                     alert.exec()
         # end metadataError
 
@@ -288,7 +288,7 @@ class MainGUI(QWidget, external_windows):
             """Display an error window if export session is clicked with no metadata."""
             if not self.metadata.GetMetadataFilename():
                 alert = self.buildErrorWindow(
-                    "No variables to export!!", QMessageBox.Critical)
+                    "No variables to export!!", QMessageBox.Critical, "Output error")
                 alert.exec()
         # end exportError
 
@@ -342,25 +342,25 @@ class MainGUI(QWidget, external_windows):
                 except MissingChannelStackError:
                     errortext = "Metadata Extraction Failed: " \
                         + "Channel/Stack/ImageID column(s) missing and/or invalid."
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Missing data")
                     alert.exec()
                 except FileNotFoundError:
                     errortext = "Metadata Extraction Failed: Metadata file does not exist."
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Metadata file error")
                     alert.exec()
                 except InvalidImageError:
                     errortext = "Metadata Extraction Failed: " \
                         + "Invalid Image type (must be grayscale)."
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Image type error")
                     alert.exec()
                 except Exception as e:
                     errortext = "Metadata Extraction Failed: " + str(e)
-                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                    alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Metadata error")
                     alert.exec()
                     return
             else:
                 load_metadata_win = self.buildErrorWindow(
-                    "Select Valid Metadatafile (.txt)", QMessageBox.Critical)
+                    "Select Valid Metadatafile (.txt)", QMessageBox.Critical, "Select metadata")
                 load_metadata_win.show()
                 load_metadata_win.exec()
                 # When meta data is loaded using the loaded data,
@@ -422,7 +422,7 @@ class MainGUI(QWidget, external_windows):
                 wino.exec()
             except Exception as e:
                 errortext = "Could not run organoid segmentation: " + str(e)
-                alert = self.buildErrorWindow(errortext, QMessageBox.Critical)
+                alert = self.buildErrorWindow(errortext, QMessageBox.Critical, "Run error")
                 alert.exec()
 
         # Menu item actions
@@ -628,7 +628,7 @@ class MainGUI(QWidget, external_windows):
             #get size of current stack
             stack_size=data[data["ImageID"] == img_id]["Channel_1"].size
             if stack_size==0:
-                imgID_win = self.buildErrorWindow("ImageID out of range", QMessageBox.Critical)
+                imgID_win = self.buildErrorWindow("ImageID out of range", QMessageBox.Critical, "Image load error")
                 imgID_win.show()
                 imgID_win.exec()
                 return(True)

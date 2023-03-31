@@ -1,4 +1,4 @@
-# Copyright (C) 2022 Sunnybrook Research Institute
+# Copyright (C) 2023 Sunnybrook Research Institute
 # This file is part of Phindr3D <https://github.com/DWALab/Phindr3D>.
 #
 # Phindr3D is free software: you can redistribute it and/or modify
@@ -166,11 +166,11 @@ class piechart(object):
             #plot cluster centers and connect line to data points
             for i in np.unique(idx):
                 ind=np.where(idx==i)
-                self.main_plot.axes.plot(plot_data[0][ind], plot_data[1][ind], 'ok', alpha=0.4)
+                self.main_plot.axes.plot(plot_data[0][ind], plot_data[1][ind], 'ok', alpha=self.pie_chart_dot_alpha)
                 for x in ind[0]:
                     self.main_plot.axes.plot(
                         [plot_data[0][x], plot_data[0][i]],
-                        [plot_data[1][x], plot_data[1][i]], 'k-', alpha=0.2)
+                        [plot_data[1][x], plot_data[1][i]], 'k-', alpha=self.pie_chart_line_alpha)
             # pie radius norm
             axisRange = abs(np.max(plot_data[0]) - np.min(plot_data[0]));
             maxRadius = .06 * axisRange
@@ -205,8 +205,8 @@ class piechart(object):
                     s1, mark = pie_slice(sum(parts[:x]), sum(parts[:x+1]))
                     self.main_plot.axes.scatter(
                         plot_data[0][cluster], plot_data[1][cluster],
-                        marker=mark, s=s1**2 * self.max_piesize*rsize[size_ind],
-                        facecolor=colors[parts_ind[0][x]])
+                        marker=mark, s=s1**2 * self.max_piesize*rsize[size_ind], alpha=self.pie_chart_wedge_alpha,
+                        facecolor=colors[parts_ind[0][x]], zorder=4)
 
                 # Add an offset to the text position so it is not in the middle of the pie chart
                 # If r_offset is set to rsize[size_ind], the centre of the text
@@ -216,11 +216,14 @@ class piechart(object):
                 r_offset = rsize[size_ind] + minRadius
                 x_offset = r_offset * np.cos(np.pi/4.0)
                 y_offset = r_offset * np.sin(np.pi/4.0)
-                self.main_plot.axes.text(
-                    plot_data[0][cluster] + x_offset, plot_data[1][cluster] + y_offset,
-                    s=size_ind+1, horizontalalignment='center', verticalalignment='center',
-                    fontdict=dict(fontsize=15, fontweight='bold', color="black"),
-                    bbox=dict(edgecolor="None", facecolor="None", alpha=1.0))
+
+                # Annotate and the draggable() attribute allow the user to move the numbers
+                self.main_plot.axes.annotate(str(size_ind + 1), xy=(plot_data[0][cluster], plot_data[1][cluster]),
+                     xycoords='axes fraction',
+                     xytext=(plot_data[0][cluster] + x_offset, plot_data[1][cluster] + y_offset), textcoords='data',
+                     ha="center", va="center", fontsize=15, fontweight='bold', color="black",
+                     bbox=dict(edgecolor="None", facecolor="None", alpha=self.pie_chart_text_alpha),
+                     zorder=5).draggable()
 
             self.main_plot.axes.set_aspect('equal')
             self.main_plot.fig.tight_layout()
@@ -236,6 +239,12 @@ class piechart(object):
             errorWindow("PieChart Error",
                 "Please 'Set Number of Clusters' before using Piechart")
     # end constructor
+
+    # Member constants
+    pie_chart_wedge_alpha = 1.0
+    pie_chart_text_alpha = 1.0
+    pie_chart_dot_alpha = 0.0
+    pie_chart_line_alpha = 0.2
 # end piechart
 
 class clusterdisplay(object):
